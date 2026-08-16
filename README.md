@@ -43,4 +43,5 @@ I built this because I wanted a quick way to see how I'm performing in my curren
 ---
 ### Author
 **Meyblow**
+* Telegram: [https://t.me/Meyblow](https://t.me/Meyblow)
 * osu! Profile: [https://osu.ppy.sh/users/39791134](https://osu.ppy.sh/users/39791134)
