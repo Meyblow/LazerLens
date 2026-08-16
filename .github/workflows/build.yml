@@ -1,0 +1,36 @@
+name: Build Plugin
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+  release:
+    types: [ created ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build -c Release --no-restore
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: lazer-lens
+        path: bin/Release/net8.0/*.zip
+    - name: Publish Release Asset
+      if: github.event_name == 'release'
+      uses: softprops/action-gh-release@v2
+      with:
+        files: bin/Release/net8.0/*.zip
+
