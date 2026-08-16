@@ -122,7 +122,10 @@ namespace LazerLens.Services
                 Rank: passed ? score.Rank : ScoreRank.F,
                 Statistics: statsDict,
                 UnstableRate: ur
-            );
+            )
+            {
+                OriginalScore = score
+            };
 
             LiveState.Plays.Add(record);
             LazerLensPatch.DebugLog($"LazerLensService.RecordScore: Play added! Total plays in LiveState: {LiveState.Plays.Count}. Firing OnSessionUpdated.");
