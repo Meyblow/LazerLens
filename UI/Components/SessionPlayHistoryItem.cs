@@ -21,6 +21,7 @@ using osuTK.Graphics;
 using osu.Game.Beatmaps;
 using LazerLens.Models;
 using LazerLens.Services;
+using osu.Framework.Screens;
 
 namespace LazerLens.UI.Components
 {
@@ -32,9 +33,14 @@ namespace LazerLens.UI.Components
         [Resolved(canBeNull: true)]
         private BeatmapSetOverlay? beatmapSetOverlay { get; set; }
 
-        public override LocalisableString TooltipText => currentPlay.OnlineBeatmapID > 0 || currentPlay.OnlineBeatmapSetID > 0
-            ? "Click to view beatmap info in overlay"
-            : "Local beatmap (no online ID)";
+        [Resolved(canBeNull: true)]
+        private osu.Game.OsuGame? game { get; set; }
+
+        public override LocalisableString TooltipText => (currentPlay.OriginalScore != null)
+            ? "Click to view score screen"
+            : (currentPlay.OnlineBeatmapID > 0 || currentPlay.OnlineBeatmapSetID > 0
+                ? "Click to view beatmap info in overlay"
+                : "Local beatmap (no online ID)");
 
         private SessionPlayRecord currentPlay;
         private readonly LazerLensService service;
@@ -168,24 +174,24 @@ namespace LazerLens.UI.Components
                                     Child = new FillFlowContainer
                                     {
                                         AutoSizeAxes = Axes.Both,
-                                        Anchor = Anchor.CentreRight,
-                                        Origin = Anchor.CentreRight,
+                                        Anchor = Anchor.Centre,
+                                        Origin = Anchor.Centre,
                                         Direction = FillDirection.Vertical,
                                         Spacing = new Vector2(0, 3),
                                         Children = new Drawable[]
                                         {
                                             new OsuSpriteText
                                             {
-                                                Anchor = Anchor.TopRight,
-                                                Origin = Anchor.TopRight,
+                                                Anchor = Anchor.TopCentre,
+                                                Origin = Anchor.TopCentre,
                                                 Text = $"{play.Accuracy.ToString("F2", CultureInfo.InvariantCulture)}%",
                                                 Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
                                                 Colour = play.Accuracy >= 95 ? Color4.LightGreen : Color4.White,
                                             },
                                             new OsuSpriteText
                                             {
-                                                Anchor = Anchor.TopRight,
-                                                Origin = Anchor.TopRight,
+                                                Anchor = Anchor.TopCentre,
+                                                Origin = Anchor.TopCentre,
                                                 Text = modString,
                                                 Font = OsuFont.Torus.With(size: 11, weight: FontWeight.SemiBold),
                                                 Colour = modString == "NoMod" ? Color4.White.Opacity(0.4f) : Color4.Yellow,
@@ -200,24 +206,24 @@ namespace LazerLens.UI.Components
                                     Child = new FillFlowContainer
                                     {
                                         AutoSizeAxes = Axes.Both,
-                                        Anchor = Anchor.CentreRight,
-                                        Origin = Anchor.CentreRight,
+                                        Anchor = Anchor.Centre,
+                                        Origin = Anchor.Centre,
                                         Direction = FillDirection.Vertical,
                                         Spacing = new Vector2(0, 3),
                                         Children = new Drawable[]
                                         {
                                             new OsuSpriteText
                                             {
-                                                Anchor = Anchor.TopRight,
-                                                Origin = Anchor.TopRight,
+                                                Anchor = Anchor.TopCentre,
+                                                Origin = Anchor.TopCentre,
                                                 Text = play.TotalScore.ToString("N0", CultureInfo.InvariantCulture),
                                                 Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
                                                 Colour = Color4.White.Opacity(0.95f),
                                             },
                                             new OsuSpriteText
                                             {
-                                                Anchor = Anchor.TopRight,
-                                                Origin = Anchor.TopRight,
+                                                Anchor = Anchor.TopCentre,
+                                                Origin = Anchor.TopCentre,
                                                 Text = "SCORE",
                                                 Font = OsuFont.Torus.With(size: 10, weight: FontWeight.Regular),
                                                 Colour = Color4.White.Opacity(0.35f),
@@ -232,8 +238,8 @@ namespace LazerLens.UI.Components
                                     Child = new FillFlowContainer
                                     {
                                         AutoSizeAxes = Axes.Both,
-                                        Anchor = Anchor.CentreRight,
-                                        Origin = Anchor.CentreRight,
+                                        Anchor = Anchor.Centre,
+                                        Origin = Anchor.Centre,
                                         Direction = FillDirection.Vertical,
                                         Spacing = new Vector2(0, 3),
                                         Children = new Drawable[]
@@ -243,13 +249,13 @@ namespace LazerLens.UI.Components
                                             })
                                             {
                                                 AutoSizeAxes = Axes.Both,
-                                                Anchor = Anchor.TopRight,
-                                                Origin = Anchor.TopRight,
+                                                Anchor = Anchor.TopCentre,
+                                                Origin = Anchor.TopCentre,
                                             },
                                             urTextSprite = new OsuSpriteText
                                             {
-                                                Anchor = Anchor.TopRight,
-                                                Origin = Anchor.TopRight,
+                                                Anchor = Anchor.TopCentre,
+                                                Origin = Anchor.TopCentre,
                                                 Text = formatUrString(play),
                                                 Font = OsuFont.Torus.With(size: 10, weight: FontWeight.SemiBold),
                                                 Colour = play.UnstableRate.HasValue ? Color4Extensions.FromHex("00ffcc") : Color4.White.Opacity(0.35f),
@@ -264,24 +270,24 @@ namespace LazerLens.UI.Components
                                     Child = new FillFlowContainer
                                     {
                                         AutoSizeAxes = Axes.Both,
-                                        Anchor = Anchor.CentreRight,
-                                        Origin = Anchor.CentreRight,
+                                        Anchor = Anchor.Centre,
+                                        Origin = Anchor.Centre,
                                         Direction = FillDirection.Vertical,
                                         Spacing = new Vector2(0, 3),
                                         Children = new Drawable[]
                                         {
                                             new OsuSpriteText
                                             {
-                                                Anchor = Anchor.TopRight,
-                                                Origin = Anchor.TopRight,
+                                                Anchor = Anchor.TopCentre,
+                                                Origin = Anchor.TopCentre,
                                                 Text = $"{play.MaxCombo}x",
                                                 Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
                                                 Colour = Color4.White.Opacity(0.95f),
                                             },
                                             new OsuSpriteText
                                             {
-                                                Anchor = Anchor.TopRight,
-                                                Origin = Anchor.TopRight,
+                                                Anchor = Anchor.TopCentre,
+                                                Origin = Anchor.TopCentre,
                                                 Text = "COMBO",
                                                 Font = OsuFont.Torus.With(size: 10, weight: FontWeight.Regular),
                                                 Colour = Color4.White.Opacity(0.35f),
@@ -296,24 +302,24 @@ namespace LazerLens.UI.Components
                                     Child = new FillFlowContainer
                                     {
                                         AutoSizeAxes = Axes.Both,
-                                        Anchor = Anchor.CentreRight,
-                                        Origin = Anchor.CentreRight,
+                                        Anchor = Anchor.Centre,
+                                        Origin = Anchor.Centre,
                                         Direction = FillDirection.Vertical,
                                         Spacing = new Vector2(0, 3),
                                         Children = new Drawable[]
                                         {
                                             ppTextSprite = new OsuSpriteText
                                             {
-                                                Anchor = Anchor.TopRight,
-                                                Origin = Anchor.TopRight,
+                                                Anchor = Anchor.TopCentre,
+                                                Origin = Anchor.TopCentre,
                                                 Text = ppDisplay,
                                                 Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
                                                 Colour = getPpColour(play),
                                             },
                                             new OsuSpriteText
                                             {
-                                                Anchor = Anchor.TopRight,
-                                                Origin = Anchor.TopRight,
+                                                Anchor = Anchor.TopCentre,
+                                                Origin = Anchor.TopCentre,
                                                 Text = "PP (PLAY/PROF)",
                                                 Font = OsuFont.Torus.With(size: 10, weight: FontWeight.Regular),
                                                 Colour = Color4.White.Opacity(0.35f),
@@ -328,24 +334,24 @@ namespace LazerLens.UI.Components
                                     Child = new FillFlowContainer
                                     {
                                         AutoSizeAxes = Axes.Both,
-                                        Anchor = Anchor.CentreRight,
-                                        Origin = Anchor.CentreRight,
+                                        Anchor = Anchor.Centre,
+                                        Origin = Anchor.Centre,
                                         Direction = FillDirection.Vertical,
                                         Spacing = new Vector2(0, 3),
                                         Children = new Drawable[]
                                         {
                                             new OsuSpriteText
                                             {
-                                                Anchor = Anchor.TopRight,
-                                                Origin = Anchor.TopRight,
+                                                Anchor = Anchor.TopCentre,
+                                                Origin = Anchor.TopCentre,
                                                 Text = play.Timestamp.ToString("HH:mm:ss", CultureInfo.InvariantCulture),
                                                 Font = OsuFont.Torus.With(size: 13, weight: FontWeight.Regular),
                                                 Colour = Color4.White.Opacity(0.6f),
                                             },
                                             new OsuSpriteText
                                             {
-                                                Anchor = Anchor.TopRight,
-                                                Origin = Anchor.TopRight,
+                                                Anchor = Anchor.TopCentre,
+                                                Origin = Anchor.TopCentre,
                                                 Text = "TIME",
                                                 Font = OsuFont.Torus.With(size: 10, weight: FontWeight.Regular),
                                                 Colour = Color4.White.Opacity(0.35f),
@@ -519,6 +525,25 @@ namespace LazerLens.UI.Components
 
         private void openBeatmapInfo()
         {
+            if (currentPlay.OriginalScore != null && game != null)
+            {
+                // Hide the LazerLens overlay
+                var parent = this.Parent;
+                while (parent != null)
+                {
+                    if (parent is osucc.UI.Overlays.OsuCcShearedOverlay overlayContainer)
+                    {
+                        overlayContainer.Hide();
+                        break;
+                    }
+                    parent = parent.Parent;
+                }
+
+                // Show the score screen
+                game.PerformFromScreen(s => s.Push(new osu.Game.Screens.Ranking.SoloResultsScreen(currentPlay.OriginalScore)));
+                return;
+            }
+
             var overlay = beatmapSetOverlay ?? ClientApi.Game?.Dependencies?.Get(typeof(BeatmapSetOverlay)) as BeatmapSetOverlay;
 
             if (currentPlay.OnlineBeatmapID > 0)

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Scoring;
@@ -33,6 +33,9 @@ namespace LazerLens.Models
         Guid Id = default
     )
     {
+        [Newtonsoft.Json.JsonIgnore]
+        public ScoreInfo? OriginalScore { get; init; }
+
         public Guid Id { get; init; } = Id == default ? Guid.NewGuid() : Id;
 
         public int CountGreat => Statistics != null && Statistics.TryGetValue(HitResult.Great, out int val) ? val : 0;
