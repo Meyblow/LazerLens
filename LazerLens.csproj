@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>LazerLens</AssemblyName>
+    <RootNamespace>LazerLens</RootNamespace>
+    <IsPlugin>true</IsPlugin>
+    <PluginId>lazer-lens</PluginId>
+    <PluginName>Lazer Lens</PluginName>
+    <PluginDescription>Tracks your play session metrics, play history, average accuracy, and session bests with an in-game overlay.</PluginDescription>
+    <PluginVersion>1.1.0</PluginVersion>
+    <PluginPriority>60</PluginPriority>
+    <PluginIconGlyph>ChartBar</PluginIconGlyph>
+    <PluginRepository>https://github.com/Meyblow/LazerLens</PluginRepository>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PluginAuthor Include="Meyblow" Email="" OsuProfileId="39791134" />
+    <PluginTag Include="menu" />
+    <PluginTag Include="song-select" />
+    <PluginTag Include="settings" />
+    <PluginTag Include="profile" />
+    <PluginTag Include="tools" />
+    <PluginTag Include="ui" />
+    <PluginTag Include="visual" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="osucc.Host" />
+    <PackageReference Include="osucc.Build" PrivateAssets="all" />
+    <PackageReference Include="ppy.osu.Game" />
+  </ItemGroup>
+
+</Project>
+
+
+
+
