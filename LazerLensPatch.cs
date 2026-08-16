@@ -233,7 +233,8 @@ namespace LazerLens
                 scoreInfo.Rank = ScoreRank.F;
 
                 DebugLog($"recordUnpassedScore: Dispatching UNPASSED for {scoreInfo.BeatmapInfo?.Metadata?.Title}, Acc={scoreInfo.Accuracy:P2}, Combo={scoreInfo.MaxCombo}");
-                OnScoreImported?.Invoke(scoreInfo, false, isRetry);
+                bool hasFailed = player.GameplayState?.HasFailed == true;
+                OnScoreImported?.Invoke(scoreInfo, false, hasFailed ? false : isRetry);
             }
             catch (Exception ex)
             {
