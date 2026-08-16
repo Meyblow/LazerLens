@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Reflection;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics.Sprites;
@@ -260,13 +260,13 @@ namespace LazerLens
             {
                 ClientCelebrations.Show(new Celebration(new CelebrationOptions
                 {
-                    TitleText = "New Session Best!",
+                    TitleText = LazerLensStrings.NotificationNewBest.ToString(),
                     SubtitleText = $"{play.BeatmapArtist} - {play.BeatmapTitle}",
                     AccentColour = Color4Extensions.FromHex("00ffcc"),
                 }));
 
                 Host.Notify(
-                    new LocalisableString($"New Session Best!\n{play.BeatmapArtist} - {play.BeatmapTitle} ({play.Accuracy:F2}%)"),
+                    LazerLensStrings.NotificationNewBestDetails(play.BeatmapArtist, play.BeatmapTitle, play.Accuracy.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)),
                     NotificationKind.Success
                 );
             }
@@ -332,4 +332,5 @@ namespace LazerLens
         }
     }
 }
+
 

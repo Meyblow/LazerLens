@@ -1,0 +1,23 @@
+﻿{
+  "lazer-lens:name": "Lazer Lens",
+  "lazer-lens:description": "Відстежує показники вашої ігрової сесії, історію ігор, середню точність та найкращі результати сесії за допомогою внутрішньоігрового оверлею.",
+  "lazer-lens:TooltipMain": "Lazer Lens",
+  "lazer-lens:TooltipSub": "Статистика та історія сесії",
+  "lazer-lens:SettingsNotificationsCaption": "Сповіщення після гри",
+  "lazer-lens:SettingsCelebrateCaption": "Святкувати рекорди сесії",
+  "lazer-lens:SettingsTrackRetriesCaption": "Відстежувати ретраї (перезапуски)",
+  "lazer-lens:SettingsCompactHistoryCaption": "Компактний інтерфейс історії",
+  "lazer-lens:SettingsShowURCaption": "Показувати Unstable Rate",
+  "lazer-lens:SettingsOpenDirectory": "Відкрити папку з сесіями",
+  "lazer-lens:SettingsExportCsv": "Експорт сесій у CSV",
+  "lazer-lens:OverlayNoPlays": "У цій сесії ще немає ігор.",
+  "lazer-lens:OverlaySessionTime": "Час сесії",
+  "lazer-lens:OverlayTotalPlays": "Всього ігор",
+  "lazer-lens:OverlayAvgAccuracy": "Середня точність",
+  "lazer-lens:OverlayMaxCombo": "Макс. комбо",
+  "lazer-lens:OverlaySessionPPGain": "Сесія: {0}",
+  "lazer-lens:NotificationNewBest": "Новий рекорд сесії!",
+  "lazer-lens:NotificationNewBestDetails": "Новий рекорд сессии!\n{0} - {1} ({2}%)",
+  "lazer-lens:ExportSuccess": "Сесії експортовано в {0}",
+  "lazer-lens:ExportFailed": "Не вдалося експортувати сесії: {0}"
+}

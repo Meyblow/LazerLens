@@ -1,3 +1,4 @@
+﻿using osu.Framework.Localisation;
 using System;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
@@ -12,12 +13,12 @@ namespace LazerLens.UI
 {
     public partial class SettingsDoubleActionRow : Container
     {
-        private readonly string leftLabel;
-        private readonly string rightLabel;
+        private readonly LocalisableString leftLabel;
+        private readonly LocalisableString rightLabel;
         private readonly Action leftAction;
         private readonly Action rightAction;
 
-        public SettingsDoubleActionRow(string leftLabel, Action leftAction, string rightLabel, Action rightAction)
+        public SettingsDoubleActionRow(LocalisableString leftLabel, Action leftAction, LocalisableString rightLabel, Action rightAction)
         {
             this.leftLabel = leftLabel;
             this.leftAction = leftAction;
@@ -67,9 +68,9 @@ namespace LazerLens.UI
         private partial class ActionButton : OsuClickableContainer
         {
             private Box background = null!;
-            private readonly string label;
+            private readonly LocalisableString label;
 
-            public ActionButton(string label, Action action)
+            public ActionButton(LocalisableString label, Action action)
             {
                 this.label = label;
                 Action = action;
@@ -113,3 +114,9 @@ namespace LazerLens.UI
         }
     }
 }
+
+
+
+
+
+

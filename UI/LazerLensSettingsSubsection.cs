@@ -6,7 +6,7 @@ namespace LazerLens.UI
 {
     public partial class LazerLensSettingsSubsection : SettingsSubsection
     {
-        protected override LocalisableString Header => "Lazer Lens";
+        protected override LocalisableString Header => LazerLensStrings.Name;
 
         public LazerLensSettingsSubsection(PluginSettings settings, System.Action onExportRequested, System.Action onOpenDirectoryRequested)
         {
@@ -14,7 +14,7 @@ namespace LazerLens.UI
                 settings,
                 "notify_on_play",
                 true,
-                "Notifications after play",
+                LazerLensStrings.SettingsNotificationsCaption,
                 "Shows a summary notification in the corner after every completed beatmap"
             );
 
@@ -22,7 +22,7 @@ namespace LazerLens.UI
                 settings,
                 "celebrate_best",
                 true,
-                "Celebrate session bests",
+                LazerLensStrings.SettingsCelebrateCaption,
                 "Plays celebratory particle effects when you set a new best score in the current session"
             );
 
@@ -30,7 +30,7 @@ namespace LazerLens.UI
                 settings,
                 "track_retries",
                 true,
-                "Track retried plays",
+                LazerLensStrings.SettingsTrackRetriesCaption,
                 "Records retries in the session history list alongside passed scores"
             );
 
@@ -38,7 +38,7 @@ namespace LazerLens.UI
                 settings,
                 "compact_mode",
                 false,
-                "Compact history UI",
+                LazerLensStrings.SettingsCompactHistoryCaption,
                 "Makes the play history list more compact to fit more scores on screen"
             );
 
@@ -46,13 +46,13 @@ namespace LazerLens.UI
                 settings,
                 "show_ur",
                 true,
-                "Show Unstable Rate",
+                LazerLensStrings.SettingsShowURCaption,
                 "Displays the UR for each play in the history list"
             );
 
             Add(new SettingsDoubleActionRow(
-                "Open sessions directory", onOpenDirectoryRequested,
-                "Export sessions to CSV", onExportRequested
+                LazerLensStrings.SettingsOpenDirectory, onOpenDirectoryRequested,
+                LazerLensStrings.SettingsExportCsv, onExportRequested
             ));
         }
     }

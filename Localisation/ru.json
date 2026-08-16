@@ -1,0 +1,23 @@
+﻿{
+  "lazer-lens:name": "Lazer Lens",
+  "lazer-lens:description": "Отслеживает показатели вашей игровой сессии, историю игр, среднюю точность и лучшие результаты сессии с помощью внутриигрового оверлея.",
+  "lazer-lens:TooltipMain": "Lazer Lens",
+  "lazer-lens:TooltipSub": "Статистика и история сессии",
+  "lazer-lens:SettingsNotificationsCaption": "Уведомления после игры",
+  "lazer-lens:SettingsCelebrateCaption": "Праздновать рекорды сессии",
+  "lazer-lens:SettingsTrackRetriesCaption": "Отслеживать ретраи (перезапуски)",
+  "lazer-lens:SettingsCompactHistoryCaption": "Компактный интерфейс истории",
+  "lazer-lens:SettingsShowURCaption": "Показывать Unstable Rate",
+  "lazer-lens:SettingsOpenDirectory": "Открыть папку с сессиями",
+  "lazer-lens:SettingsExportCsv": "Экспорт сессий в CSV",
+  "lazer-lens:OverlayNoPlays": "В этой сессии пока нет игр.",
+  "lazer-lens:OverlaySessionTime": "Время сессии",
+  "lazer-lens:OverlayTotalPlays": "Всего игр",
+  "lazer-lens:OverlayAvgAccuracy": "Средняя точность",
+  "lazer-lens:OverlayMaxCombo": "Макс. комбо",
+  "lazer-lens:OverlaySessionPPGain": "Сессия: {0}",
+  "lazer-lens:NotificationNewBest": "Новый рекорд сессии!",
+  "lazer-lens:NotificationNewBestDetails": "Новый рекорд сессии!\n{0} - {1} ({2}%)",
+  "lazer-lens:ExportSuccess": "Сессии экспортированы в {0}",
+  "lazer-lens:ExportFailed": "Не удалось экспортировать сессии: {0}"
+}

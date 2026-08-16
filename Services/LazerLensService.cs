@@ -21,7 +21,7 @@ namespace LazerLens.Services
         /// <summary>The session currently displayed in the overlay (Live or Archived).</summary>
         public SessionState ViewedState => _viewedState ?? LiveState;
 
-        /// <summary>Shortcut kept for backward compat — points to ViewedState.</summary>
+        /// <summary>Shortcut kept for backward compat вЂ” points to ViewedState.</summary>
         public SessionState State => ViewedState;
 
         /// <summary>Whether the overlay is showing an archived session instead of the live one.</summary>
@@ -52,6 +52,12 @@ namespace LazerLens.Services
         public void RecordScore(ScoreInfo score, bool passed)
         {
             LazerLensPatch.DebugLog($"LazerLensService.RecordScore: entered. Title={score.BeatmapInfo?.Metadata?.Title}, Passed={passed}");
+
+            if (!passed && !TrackRetries.Value)
+            {
+                LazerLensPatch.DebugLog("LazerLensService.RecordScore: ignoring unpassed score because TrackRetries is false.");
+                return;
+            }
 
             // Prevent duplicate recording of the same play (e.g. from both Player.ImportScore and ResultsScreen.LoadComplete)
             var lastPlay = LiveState.Plays.LastOrDefault();
@@ -152,7 +158,7 @@ namespace LazerLens.Services
                         UpdatePlay(record.Id, p => p with { PerformancePoints = calculatedPp.Value });
                     }
                 }
-                catch { /* Silently ignore — PP calc can fail for custom rulesets */ }
+                catch { /* Silently ignore вЂ” PP calc can fail for custom rulesets */ }
                 finally
                 {
                     triggerNewPlayEvent(record, previousBest);
@@ -262,7 +268,7 @@ namespace LazerLens.Services
             }
             catch
             {
-                return null; // Silently ignore — some rulesets don't support UR
+                return null; // Silently ignore вЂ” some rulesets don't support UR
             }
         }
 
@@ -333,7 +339,7 @@ namespace LazerLens.Services
             {
                 _storageService.SaveSession(LiveState);
             }
-            catch { /* Silently ignore — don't crash the game over a failed save */ }
+            catch { /* Silently ignore вЂ” don't crash the game over a failed save */ }
         }
 
         public void SelectSession(Guid? sessionId)
@@ -358,7 +364,8 @@ namespace LazerLens.Services
 
         public List<SessionSummary> GetAllSessionSummaries()
         {
-            return _storageService?.GetAllSessions() ?? new List<SessionSummary>();
+            var sessions = _storageService?.GetAllSessions() ?? new List<SessionSummary>();
+            return sessions.Where(s => s.Id != LiveState.Id).ToList();
         }
 
         public void ResetSession()
@@ -372,3 +379,5 @@ namespace LazerLens.Services
         }
     }
 }
+
+

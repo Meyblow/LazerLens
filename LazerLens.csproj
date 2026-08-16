@@ -10,7 +10,7 @@
     <PluginId>lazer-lens</PluginId>
     <PluginName>Lazer Lens</PluginName>
     <PluginDescription>Tracks your play session metrics, play history, average accuracy, and session bests with an in-game overlay.</PluginDescription>
-    <PluginVersion>1.0.0</PluginVersion>
+    <PluginVersion>1.0.1</PluginVersion>
     <PluginPriority>60</PluginPriority>
     <PluginIconGlyph>ChartBar</PluginIconGlyph>
     <PluginRepository>https://github.com/Meyblow/LazerLens</PluginRepository>
@@ -31,6 +31,10 @@
     <PackageReference Include="osucc.Host" Version="2.2.0" />
     <PackageReference Include="osucc.Build" Version="2.2.0" PrivateAssets="all" />
     <PackageReference Include="ppy.osu.Game" Version="2026.702.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Localisation/*.json" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,5 @@
-﻿using osu.Framework.Allocation;
+﻿using osu.Framework.Localisation;
+using osu.Framework.Allocation;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
@@ -18,7 +19,7 @@ namespace LazerLens.UI.Components
         private OverlayColourProvider colourProvider { get; set; } = null!;
 
         private readonly IconUsage icon;
-        private readonly string title;
+        private readonly LocalisableString title;
         private readonly OsuSpriteText valueText;
         private readonly OsuSpriteText subtitleText;
 
@@ -26,7 +27,7 @@ namespace LazerLens.UI.Components
         private Container iconContainer = null!;
         private SpriteIcon spriteIcon = null!;
 
-        public MetricCard(IconUsage icon, string title, string initialValue = "0", string initialSubtitle = "")
+        public MetricCard(IconUsage icon, LocalisableString title, string initialValue = "0", string initialSubtitle = "")
         {
             this.icon = icon;
             this.title = title;
@@ -95,7 +96,7 @@ namespace LazerLens.UI.Components
                                         {
                                             new OsuSpriteText
                                             {
-                                                Text = title.ToUpperInvariant(),
+                                                Text = title.ToString().ToUpperInvariant(),
                                                 Font = OsuFont.Torus.With(size: 11, weight: FontWeight.SemiBold),
                                                 Colour = Color4.White.Opacity(0.6f),
                                             },
@@ -128,11 +129,16 @@ namespace LazerLens.UI.Components
             spriteIcon.Colour = colourProvider.Colour1;
         }
 
-        public void UpdateValues(string value, string subtitle = "")
+        public void UpdateValues(string value, LocalisableString subtitle = default)
         {
             valueText.Text = value;
             subtitleText.Text = subtitle;
         }
     }
 }
+
+
+
+
+
 

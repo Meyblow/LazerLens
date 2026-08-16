@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -13,7 +13,7 @@ namespace LazerLens.Models
         public DateTimeOffset SessionStart { get; set; } = DateTimeOffset.Now;
         public double? InitialProfilePP { get; set; }
         public double? CurrentProfilePP { get; set; }
-        public double SessionPPGain => (CurrentProfilePP ?? InitialProfilePP ?? 0) - (InitialProfilePP ?? 0);
+        public double SessionPPGain => Plays.Sum(p => p.ProfilePerformancePoints ?? 0);
 
         public List<SessionPlayRecord> Plays { get; } = new();
 

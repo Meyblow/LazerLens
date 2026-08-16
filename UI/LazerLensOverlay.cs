@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -256,25 +256,25 @@ namespace LazerLens.UI
                                     {
                                         RelativeSizeAxes = Axes.Both,
                                         Padding = new MarginPadding { Right = 6 },
-                                        Child = timeCard = new MetricCard(FontAwesome.Solid.Clock, "Session Time", "00:00:00", "Started just now")
+                                        Child = timeCard = new MetricCard(FontAwesome.Solid.Clock, LazerLensStrings.OverlaySessionTime, "00:00:00", "Started just now")
                                     },
                                     new Container
                                     {
                                         RelativeSizeAxes = Axes.Both,
                                         Padding = new MarginPadding { Horizontal = 3 },
-                                        Child = playsCard = new MetricCard(FontAwesome.Solid.Play, "Total Plays", "0", "0 passes \u2022 0 fails")
+                                        Child = playsCard = new MetricCard(FontAwesome.Solid.Play, LazerLensStrings.OverlayTotalPlays, "0", "0 passes \u2022 0 fails")
                                     },
                                     new Container
                                     {
                                         RelativeSizeAxes = Axes.Both,
                                         Padding = new MarginPadding { Horizontal = 3 },
-                                        Child = accCard = new MetricCard(FontAwesome.Solid.Percent, "Avg Accuracy", "0.00%", "Across all plays")
+                                        Child = accCard = new MetricCard(FontAwesome.Solid.Percent, LazerLensStrings.OverlayAvgAccuracy, "0.00%", "Across all plays")
                                     },
                                     new Container
                                     {
                                         RelativeSizeAxes = Axes.Both,
                                         Padding = new MarginPadding { Left = 6 },
-                                        Child = comboCard = new MetricCard(FontAwesome.Solid.Fire, "Max Combo", "0x", "Session peak")
+                                        Child = comboCard = new MetricCard(FontAwesome.Solid.Fire, LazerLensStrings.OverlayMaxCombo, "0x", "Session peak")
                                     }
                                 }
                             }
@@ -612,7 +612,7 @@ namespace LazerLens.UI
 
             // 4. Max Combo / Session PP Gain
             string ppGainStr = state.SessionPPGain >= 0 ? $"+{state.SessionPPGain.ToString("F1", CultureInfo.InvariantCulture)} pp" : $"{state.SessionPPGain.ToString("F1", CultureInfo.InvariantCulture)} pp";
-            comboCard?.UpdateValues($"{state.MaxCombo.ToString("N0", CultureInfo.InvariantCulture)}x", $"Session PP: {ppGainStr}");
+            comboCard?.UpdateValues($"{state.MaxCombo.ToString("N0", CultureInfo.InvariantCulture)}x", LazerLensStrings.OverlaySessionPPGain(ppGainStr));
 
             // 5. Best Score Banner
             bestScoreBanner?.UpdateScore(state.BestScore);
@@ -1244,5 +1244,8 @@ namespace LazerLens.UI
         }
     }
 }
+
+
+
 
 
