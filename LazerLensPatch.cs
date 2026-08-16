@@ -131,6 +131,10 @@ namespace LazerLens
                 }
 
                 score.ScoreInfo.Rank = ScoreRank.F;
+                if (score.ScoreInfo.Date == default)
+                {
+                    score.ScoreInfo.Date = DateTimeOffset.Now;
+                }
                 DebugLog($"ConcludeFailedScorePostfix: Dispatching FAIL for {score.ScoreInfo.BeatmapInfo?.Metadata?.Title}, Acc={score.ScoreInfo.Accuracy:P2}, Combo={score.ScoreInfo.MaxCombo}");
                 OnScoreImported?.Invoke(score.ScoreInfo, false, false);
             }
@@ -231,6 +235,10 @@ namespace LazerLens
                 }
 
                 scoreInfo.Rank = ScoreRank.F;
+                if (scoreInfo.Date == default)
+                {
+                    scoreInfo.Date = DateTimeOffset.Now;
+                }
 
                 DebugLog($"recordUnpassedScore: Dispatching UNPASSED for {scoreInfo.BeatmapInfo?.Metadata?.Title}, Acc={scoreInfo.Accuracy:P2}, Combo={scoreInfo.MaxCombo}");
                 bool hasFailed = player.GameplayState?.HasFailed == true;

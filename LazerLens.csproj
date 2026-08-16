@@ -11,6 +11,7 @@
     <PluginName>Lazer Lens</PluginName>
     <PluginDescription>Tracks your play session metrics, play history, average accuracy, and session bests with an in-game overlay.</PluginDescription>
     <PluginVersion>1.1.0</PluginVersion>
+    <Version>1.1.0</Version>
     <PluginPriority>60</PluginPriority>
     <PluginIconGlyph>ChartBar</PluginIconGlyph>
     <PluginRepository>https://github.com/Meyblow/LazerLens</PluginRepository>
