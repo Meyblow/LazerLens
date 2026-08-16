@@ -369,6 +369,8 @@ namespace LazerLens.UI
                                          Padding = new MarginPadding { Horizontal = 8 },
                                          Child = searchTextBox = new SearchTextBox
                                          {
+                                             Anchor = Anchor.CentreLeft,
+                                             Origin = Anchor.CentreLeft,
                                              RelativeSizeAxes = Axes.X,
                                              Width = 1.0f,
                                              PlaceholderText = "Search maps...",
