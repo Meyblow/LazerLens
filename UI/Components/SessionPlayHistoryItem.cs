@@ -333,13 +333,13 @@ namespace LazerLens.UI.Components
                                         Padding = new MarginPadding { Right = 6 },
                                         Children = new Drawable[]
                                         {
-                                            // Top Line: Title - Artist
+                                            // Top Line: Title - Artist [Difficulty]
                                             new FillFlowContainer
                                             {
                                                 RelativeSizeAxes = Axes.X,
                                                 AutoSizeAxes = Axes.Y,
                                                 Direction = FillDirection.Horizontal,
-                                                Spacing = new Vector2(4, 0),
+                                                Spacing = new Vector2(5, 0),
                                                 Children = new Drawable[]
                                                 {
                                                     new TruncatingSpriteText
@@ -347,11 +347,20 @@ namespace LazerLens.UI.Components
                                                         Text = $"{currentPlay.BeatmapArtist} - {currentPlay.BeatmapTitle}",
                                                         Font = OsuFont.Torus.With(size: 13, weight: FontWeight.Bold),
                                                         Colour = Color4.White,
-                                                        RelativeSizeAxes = Axes.X,
+                                                        MaxWidth = 320,
+                                                    },
+                                                    new TruncatingSpriteText
+                                                    {
+                                                        Text = $"[{currentPlay.DifficultyName}]",
+                                                        Font = OsuFont.Torus.With(size: 12, weight: FontWeight.SemiBold),
+                                                        Colour = colourProvider.Content2,
+                                                        Anchor = Anchor.CentreLeft,
+                                                        Origin = Anchor.CentreLeft,
+                                                        MaxWidth = 180,
                                                     }
                                                 }
                                             },
-                                            // Bottom Line: StarRatingDisplay + OnlineStatus + DifficultyName
+                                            // Bottom Line: StarRatingDisplay + OnlineStatus
                                             new FillFlowContainer
                                             {
                                                 AutoSizeAxes = Axes.Both,
@@ -372,14 +381,6 @@ namespace LazerLens.UI.Components
                                                         }
                                                     },
                                                     statusContainer,
-                                                    new OsuSpriteText
-                                                    {
-                                                        Anchor = Anchor.CentreLeft,
-                                                        Origin = Anchor.CentreLeft,
-                                                        Text = $"[{currentPlay.DifficultyName}]",
-                                                        Font = OsuFont.Torus.With(size: 11, weight: FontWeight.SemiBold),
-                                                        Colour = colourProvider.Content1,
-                                                    },
                                                 }
                                             }
                                         }
