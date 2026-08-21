@@ -253,17 +253,41 @@ namespace LazerLens
             }
         }
 
+        private static bool isPlayerFailed(Player player)
+        {
+            try
+            {
+                var hpProp = typeof(Player).GetProperty("HealthProcessor", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                var hp = hpProp?.GetValue(player) as osu.Game.Rulesets.Scoring.HealthProcessor;
+                if (hp?.HasFailed == true)
+                    return true;
+
+                var failOverlayProp = typeof(Player).GetProperty("FailOverlay", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                if (failOverlayProp?.GetValue(player) is osu.Game.Screens.Play.FailOverlay failOverlay &&
+                    failOverlay.State.Value == osu.Framework.Graphics.Containers.Visibility.Visible)
+                {
+                    return true;
+                }
+            }
+            catch
+            {
+            }
+
+            return false;
+        }
+
         public void RecordUnpassedPlayerScore(Player player)
         {
             try
             {
-                if (!trackerService.TrackRetries.Value)
-                    return;
-
                 if (player == null) return;
 
                 string typeName = player.GetType().Name;
                 if (typeName.Contains("Replay") || typeName.Contains("Spectator"))
+                    return;
+
+                bool isFailed = isPlayerFailed(player);
+                if (!isFailed && !trackerService.TrackRetries.Value)
                     return;
 
                 if (!TryMarkPlayerRecorded(player))

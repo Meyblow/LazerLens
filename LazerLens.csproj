@@ -22,6 +22,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PluginDocument Include="README.md" Title="README" IconGlyph="Book" />
+    <PluginDocument Include="CHANGELOG.md" Title="Changelog" IconGlyph="History" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="osucc.Api" Version="2.2.0" />
     <PackageReference Include="osucc.Build" Version="2.2.0" PrivateAssets="all" />
     <PackageReference Include="ppy.osu.Game" Version="2026.702.1" />
