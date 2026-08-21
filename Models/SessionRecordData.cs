@@ -58,7 +58,7 @@ namespace LazerLens.Models
             {
                 Id = state.Id,
                 StartTime = state.SessionStart,
-                EndTime = DateTimeOffset.Now,
+                EndTime = state.SessionEnd ?? (state.Plays.Count > 0 ? state.Plays.Max(p => p.Timestamp) : DateTimeOffset.Now),
                 InitialProfilePP = state.InitialProfilePP,
                 CurrentProfilePP = state.CurrentProfilePP,
                 Plays = state.Plays.Select(p => new PlayRecordDto
@@ -95,6 +95,7 @@ namespace LazerLens.Models
             {
                 Id = archive.Id,
                 SessionStart = archive.StartTime,
+                SessionEnd = archive.EndTime,
                 InitialProfilePP = archive.InitialProfilePP,
                 CurrentProfilePP = archive.CurrentProfilePP
             };

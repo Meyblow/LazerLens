@@ -158,7 +158,7 @@ namespace LazerLens.UI.Components
             var sessions = getSessions();
             foreach (var s in sessions)
             {
-                string label = s.StartTime.ToString("dd MMM HH:mm", CultureInfo.InvariantCulture);
+                string label = s.StartTime.ToLocalTime().ToString("dd MMM HH:mm", CultureInfo.InvariantCulture);
                 var detail = LazerLensStrings.SessionSummaryDetail(s.PlayCount, s.TopPP, s.AverageAccuracy);
                 bool isSelected = CurrentSessionId == s.Id;
                 var id = s.Id;

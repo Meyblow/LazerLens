@@ -12,6 +12,7 @@ namespace LazerLens.Models
     {
         public Guid Id { get; set; } = Guid.NewGuid();
         public DateTimeOffset SessionStart { get; set; } = GetProcessStartTime();
+        public DateTimeOffset? SessionEnd { get; set; }
         public double? InitialProfilePP { get; set; }
         public double? CurrentProfilePP { get; set; }
         public double SessionPPGain => Plays.Sum(p => p.ProfilePerformancePoints ?? 0);
@@ -33,7 +34,7 @@ namespace LazerLens.Models
             .ThenByDescending(p => p.TotalScore)
             .FirstOrDefault();
 
-        public TimeSpan SessionDuration => DateTimeOffset.Now - SessionStart;
+        public TimeSpan SessionDuration => (SessionEnd ?? DateTimeOffset.Now) - SessionStart;
 
         public static DateTimeOffset GetProcessStartTime()
         {

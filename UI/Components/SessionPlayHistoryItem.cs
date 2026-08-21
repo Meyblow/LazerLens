@@ -121,6 +121,7 @@ namespace LazerLens.UI.Components
 
             string ppSecondary = "PP";
             Color4 ppSecondaryColour = colourProvider.Content2;
+            bool isPpGain = false;
 
             if (currentPlay.ProfilePerformancePoints.HasValue)
             {
@@ -128,7 +129,8 @@ namespace LazerLens.UI.Components
                 if (prof > 0)
                 {
                     ppSecondary = $"+{prof.ToString("F0", CultureInfo.InvariantCulture)} PP";
-                    ppSecondaryColour = Color4Extensions.FromHex("#38f773");
+                    ppSecondaryColour = Color4Extensions.FromHex("#00ff66");
+                    isPpGain = true;
                 }
                 else if (prof < 0)
                 {
@@ -180,7 +182,7 @@ namespace LazerLens.UI.Components
 
             bool hasUr = currentPlay.UnstableRate.HasValue && currentPlay.UnstableRate.Value > 0;
             string urText = hasUr ? currentPlay.UnstableRate!.Value.ToString("F2", CultureInfo.InvariantCulture) : "-";
-            Color4 urColour = hasUr ? Color4Extensions.FromHex("#00ffcc") : colourProvider.Content2;
+            Color4 urColour = hasUr ? colourProvider.Content1 : colourProvider.Content2;
 
             var urFlow = new FillFlowContainer
             {
@@ -196,7 +198,7 @@ namespace LazerLens.UI.Components
                         Anchor = Anchor.TopCentre,
                         Origin = Anchor.TopCentre,
                         Text = urText,
-                        Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
+                        Font = OsuFont.Torus.With(size: 14, weight: FontWeight.SemiBold),
                         Colour = urColour,
                     },
                     new OsuSpriteText
@@ -462,11 +464,12 @@ namespace LazerLens.UI.Components
                                     colourProvider.Content2
                                 ),
                                 // Column 8: PP
-                                buildCell(
+                                buildPpCell(
                                     ppPrimary,
                                     ppSecondary,
                                     colourProvider.Content1,
-                                    ppSecondaryColour
+                                    ppSecondaryColour,
+                                    isPpGain
                                 ),
                                 // Column 9: Time
                                 buildCell(
@@ -559,6 +562,41 @@ namespace LazerLens.UI.Components
                 return $"{p.PerformancePoints.Value.ToString("F0", CultureInfo.InvariantCulture)} PP";
 
             return "-";
+        }
+
+        private static Container buildPpCell(string primary, string secondary, Color4 primaryColour, Color4 secondaryColour, bool isGain)
+        {
+            return new Container
+            {
+                RelativeSizeAxes = Axes.Both,
+                Child = new FillFlowContainer
+                {
+                    AutoSizeAxes = Axes.Both,
+                    Anchor = Anchor.Centre,
+                    Origin = Anchor.Centre,
+                    Direction = FillDirection.Vertical,
+                    Spacing = new Vector2(0, 2),
+                    Children = new Drawable[]
+                    {
+                        new OsuSpriteText
+                        {
+                            Anchor = Anchor.TopCentre,
+                            Origin = Anchor.TopCentre,
+                            Text = primary,
+                            Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
+                            Colour = primaryColour,
+                        },
+                        new OsuSpriteText
+                        {
+                            Anchor = Anchor.TopCentre,
+                            Origin = Anchor.TopCentre,
+                            Text = secondary,
+                            Font = OsuFont.Torus.With(size: isGain ? 11 : 10, weight: isGain ? FontWeight.Bold : FontWeight.Regular),
+                            Colour = secondaryColour,
+                        }
+                    }
+                }
+            };
         }
 
         private static Container buildCell(string primary, LocalisableString secondary, Color4 primaryColour, Color4 secondaryColour, bool primaryBold = false)
