@@ -23,17 +23,17 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
-    - name: Clone osu-cc and Build Plugin
+    - name: Pack osu-cc local packages
       run: |
-        git clone --depth 1 https://github.com/rus07tam/osu-cc.git ../osu-cc
-        mkdir -p ../osu-cc/plugins/LazerLens
-        cp -r ./* ../osu-cc/plugins/LazerLens/
-        cd ../osu-cc
-        dotnet build osucc.build.proj -t:PackBootstrapBundle -c Release
-        cd -
-        mkdir -p bin/Release/net8.0
-        cp ../osu-cc/plugins/LazerLens/bin/Release/net8.0/*.dll bin/Release/net8.0/
-        cp ../osu-cc/plugins/LazerLens/bin/Release/net8.0/*.zip bin/Release/net8.0/
+        git clone --depth 1 https://github.com/rus07tam/osu-cc.git /tmp/osu-cc
+        dotnet build /tmp/osu-cc/osucc.build.proj -t:PackPackages -c Release
+        dotnet nuget add source /tmp/osu-cc/artifacts/nuget -n osu-cc-local
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build plugin
+      run: dotnet build -c Release --no-restore
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
