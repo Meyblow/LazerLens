@@ -32,7 +32,7 @@
   "lazer-lens:DropdownArchivedSession": "Архивная сессия",
   "lazer-lens:DropdownCurrentActive": "Текущая активная сессия",
   "lazer-lens:TimeStartedJustNow": "Началась только что",
-  "lazer-lens:TimeStartedAt": "Началась в {0}",
+  "lazer-lens:TimeStartedAt": "Началась в {0} (идёт)",
   "lazer-lens:TimeArchived": "Архив: {0}",
   "lazer-lens:PlaysPassFail": "{0} пройдено • {1} провалено",
   "lazer-lens:PlaysRecorded": "Записано игр: {0}",

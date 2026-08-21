@@ -51,7 +51,7 @@ namespace LazerLens
         public static LocalisableString DropdownArchivedSession => OsuCcLocalisation.Get(getKey(nameof(DropdownArchivedSession)), "Archived Session");
         public static LocalisableString DropdownCurrentActive => OsuCcLocalisation.Get(getKey(nameof(DropdownCurrentActive)), "Current active session");
         public static LocalisableString TimeStartedJustNow => OsuCcLocalisation.Get(getKey(nameof(TimeStartedJustNow)), "Started just now");
-        public static LocalisableString TimeStartedAt(string time) => OsuCcLocalisation.Get(getKey(nameof(TimeStartedAt)), "Started at {0}", time);
+        public static LocalisableString TimeStartedAt(string time) => OsuCcLocalisation.Get(getKey(nameof(TimeStartedAt)), "Started at {0} (running)", time);
         public static LocalisableString TimeArchived(string time) => OsuCcLocalisation.Get(getKey(nameof(TimeArchived)), "Archived: {0}", time);
         public static LocalisableString PlaysPassFail(int passes, int fails) => OsuCcLocalisation.Get(getKey(nameof(PlaysPassFail)), "{0} pass \u2022 {1} fail", passes, fails);
         public static LocalisableString PlaysRecorded(int plays) => plays == 1

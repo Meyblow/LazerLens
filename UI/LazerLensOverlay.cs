@@ -375,7 +375,7 @@ namespace LazerLens.UI
                 {
                     lastUpdatedSecond = totalSeconds;
                     string timeStr = $"{(int)duration.TotalHours:D2}:{duration.Minutes:D2}:{duration.Seconds:D2}";
-                    timeCard.UpdateValues(timeStr, LazerLensStrings.TimeStartedAt(service.LiveState.SessionStart.ToString("HH:mm", CultureInfo.InvariantCulture)));
+                    timeCard.UpdateValues(timeStr, LazerLensStrings.TimeStartedAt(service.LiveState.SessionStart.ToLocalTime().ToString("HH:mm", CultureInfo.InvariantCulture)));
                 }
             }
         }
@@ -415,7 +415,7 @@ namespace LazerLens.UI
                 if (service.IsViewingArchive)
                 {
                     archiveBanner.FadeIn(200, Easing.OutQuint);
-                    archiveBannerText.Text = LazerLensStrings.ArchiveBanner(state.SessionStart.ToString("dd MMM yyyy, HH:mm", CultureInfo.InvariantCulture));
+                    archiveBannerText.Text = LazerLensStrings.ArchiveBanner(state.SessionStart.ToLocalTime().ToString("dd MMM yyyy, HH:mm", CultureInfo.InvariantCulture));
                 }
                 else
                 {
@@ -430,13 +430,13 @@ namespace LazerLens.UI
                     ? state.Plays.Last().Timestamp - state.SessionStart
                     : TimeSpan.Zero;
                 string timeStr = $"{(int)archivedDuration.TotalHours:D2}:{archivedDuration.Minutes:D2}:{archivedDuration.Seconds:D2}";
-                timeCard?.UpdateValues(timeStr, LazerLensStrings.TimeArchived(state.SessionStart.ToString("dd MMM HH:mm", CultureInfo.InvariantCulture)));
+                timeCard?.UpdateValues(timeStr, LazerLensStrings.TimeArchived(state.SessionStart.ToLocalTime().ToString("dd MMM HH:mm", CultureInfo.InvariantCulture)));
             }
             else
             {
                 var duration = state.SessionDuration;
                 string timeStr = $"{(int)duration.TotalHours:D2}:{duration.Minutes:D2}:{duration.Seconds:D2}";
-                timeCard?.UpdateValues(timeStr, LazerLensStrings.TimeStartedAt(state.SessionStart.ToString("HH:mm", CultureInfo.InvariantCulture)));
+                timeCard?.UpdateValues(timeStr, LazerLensStrings.TimeStartedAt(state.SessionStart.ToLocalTime().ToString("HH:mm", CultureInfo.InvariantCulture)));
             }
 
             // 2. Total Plays
