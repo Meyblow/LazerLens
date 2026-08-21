@@ -17,26 +17,32 @@ jobs:
       contents: write
     steps:
     - uses: actions/checkout@v4
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
+
+    - name: Build osu-cc local packages
+      run: |
+        git clone --depth 1 https://github.com/rus07tam/osu-cc.git ../osu-cc
+        dotnet build ../osu-cc/osucc.build.proj -t:PackPackages -c Release
+        mkdir -p local_feed
+        cp ../osu-cc/artifacts/nuget/*.nupkg local_feed/
+        dotnet nuget add source $(pwd)/local_feed -n osu-cc-local
+
     - name: Restore dependencies
       run: dotnet restore
+
     - name: Build
       run: dotnet build -c Release --no-restore
-    - name: Rename Artifact
-      id: rename
-      run: |
-        PLUGIN_ID=$(grep -oP '(?<=<PluginId>).*?(?=</PluginId>)' LazerLens.csproj | tr -d '\r')
-        PLUGIN_VERSION=$(grep -oP '(?<=<PluginVersion>).*?(?=</PluginVersion>)' LazerLens.csproj | tr -d '\r')
-        mv bin/Release/net8.0/$PLUGIN_ID.zip bin/Release/net8.0/$PLUGIN_ID-$PLUGIN_VERSION.zip
-        echo "artifact_name=$PLUGIN_ID-$PLUGIN_VERSION" >> $GITHUB_ENV
+
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.artifact_name }}
+        name: lazer-lens-build
         path: bin/Release/net8.0/*.zip
+
     - name: Publish Release
       if: startsWith(github.ref, 'refs/tags/v')
       uses: softprops/action-gh-release@v2
