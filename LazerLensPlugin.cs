@@ -257,6 +257,9 @@ namespace LazerLens
         {
             try
             {
+                if (!trackerService.TrackRetries.Value)
+                    return;
+
                 if (player == null) return;
 
                 string typeName = player.GetType().Name;

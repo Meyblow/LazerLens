@@ -58,11 +58,6 @@ namespace LazerLens.Services
                 return;
             }
 
-            if (!passed && !TrackRetries.Value)
-            {
-                return;
-            }
-
             // Prevent duplicate recording of the same play (e.g. from both Player.ImportScore and ResultsScreen.LoadComplete)
             var lastPlay = LiveState.Plays.LastOrDefault();
             if (lastPlay != null && lastPlay.Passed && passed &&
