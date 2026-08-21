@@ -23,9 +23,6 @@ namespace LazerLens
         public static LocalisableString SettingsNotificationsCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsNotificationsCaption)), "Notifications after play");
         public static LocalisableString SettingsNotificationsSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsNotificationsSubtitle)), "Shows a summary notification in the corner after every completed beatmap");
 
-        public static LocalisableString SettingsCelebrateCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsCelebrateCaption)), "Celebrate session bests");
-        public static LocalisableString SettingsCelebrateSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsCelebrateSubtitle)), "Plays celebratory particle effects when you set a new best score in the current session");
-
         public static LocalisableString SettingsTrackRetriesCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsTrackRetriesCaption)), "Track retried plays");
         public static LocalisableString SettingsTrackRetriesSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsTrackRetriesSubtitle)), "Records retries in the session history list alongside passed scores");
 
@@ -45,8 +42,6 @@ namespace LazerLens
         public static LocalisableString OverlayMaxCombo => OsuCcLocalisation.Get(getKey(nameof(OverlayMaxCombo)), "MAX COMBO");
         public static LocalisableString OverlaySessionPPGain(string gain) => OsuCcLocalisation.Get(getKey(nameof(OverlaySessionPPGain)), "Session PP: {0}", gain);
 
-        public static LocalisableString NotificationNewBest => OsuCcLocalisation.Get(getKey(nameof(NotificationNewBest)), "New Session Best!");
-        public static LocalisableString NotificationNewBestDetails(string artist, string title, string acc) => OsuCcLocalisation.Get(getKey(nameof(NotificationNewBestDetails)), "New Session Best!\n{0} - {1} ({2}%)", artist, title, acc);
         public static LocalisableString AddedToTracker(string title, string acc, string grade, string pp) => OsuCcLocalisation.Get(getKey(nameof(AddedToTracker)), "Added to tracker: {0}\nAcc: {1}% \u2022 Grade: {2}{3}", title, acc, grade, pp);
 
         public static LocalisableString ExportSuccess(string path) => OsuCcLocalisation.Get(getKey(nameof(ExportSuccess)), "Sessions exported to {0}", path);

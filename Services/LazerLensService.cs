@@ -28,11 +28,10 @@ namespace LazerLens.Services
         public bool IsViewingArchive => viewedState != null;
 
         public event Action? OnSessionUpdated;
-        public event Action<SessionPlayRecord, bool>? OnNewPlayRecorded;
+        public event Action<SessionPlayRecord>? OnNewPlayRecorded;
 
         public Bindable<bool> TrackRetries { get; } = new(true);
         public Bindable<bool> NotifyOnPlay { get; } = new(true);
-        public Bindable<bool> CelebrateBest { get; } = new(true);
         public Bindable<bool> CompactMode { get; } = new(false);
         public Bindable<bool> ShowUR { get; } = new(true);
 
@@ -69,8 +68,6 @@ namespace LazerLens.Services
                 UpdateScore(score); // Just update it with any new stats (like PP)
                 return;
             }
-
-            var previousBest = LiveState.BestScore;
 
             string statusStr = score.BeatmapInfo?.Status switch
             {
@@ -123,26 +120,22 @@ namespace LazerLens.Services
             // If raw PP is not populated yet or 0 on a pass, compute it asynchronously
             if (passed && (!score.PP.HasValue || score.PP.Value <= 0))
             {
-                calculateAndAssignPP(score, record, previousBest);
+                calculateAndAssignPP(score, record);
             }
             else
             {
-                triggerNewPlayEvent(record, previousBest);
+                triggerNewPlayEvent(record);
             }
         }
 
-        private void triggerNewPlayEvent(SessionPlayRecord record, SessionPlayRecord? previousBest)
+        private void triggerNewPlayEvent(SessionPlayRecord record)
         {
             if (!record.Passed) return;
 
-            bool isNewBest = previousBest == null ||
-                (record.PerformancePoints ?? 0) > (previousBest.PerformancePoints ?? 0) ||
-                ((record.PerformancePoints ?? 0) == (previousBest.PerformancePoints ?? 0) && record.TotalScore > previousBest.TotalScore);
-
-            OnNewPlayRecorded?.Invoke(record, isNewBest);
+            OnNewPlayRecorded?.Invoke(record);
         }
 
-        private void calculateAndAssignPP(ScoreInfo score, SessionPlayRecord record, SessionPlayRecord? previousBest)
+        private void calculateAndAssignPP(ScoreInfo score, SessionPlayRecord record)
         {
             Task.Run(async () =>
             {
@@ -155,10 +148,10 @@ namespace LazerLens.Services
                         UpdatePlay(record.Id, p => p with { PerformancePoints = calculatedPp.Value });
                     }
                 }
-                catch { /* Silently ignore вЂ” PP calc can fail for custom rulesets */ }
+                catch { /* Silently ignore — PP calc can fail for custom rulesets */ }
                 finally
                 {
-                    triggerNewPlayEvent(record, previousBest);
+                    triggerNewPlayEvent(record);
                 }
             });
         }

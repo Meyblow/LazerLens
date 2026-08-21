@@ -57,13 +57,11 @@ namespace LazerLens
             var settings = Host.GetSettings();
 
             var notifySetting = settings.Bind("notify_on_play", true);
-            var celebrateSetting = settings.Bind("celebrate_best", true);
             var retriesSetting = settings.Bind("track_retries", true);
             var compactSetting = settings.Bind("compact_mode", false);
             var showUrSetting = settings.Bind("show_ur", true);
 
             trackerService.NotifyOnPlay.BindTo(notifySetting);
-            trackerService.CelebrateBest.BindTo(celebrateSetting);
             trackerService.TrackRetries.BindTo(retriesSetting);
             trackerService.CompactMode.BindTo(compactSetting);
             trackerService.ShowUR.BindTo(showUrSetting);
@@ -370,23 +368,9 @@ namespace LazerLens
             }
         }
 
-        private void onNewPlayRecorded(SessionPlayRecord play, bool isNewBest)
+        private void onNewPlayRecorded(SessionPlayRecord play)
         {
-            if (isNewBest && trackerService.CelebrateBest.Value)
-            {
-                ClientCelebrations.Show(new Celebration(new CelebrationOptions
-                {
-                    TitleText = LazerLensStrings.NotificationNewBest.ToString(),
-                    SubtitleText = $"{play.BeatmapArtist} - {play.BeatmapTitle}",
-                    AccentColour = Color4Extensions.FromHex("00ffcc"),
-                }));
-
-                Host.Notify(
-                    LazerLensStrings.NotificationNewBestDetails(play.BeatmapArtist, play.BeatmapTitle, play.Accuracy.ToString("F2", CultureInfo.InvariantCulture)),
-                    NotificationKind.Success
-                );
-            }
-            else if (trackerService.NotifyOnPlay.Value && play.Passed)
+            if (trackerService.NotifyOnPlay.Value && play.Passed)
             {
                 string ppStr = play.PerformancePoints.HasValue ? $" \u2022 {play.PerformancePoints.Value:F0}pp" : "";
 
@@ -406,7 +390,6 @@ namespace LazerLens
             trackerService.OnNewPlayRecorded -= onNewPlayRecorded;
 
             trackerService.NotifyOnPlay.UnbindAll();
-            trackerService.CelebrateBest.UnbindAll();
             trackerService.TrackRetries.UnbindAll();
             trackerService.CompactMode.UnbindAll();
             trackerService.ShowUR.UnbindAll();
