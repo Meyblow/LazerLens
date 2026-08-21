@@ -144,7 +144,7 @@ namespace LazerLens.UI.Components
             if (currentLabel != null)
             {
                 currentLabel.Text = CurrentSessionId.HasValue ? LazerLensStrings.DropdownArchivedSession : LazerLensStrings.DropdownLiveSession;
-                currentLabel.Colour = CurrentSessionId.HasValue ? Color4Extensions.FromHex("ffcc00") : Color4Extensions.FromHex("00ffcc");
+                currentLabel.Colour = CurrentSessionId.HasValue ? Color4Extensions.FromHex("ffcc00") : colourProvider.Highlight1;
             }
         }
 
@@ -229,7 +229,7 @@ namespace LazerLens.UI.Components
                                             Origin = Anchor.CentreLeft,
                                             Text = parent.CurrentSessionId.HasValue ? LazerLensStrings.DropdownArchivedSession : LazerLensStrings.DropdownLiveSession,
                                             Font = OsuFont.Torus.With(size: 13, weight: FontWeight.SemiBold),
-                                            Colour = parent.CurrentSessionId.HasValue ? Color4Extensions.FromHex("ffcc00") : Color4Extensions.FromHex("00ffcc"),
+                                            Colour = parent.CurrentSessionId.HasValue ? Color4Extensions.FromHex("ffcc00") : colourProvider.Highlight1,
                                         },
                                     }
                                 },
@@ -255,7 +255,7 @@ namespace LazerLens.UI.Components
                 if (labelText != null)
                 {
                     labelText.Text = parent.CurrentSessionId.HasValue ? LazerLensStrings.DropdownArchivedSession : LazerLensStrings.DropdownLiveSession;
-                    labelText.Colour = parent.CurrentSessionId.HasValue ? Color4Extensions.FromHex("ffcc00") : Color4Extensions.FromHex("00ffcc");
+                    labelText.Colour = parent.CurrentSessionId.HasValue ? Color4Extensions.FromHex("ffcc00") : colourProvider.Highlight1;
                 }
             }
 
@@ -323,7 +323,7 @@ namespace LazerLens.UI.Components
                                 {
                                     Text = label,
                                     Font = OsuFont.Torus.With(size: 12, weight: isSelected ? FontWeight.Bold : FontWeight.SemiBold),
-                                    Colour = isSelected ? Color4Extensions.FromHex("00ffcc") : Color4.White,
+                                    Colour = isSelected ? colourProvider.Highlight1 : Color4.White,
                                 },
                                 new OsuSpriteText
                                 {
