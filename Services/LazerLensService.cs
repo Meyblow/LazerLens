@@ -137,6 +137,7 @@ namespace LazerLens.Services
 
         private void calculateAndAssignPP(ScoreInfo score, SessionPlayRecord record)
         {
+            // Calculate performance asynchronously to prevent UI hitches on map completion
             Task.Run(async () =>
             {
                 try
@@ -144,15 +145,31 @@ namespace LazerLens.Services
                     double? calculatedPp = await CalculatePerformanceAsync(score);
                     if (calculatedPp.HasValue && calculatedPp.Value > 0)
                     {
-                        record = record with { PerformancePoints = calculatedPp.Value };
-                        UpdatePlay(record.Id, p => p with { PerformancePoints = calculatedPp.Value });
+                        var updatedRecord = record with { PerformancePoints = calculatedPp.Value };
+
+                        // §13: Mutating game state and raising UI events MUST happen on the main game thread
+                        if (LazerLensPlugin.Instance?.Host.Scheduler != null)
+                        {
+                            LazerLensPlugin.Instance.Host.Scheduler.Add(() =>
+                            {
+                                UpdatePlay(updatedRecord.Id, p => p with { PerformancePoints = calculatedPp.Value });
+                                triggerNewPlayEvent(updatedRecord);
+                            });
+                        }
+                        else
+                        {
+                            UpdatePlay(updatedRecord.Id, p => p with { PerformancePoints = calculatedPp.Value });
+                            triggerNewPlayEvent(updatedRecord);
+                        }
+                        return;
                     }
                 }
-                catch { /* Silently ignore — PP calc can fail for custom rulesets */ }
-                finally
-                {
+                catch { /* PP calculation can fail for unconverted or custom rulesets; safely ignored */ }
+
+                if (LazerLensPlugin.Instance?.Host.Scheduler != null)
+                    LazerLensPlugin.Instance.Host.Scheduler.Add(() => triggerNewPlayEvent(record));
+                else
                     triggerNewPlayEvent(record);
-                }
             });
         }
 

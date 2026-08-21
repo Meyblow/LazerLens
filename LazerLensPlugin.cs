@@ -14,6 +14,7 @@ using LazerLens.Models;
 using LazerLens.Patches;
 using LazerLens.Services;
 using LazerLens.UI;
+using LazerLens.Utilities;
 using osu.Game.Screens.Play;
 using osucc.Core;
 
@@ -42,8 +43,6 @@ namespace LazerLens
         private LazerLensOverlay? overlay;
         private IDisposable? overlayRegistration;
 
-        private static UserStatisticsWatcher? cachedWatcher;
-        private static LocalUserStatisticsProvider? cachedStatsProvider;
         private bool isWatcherHooked;
         private bool isProviderHooked;
         private Action<osu.Framework.Bindables.ValueChangedEvent<osu.Game.Online.ScoreBasedUserStatisticsUpdate?>>? watcherAction;
@@ -172,68 +171,8 @@ namespace LazerLens
             }
         }
 
-        public static UserStatisticsWatcher? GetWatcher()
-        {
-            if (cachedWatcher != null) return cachedWatcher;
-
-            var game = ClientApi.Game;
-            if (game == null) return null;
-
-            var prop = game.GetType().GetProperty("UserStatisticsWatcher", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            if (prop?.GetValue(game) is UserStatisticsWatcher val1)
-            {
-                cachedWatcher = val1;
-                return cachedWatcher;
-            }
-
-            Type? current = game.GetType();
-            while (current != null)
-            {
-                foreach (var f in current.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
-                {
-                    if (typeof(UserStatisticsWatcher).IsAssignableFrom(f.FieldType))
-                    {
-                        if (f.GetValue(game) is UserStatisticsWatcher val2)
-                        {
-                            cachedWatcher = val2;
-                            return cachedWatcher;
-                        }
-                    }
-                }
-                current = current.BaseType;
-            }
-
-            cachedWatcher = game.Dependencies?.Get(typeof(UserStatisticsWatcher)) as UserStatisticsWatcher;
-            return cachedWatcher;
-        }
-
-        public static LocalUserStatisticsProvider? GetStatsProvider()
-        {
-            if (cachedStatsProvider != null) return cachedStatsProvider;
-
-            var game = ClientApi.Game;
-            if (game == null) return null;
-
-            Type? current = game.GetType();
-            while (current != null)
-            {
-                foreach (var f in current.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
-                {
-                    if (typeof(LocalUserStatisticsProvider).IsAssignableFrom(f.FieldType))
-                    {
-                        if (f.GetValue(game) is LocalUserStatisticsProvider val)
-                        {
-                            cachedStatsProvider = val;
-                            return cachedStatsProvider;
-                        }
-                    }
-                }
-                current = current.BaseType;
-            }
-
-            cachedStatsProvider = game.Dependencies?.Get(typeof(LocalUserStatisticsProvider)) as LocalUserStatisticsProvider;
-            return cachedStatsProvider;
-        }
+        public static UserStatisticsWatcher? GetWatcher() => ReflectionHelper.GetUserStatisticsWatcher();
+        public static LocalUserStatisticsProvider? GetStatsProvider() => ReflectionHelper.GetLocalUserStatisticsProvider();
 
         public static bool TryMarkPlayerRecorded(Player player)
         {
@@ -243,6 +182,7 @@ namespace LazerLens
                 if (recordedPlayerHashes.Contains(hash))
                     return false;
 
+                // Limit the hash cache size to 300 items to avoid unbounded memory growth during long gaming sessions
                 if (recordedPlayerHashes.Count > 300)
                     recordedPlayerHashes.Clear();
 
@@ -251,28 +191,7 @@ namespace LazerLens
             }
         }
 
-        private static bool isPlayerFailed(Player player)
-        {
-            try
-            {
-                var hpProp = typeof(Player).GetProperty("HealthProcessor", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                var hp = hpProp?.GetValue(player) as osu.Game.Rulesets.Scoring.HealthProcessor;
-                if (hp?.HasFailed == true)
-                    return true;
-
-                var failOverlayProp = typeof(Player).GetProperty("FailOverlay", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                if (failOverlayProp?.GetValue(player) is osu.Game.Screens.Play.FailOverlay failOverlay &&
-                    failOverlay.State.Value == osu.Framework.Graphics.Containers.Visibility.Visible)
-                {
-                    return true;
-                }
-            }
-            catch
-            {
-            }
-
-            return false;
-        }
+        private static bool isPlayerFailed(Player player) => ReflectionHelper.IsPlayerFailed(player);
 
         public void RecordUnpassedPlayerScore(Player player)
         {

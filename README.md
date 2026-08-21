@@ -18,7 +18,7 @@ about it.
 
 **Session archive**
 Every session is saved locally as a JSON file. Pick any past session from the
-dropdown to review it. You can also open the sessions folder directly from settings.
+archive tab to review it with full stats and play history. You can also open the sessions folder directly from settings.
 
 **CSV export**
 One button dumps your entire session history to a `.csv` in `~/Downloads/osu_session_exports/`.
@@ -28,8 +28,7 @@ Useful if you want to track long-term progress in a spreadsheet.
 - Compact list mode (smaller rows, more plays visible)
 - Toggle UR visibility
 - Toggle in-game notifications on each recorded play
-- Enable/disable "new session best" celebration effects
-- Track retries and fails, or only count passed plays
+- Enable/disable retry tracking and fails
 
 ### Install
 

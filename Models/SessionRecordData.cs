@@ -45,6 +45,11 @@ namespace LazerLens.Models
 
     public class SessionArchive
     {
+        /// <summary>
+        /// §10: Schema version for migration compatibility.
+        /// </summary>
+        public int SchemaVersion { get; set; } = 1;
+
         public Guid Id { get; set; } = Guid.NewGuid();
         public DateTimeOffset StartTime { get; set; }
         public DateTimeOffset EndTime { get; set; }
