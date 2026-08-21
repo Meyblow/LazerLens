@@ -114,7 +114,33 @@ namespace LazerLens.UI.Components
         private Container buildContent()
         {
             string modString = currentPlay.Mods.Length > 0 ? "+" + string.Join("", currentPlay.Mods) : "NoMod";
-            string ppDisplay = formatPp(currentPlay);
+
+            string ppPrimary = currentPlay.PerformancePoints.HasValue && currentPlay.PerformancePoints.Value > 0
+                ? $"{currentPlay.PerformancePoints.Value.ToString("F0", CultureInfo.InvariantCulture)} PP"
+                : "-";
+
+            string ppSecondary = "PP";
+            Color4 ppSecondaryColour = colourProvider.Content2;
+
+            if (currentPlay.ProfilePerformancePoints.HasValue)
+            {
+                double prof = currentPlay.ProfilePerformancePoints.Value;
+                if (prof > 0)
+                {
+                    ppSecondary = $"+{prof.ToString("F0", CultureInfo.InvariantCulture)} PP";
+                    ppSecondaryColour = Color4Extensions.FromHex("#38f773");
+                }
+                else if (prof < 0)
+                {
+                    ppSecondary = $"{prof.ToString("F0", CultureInfo.InvariantCulture)} PP";
+                    ppSecondaryColour = Color4Extensions.FromHex("#ed4242");
+                }
+                else
+                {
+                    ppSecondary = "+0 PP";
+                    ppSecondaryColour = colourProvider.Content2;
+                }
+            }
 
             string rulesetName = currentPlay.RulesetName == "osu" ? "osu!" : currentPlay.RulesetName;
 
@@ -423,10 +449,10 @@ namespace LazerLens.UI.Components
                                 ),
                                 // Column 8: PP
                                 buildCell(
-                                    ppDisplay,
-                                    "PP",
+                                    ppPrimary,
+                                    ppSecondary,
                                     colourProvider.Content1,
-                                    colourProvider.Content2
+                                    ppSecondaryColour
                                 ),
                                 // Column 9: Time
                                 buildCell(

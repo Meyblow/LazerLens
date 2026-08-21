@@ -104,7 +104,7 @@ namespace LazerLens.Services
                 Timestamp: DateTimeOffset.Now,
                 StarRating: score.BeatmapInfo?.StarRating ?? 0.0,
                 PerformancePoints: rawPp,
-                ProfilePerformancePoints: 0.0,
+                ProfilePerformancePoints: null,
                 Status: statusStr,
                 OnlineBeatmapID: score.BeatmapInfo?.OnlineID ?? 0,
                 OnlineBeatmapSetID: score.BeatmapInfo?.BeatmapSet?.OnlineID ?? 0,
