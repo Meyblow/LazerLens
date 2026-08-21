@@ -2,6 +2,16 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [1.3.0] - 2026-08-21
+
+### Added
+- **OsuCcWaveOverlay Migration**: Upgraded overlay to `OsuCcWaveOverlay` with animated wave transitions and tabbed navigation (`Session` and `Settings`).
+- **Integrated Settings Tab**: Settings are now natively embedded as a dedicated tab, replacing the floating modal.
+- **Scrollable Floating Session Selector**: Redesigned session dropdown with shadow effect, fixed width, and scrolling for past sessions.
+
+### Fixed
+- **InvalidOperationException Crash**: Fixed AutoSizeAxes conflict on the play history container that caused error notifications during gameplay and overlay open.
+
 ## [1.2.0] - 2026-08-21
 
 ### Added

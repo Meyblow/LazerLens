@@ -288,7 +288,6 @@ namespace LazerLens.UI
                                     historyContainer = new Container
                                     {
                                         RelativeSizeAxes = Axes.X,
-                                        AutoSizeAxes = Axes.Y,
                                     }
                                 }
                             }

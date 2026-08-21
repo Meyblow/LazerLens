@@ -53,39 +53,39 @@ namespace LazerLens.UI.Components
 
             InternalChildren = new Drawable[]
             {
-                new FillFlowContainer
+                new SessionSelectorButton(this),
+                dropdownContainer = new Container
                 {
-                    RelativeSizeAxes = Axes.X,
+                    Width = 240,
                     AutoSizeAxes = Axes.Y,
-                    Direction = FillDirection.Vertical,
-                    Spacing = new Vector2(0, 0),
+                    BypassAutoSizeAxes = Axes.Both,
+                    Position = new Vector2(0, 36),
+                    Anchor = Anchor.TopRight,
+                    Origin = Anchor.TopRight,
+                    Depth = -100,
+                    Masking = true,
+                    CornerRadius = 8,
+                    Alpha = 0,
+                    EdgeEffect = new osu.Framework.Graphics.Effects.EdgeEffectParameters
+                    {
+                        Type = osu.Framework.Graphics.Effects.EdgeEffectType.Shadow,
+                        Colour = Color4.Black.Opacity(0.45f),
+                        Radius = 8,
+                    },
                     Children = new Drawable[]
                     {
-                        // The toggle button
-                        new SessionSelectorButton(this),
-                        // The dropdown list
-                        dropdownContainer = new Container
+                        new Box
+                        {
+                            RelativeSizeAxes = Axes.Both,
+                            Colour = colourProvider.Background5,
+                        },
+                        dropdownContent = new FillFlowContainer
                         {
                             RelativeSizeAxes = Axes.X,
                             AutoSizeAxes = Axes.Y,
-                            Masking = true,
-                            Alpha = 0,
-                            Children = new Drawable[]
-                            {
-                                new Box
-                                {
-                                    RelativeSizeAxes = Axes.Both,
-                                    Colour = colourProvider.Background5,
-                                },
-                                dropdownContent = new FillFlowContainer
-                                {
-                                    RelativeSizeAxes = Axes.X,
-                                    AutoSizeAxes = Axes.Y,
-                                    Direction = FillDirection.Vertical,
-                                    Spacing = new Vector2(0, 2),
-                                    Padding = new MarginPadding(6),
-                                }
-                            }
+                            Direction = FillDirection.Vertical,
+                            Spacing = new Vector2(0, 2),
+                            Padding = new MarginPadding(6),
                         }
                     }
                 }
