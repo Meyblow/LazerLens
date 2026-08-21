@@ -126,18 +126,11 @@ namespace LazerLens.UI.Components
             };
             if (Enum.TryParse<BeatmapOnlineStatus>(currentPlay.Status, true, out var onlineStatus))
             {
-                statusContainer.Child = new Container
+                statusContainer.Child = new BeatmapSetOnlineStatusPill
                 {
+                    Status = onlineStatus,
                     Anchor = Anchor.CentreLeft,
                     Origin = Anchor.CentreLeft,
-                    AutoSizeAxes = Axes.Both,
-                    Scale = new Vector2(0.72f),
-                    Child = new BeatmapSetOnlineStatusPill
-                    {
-                        Status = onlineStatus,
-                        Anchor = Anchor.CentreLeft,
-                        Origin = Anchor.CentreLeft,
-                    }
                 };
             }
             else
@@ -368,17 +361,10 @@ namespace LazerLens.UI.Components
                                                 Spacing = new Vector2(6, 0),
                                                 Children = new Drawable[]
                                                 {
-                                                    new Container
+                                                    new StarRatingDisplay(new StarDifficulty(currentPlay.StarRating, 0), StarRatingDisplaySize.Small)
                                                     {
                                                         Anchor = Anchor.CentreLeft,
                                                         Origin = Anchor.CentreLeft,
-                                                        AutoSizeAxes = Axes.Both,
-                                                        Scale = new Vector2(0.80f),
-                                                        Child = new StarRatingDisplay(new StarDifficulty(currentPlay.StarRating, 0), StarRatingDisplaySize.Small)
-                                                        {
-                                                            Anchor = Anchor.CentreLeft,
-                                                            Origin = Anchor.CentreLeft,
-                                                        }
                                                     },
                                                     statusContainer,
                                                 }
