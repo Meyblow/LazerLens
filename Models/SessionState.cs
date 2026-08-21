@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace LazerLens.Models
@@ -10,10 +11,10 @@ namespace LazerLens.Models
     public class SessionState
     {
         public Guid Id { get; set; } = Guid.NewGuid();
-        public DateTimeOffset SessionStart { get; set; } = DateTimeOffset.Now;
+        public DateTimeOffset SessionStart { get; set; } = GetProcessStartTime();
         public double? InitialProfilePP { get; set; }
         public double? CurrentProfilePP { get; set; }
-        public double SessionPPGain => (CurrentProfilePP ?? InitialProfilePP ?? 0) - (InitialProfilePP ?? 0);
+        public double SessionPPGain => Plays.Sum(p => p.ProfilePerformancePoints ?? 0);
 
         public List<SessionPlayRecord> Plays { get; } = new();
 
@@ -22,6 +23,7 @@ namespace LazerLens.Models
         public int TotalFails => Plays.Count(p => !p.Passed);
 
         public double AverageAccuracy => Plays.Count == 0 ? 0.0 : Plays.Average(p => p.Accuracy);
+        public double AverageUnstableRate => Plays.Any(p => p.UnstableRate.HasValue) ? Plays.Where(p => p.UnstableRate.HasValue).Average(p => p.UnstableRate!.Value) : 0.0;
         public int MaxCombo => Plays.Count == 0 ? 0 : Plays.Max(p => p.MaxCombo);
         public long TotalScore => Plays.Sum(p => p.TotalScore);
 
@@ -33,6 +35,19 @@ namespace LazerLens.Models
 
         public TimeSpan SessionDuration => DateTimeOffset.Now - SessionStart;
 
+        public static DateTimeOffset GetProcessStartTime()
+        {
+            try
+            {
+                using var proc = Process.GetCurrentProcess();
+                return new DateTimeOffset(proc.StartTime);
+            }
+            catch
+            {
+                return DateTimeOffset.Now;
+            }
+        }
+
         public void Reset()
         {
             Id = Guid.NewGuid();
@@ -42,4 +57,3 @@ namespace LazerLens.Models
         }
     }
 }
-

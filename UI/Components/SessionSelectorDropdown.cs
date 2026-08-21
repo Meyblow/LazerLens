@@ -1,3 +1,4 @@
+using osu.Framework.Localisation;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -36,7 +37,7 @@ namespace LazerLens.UI.Components
         private Container dropdownContainer = null!;
         private bool isOpen;
 
-        private Guid? currentSessionId;
+        public Guid? CurrentSessionId { get; private set; }
 
         public SessionSelectorDropdown(Action<Guid?> onSessionSelected, Func<List<SessionSummary>> getSessions)
         {
@@ -96,6 +97,7 @@ namespace LazerLens.UI.Components
 
         public void Toggle()
         {
+            if (IsDisposed) return;
             isOpen = !isOpen;
 
             if (isOpen)
@@ -113,7 +115,7 @@ namespace LazerLens.UI.Components
 
         public void SelectLive()
         {
-            currentSessionId = null;
+            CurrentSessionId = null;
             updateLabel();
             close();
             onSessionSelected(null);
@@ -121,14 +123,13 @@ namespace LazerLens.UI.Components
 
         public void SelectSession(Guid sessionId)
         {
-            currentSessionId = sessionId;
+            CurrentSessionId = sessionId;
             updateLabel();
             close();
             onSessionSelected(sessionId);
         }
 
-        public bool IsViewingArchive => currentSessionId.HasValue;
-        public Guid? CurrentSessionId => currentSessionId;
+        public bool IsViewingArchive => CurrentSessionId.HasValue;
 
         private void close()
         {
@@ -140,7 +141,11 @@ namespace LazerLens.UI.Components
 
         private void updateLabel()
         {
-            // Label is managed by the button, this is a no-op placeholder
+            if (currentLabel != null)
+            {
+                currentLabel.Text = CurrentSessionId.HasValue ? LazerLensStrings.DropdownArchivedSession : LazerLensStrings.DropdownLiveSession;
+                currentLabel.Colour = CurrentSessionId.HasValue ? Color4Extensions.FromHex("ffcc00") : Color4Extensions.FromHex("00ffcc");
+            }
         }
 
         private void populateDropdown()
@@ -148,14 +153,14 @@ namespace LazerLens.UI.Components
             dropdownContent.Clear();
 
             // Live session item
-            dropdownContent.Add(new SessionDropdownItem("● Live Session", "Current active session", !currentSessionId.HasValue, () => SelectLive()));
+            dropdownContent.Add(new SessionDropdownItem(LazerLensStrings.DropdownLiveSession, LazerLensStrings.DropdownCurrentActive, !CurrentSessionId.HasValue, () => SelectLive()));
 
             var sessions = getSessions();
             foreach (var s in sessions)
             {
                 string label = s.StartTime.ToString("dd MMM HH:mm", CultureInfo.InvariantCulture);
-                string detail = $"{s.PlayCount} plays \u2022 {s.TopPP:F0}pp top \u2022 {s.AverageAccuracy:F1}% avg";
-                bool isSelected = currentSessionId == s.Id;
+                var detail = LazerLensStrings.SessionSummaryDetail(s.PlayCount, s.TopPP, s.AverageAccuracy);
+                bool isSelected = CurrentSessionId == s.Id;
                 var id = s.Id;
                 dropdownContent.Add(new SessionDropdownItem(label, detail, isSelected, () => SelectSession(id)));
             }
@@ -222,9 +227,9 @@ namespace LazerLens.UI.Components
                                         {
                                             Anchor = Anchor.CentreLeft,
                                             Origin = Anchor.CentreLeft,
-                                            Text = parent.currentSessionId.HasValue ? "Archived Session" : "● Live Session",
+                                            Text = parent.CurrentSessionId.HasValue ? LazerLensStrings.DropdownArchivedSession : LazerLensStrings.DropdownLiveSession,
                                             Font = OsuFont.Torus.With(size: 13, weight: FontWeight.SemiBold),
-                                            Colour = parent.currentSessionId.HasValue ? Color4Extensions.FromHex("ffcc00") : Color4Extensions.FromHex("00ffcc"),
+                                            Colour = parent.CurrentSessionId.HasValue ? Color4Extensions.FromHex("ffcc00") : Color4Extensions.FromHex("00ffcc"),
                                         },
                                     }
                                 },
@@ -249,8 +254,8 @@ namespace LazerLens.UI.Components
                 base.Update();
                 if (labelText != null)
                 {
-                    labelText.Text = parent.currentSessionId.HasValue ? "Archived Session" : "● Live Session";
-                    labelText.Colour = parent.currentSessionId.HasValue ? Color4Extensions.FromHex("ffcc00") : Color4Extensions.FromHex("00ffcc");
+                    labelText.Text = parent.CurrentSessionId.HasValue ? LazerLensStrings.DropdownArchivedSession : LazerLensStrings.DropdownLiveSession;
+                    labelText.Colour = parent.CurrentSessionId.HasValue ? Color4Extensions.FromHex("ffcc00") : Color4Extensions.FromHex("00ffcc");
                 }
             }
 
@@ -272,12 +277,12 @@ namespace LazerLens.UI.Components
             [Resolved]
             private OverlayColourProvider colourProvider { get; set; } = null!;
 
-            private readonly string label;
-            private readonly string detail;
+            private readonly LocalisableString label;
+            private readonly LocalisableString detail;
             private readonly bool isSelected;
             private Box background = null!;
 
-            public SessionDropdownItem(string label, string detail, bool isSelected, Action action)
+            public SessionDropdownItem(LocalisableString label, LocalisableString detail, bool isSelected, Action action)
             {
                 this.label = label;
                 this.detail = detail;
@@ -346,4 +351,3 @@ namespace LazerLens.UI.Components
         }
     }
 }
-

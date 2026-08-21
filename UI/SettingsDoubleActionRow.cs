@@ -1,3 +1,4 @@
+using osu.Framework.Localisation;
 using System;
 using osu.Framework.Allocation;
 using osu.Framework.Graphics;
@@ -12,12 +13,12 @@ namespace LazerLens.UI
 {
     public partial class SettingsDoubleActionRow : Container
     {
-        private readonly string leftLabel;
-        private readonly string rightLabel;
+        private readonly LocalisableString leftLabel;
+        private readonly LocalisableString rightLabel;
         private readonly Action leftAction;
         private readonly Action rightAction;
 
-        public SettingsDoubleActionRow(string leftLabel, Action leftAction, string rightLabel, Action rightAction)
+        public SettingsDoubleActionRow(LocalisableString leftLabel, Action leftAction, LocalisableString rightLabel, Action rightAction)
         {
             this.leftLabel = leftLabel;
             this.leftAction = leftAction;
@@ -64,12 +65,12 @@ namespace LazerLens.UI
             };
         }
 
-        private partial class ActionButton : OsuClickableContainer
+        private sealed partial class ActionButton : OsuClickableContainer
         {
             private Box background = null!;
-            private readonly string label;
+            private readonly LocalisableString label;
 
-            public ActionButton(string label, Action action)
+            public ActionButton(LocalisableString label, Action action)
             {
                 this.label = label;
                 Action = action;
@@ -86,31 +87,28 @@ namespace LazerLens.UI
                     background = new Box
                     {
                         RelativeSizeAxes = Axes.Both,
-                        Colour = colours.Gray3,
-                        Alpha = 1
+                        Colour = colours.Gray2,
+                        Alpha = 0
                     },
                     new OsuSpriteText
                     {
                         Anchor = Anchor.Centre,
                         Origin = Anchor.Centre,
                         Text = label,
-                        Font = OsuFont.GetFont(weight: FontWeight.Bold, size: 16)
+                        Font = OsuFont.GetFont(weight: FontWeight.Bold, size: 14)
                     }
                 };
             }
 
-            [Resolved]
-            private OsuColour colours { get; set; } = null!;
-
             protected override bool OnHover(HoverEvent e)
             {
-                background.FadeColour(colours.Gray4, 200, Easing.OutQuint);
+                background.FadeIn(200, Easing.OutQuint);
                 return base.OnHover(e);
             }
 
             protected override void OnHoverLost(HoverLostEvent e)
             {
-                background.FadeColour(colours.Gray3, 200, Easing.OutQuint);
+                background.FadeOut(200, Easing.OutQuint);
                 base.OnHoverLost(e);
             }
         }

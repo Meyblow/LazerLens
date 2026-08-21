@@ -36,7 +36,7 @@ namespace LazerLens.Services
 
                 using var stream = _sessionsStorage.GetStream(fileName, FileAccess.Write, FileMode.Create);
                 JsonSerializer.Serialize(stream, archive, s_jsonOptions);
-                
+
                 InvalidateCache();
             }
             catch (Exception ex)
@@ -72,7 +72,7 @@ namespace LazerLens.Services
                         TimingLog.Error($"Failed to load session file {file}: {ex.Message}");
                     }
                 }
-                
+
                 _cachedSummaries = summaries.OrderByDescending(s => s.StartTime).ToList();
                 return _cachedSummaries;
             }
@@ -91,14 +91,14 @@ namespace LazerLens.Services
             {
                 var files = _sessionsStorage.GetFiles(".", $"*_{sessionId}.json");
                 var file = files.FirstOrDefault();
-                
+
                 if (file == null) return null;
 
                 using var stream = _sessionsStorage.GetStream(file);
                 var archive = JsonSerializer.Deserialize<SessionArchive>(stream);
-                
+
                 if (archive == null) return null;
-                
+
                 return SessionArchive.ToState(archive);
             }
             catch (Exception ex)
@@ -116,7 +116,7 @@ namespace LazerLens.Services
             {
                 var files = _sessionsStorage.GetFiles(".", $"*_{sessionId}.json");
                 var file = files.FirstOrDefault();
-                
+
                 if (file != null)
                 {
                     _sessionsStorage.Delete(file);

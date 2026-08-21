@@ -19,13 +19,13 @@ namespace LazerLens.Services
         public SessionState LiveState { get; } = new();
 
         /// <summary>The session currently displayed in the overlay (Live or Archived).</summary>
-        public SessionState ViewedState => _viewedState ?? LiveState;
+        public SessionState ViewedState => viewedState ?? LiveState;
 
         /// <summary>Shortcut kept for backward compat — points to ViewedState.</summary>
         public SessionState State => ViewedState;
 
         /// <summary>Whether the overlay is showing an archived session instead of the live one.</summary>
-        public bool IsViewingArchive => _viewedState != null;
+        public bool IsViewingArchive => viewedState != null;
 
         public event Action? OnSessionUpdated;
         public event Action<SessionPlayRecord, bool>? OnNewPlayRecorded;
@@ -36,22 +36,32 @@ namespace LazerLens.Services
         public Bindable<bool> CompactMode { get; } = new(false);
         public Bindable<bool> ShowUR { get; } = new(true);
 
-        private SessionState? _viewedState;
-        private SessionStorageService? _storageService;
+        private SessionState? viewedState;
+        public SessionStorageService? StorageService { get; private set; }
 
         public void OpenSessionsDirectory()
         {
-            _storageService?.OpenSessionsDirectory();
+            StorageService?.OpenSessionsDirectory();
         }
 
         public string? ExportSessionsToCsv()
         {
-            return _storageService?.ExportToCsv();
+            return StorageService?.ExportToCsv();
         }
 
-        public void RecordScore(ScoreInfo score, bool passed, bool isRetry)
+        public void RecordScore(ScoreInfo score, bool passed)
         {
-            LazerLensPatch.DebugLog($"LazerLensService.RecordScore: entered. Title={score.BeatmapInfo?.Metadata?.Title}, Passed={passed}");
+            if (score.Date == default)
+                score.Date = DateTimeOffset.Now;
+            else if ((DateTimeOffset.Now - score.Date).TotalMinutes > 5)
+            {
+                return;
+            }
+
+            if (!passed && !TrackRetries.Value)
+            {
+                return;
+            }
 
             // Prevent duplicate recording of the same play (e.g. from both Player.ImportScore and ResultsScreen.LoadComplete)
             var lastPlay = LiveState.Plays.LastOrDefault();
@@ -61,14 +71,7 @@ namespace LazerLens.Services
                 lastPlay.MaxCombo == score.MaxCombo &&
                 (DateTimeOffset.Now - lastPlay.Timestamp).TotalSeconds < 30)
             {
-                LazerLensPatch.DebugLog("LazerLensService.RecordScore: duplicate pass detected, updating instead of adding.");
                 UpdateScore(score); // Just update it with any new stats (like PP)
-                return;
-            }
-
-            if (!passed && isRetry && !TrackRetries.Value)
-            {
-                LazerLensPatch.DebugLog("LazerLensService.RecordScore: ignoring unpassed score because it's a retry and TrackRetries is false.");
                 return;
             }
 
@@ -95,12 +98,6 @@ namespace LazerLens.Services
                 ? new Dictionary<osu.Game.Rulesets.Scoring.HitResult, int>(score.Statistics)
                 : new Dictionary<osu.Game.Rulesets.Scoring.HitResult, int>();
 
-            if (score.Date < LiveState.SessionStart)
-            {
-                LazerLensPatch.DebugLog($"RecordScore: ignoring score from {score.Date} because it is before session start ({LiveState.SessionStart}). Likely a replay.");
-                return;
-            }
-
             var record = new SessionPlayRecord(
                 BeatmapTitle: score.BeatmapInfo?.Metadata?.Title ?? "Unknown Title",
                 BeatmapArtist: score.BeatmapInfo?.Metadata?.Artist ?? "Unknown Artist",
@@ -122,13 +119,9 @@ namespace LazerLens.Services
                 Rank: passed ? score.Rank : ScoreRank.F,
                 Statistics: statsDict,
                 UnstableRate: ur
-            )
-            {
-                OriginalScore = score
-            };
+            );
 
             LiveState.Plays.Add(record);
-            LazerLensPatch.DebugLog($"LazerLensService.RecordScore: Play added! Total plays in LiveState: {LiveState.Plays.Count}. Firing OnSessionUpdated.");
             OnSessionUpdated?.Invoke();
             AutoSave();
 
@@ -167,7 +160,7 @@ namespace LazerLens.Services
                         UpdatePlay(record.Id, p => p with { PerformancePoints = calculatedPp.Value });
                     }
                 }
-                catch { /* Silently ignore — PP calc can fail for custom rulesets */ }
+                catch { /* Silently ignore вЂ” PP calc can fail for custom rulesets */ }
                 finally
                 {
                     triggerNewPlayEvent(record, previousBest);
@@ -183,11 +176,6 @@ namespace LazerLens.Services
             decimal ppBefore = update.Before.PP ?? 0;
             decimal ppAfter = update.After.PP ?? 0;
             double roundedDelta = Math.Round((double)(ppAfter - ppBefore));
-
-            if (LiveState.InitialProfilePP == null && ppBefore > 0)
-                LiveState.InitialProfilePP = (double)ppBefore;
-            if (ppAfter > 0)
-                LiveState.CurrentProfilePP = (double)ppAfter;
 
             // Find matching play in current session
             SessionPlayRecord? match = null;
@@ -215,11 +203,6 @@ namespace LazerLens.Services
             decimal ppNew = newStats.PP ?? 0;
             double delta = Math.Round((double)(ppNew - ppOld));
 
-            if (LiveState.InitialProfilePP == null && ppOld > 0)
-                LiveState.InitialProfilePP = (double)ppOld;
-            if (ppNew > 0)
-                LiveState.CurrentProfilePP = (double)ppNew;
-
             var lastPlay = LiveState.Plays.LastOrDefault(p => p.Passed);
             if (lastPlay != null)
                 UpdatePlay(lastPlay.Id, p => p with { ProfilePerformancePoints = delta }, save: true);
@@ -231,11 +214,13 @@ namespace LazerLens.Services
                 return;
 
             string title = score.BeatmapInfo?.Metadata?.Title ?? "";
+            int onlineId = score.BeatmapInfo?.OnlineID ?? 0;
             long totalScore = score.TotalScore;
 
             var matching = LiveState.Plays.LastOrDefault(p =>
+                (onlineId > 0 && p.OnlineBeatmapID == onlineId && (DateTimeOffset.Now - p.Timestamp).TotalMinutes < 10) ||
                 (title.Length > 0 && p.BeatmapTitle == title && p.TotalScore == totalScore) ||
-                p.TotalScore == totalScore) ?? LiveState.Plays.LastOrDefault();
+                (title.Length > 0 && p.BeatmapTitle == title && (DateTimeOffset.Now - p.Timestamp).TotalMinutes < 10));
 
             if (matching == null) return;
 
@@ -249,7 +234,8 @@ namespace LazerLens.Services
             {
                 PerformancePoints = rawPp,
                 UnstableRate = ur,
-                Statistics = statsDict
+                Statistics = statsDict,
+                TotalScore = totalScore > 0 ? totalScore : p.TotalScore
             }, save: true);
         }
 
@@ -282,12 +268,20 @@ namespace LazerLens.Services
 
             try
             {
-                var urResult = osu.Game.Rulesets.Scoring.HitEventExtensions.CalculateUnstableRate(score.HitEvents);
-                return urResult.Result;
+                var hitErrors = score.HitEvents
+                    .Select(e => e.TimeOffset)
+                    .ToList();
+
+                if (hitErrors.Count == 0) return null;
+
+                double mean = hitErrors.Average();
+                double sumSquares = hitErrors.Sum(e => (e - mean) * (e - mean));
+                double stdDev = Math.Sqrt(sumSquares / hitErrors.Count);
+                return stdDev * 10.0;
             }
             catch
             {
-                return null; // Silently ignore — some rulesets don't support UR
+                return null;
             }
         }
 
@@ -345,18 +339,16 @@ namespace LazerLens.Services
 
         public void AttachStorage(osu.Framework.Platform.Storage? storage)
         {
-            _storageService = new SessionStorageService(storage);
+            StorageService = new SessionStorageService(storage);
         }
-
-        public SessionStorageService? StorageService => _storageService;
 
         public void AutoSave()
         {
-            if (_storageService == null || LiveState.Plays.Count == 0) return;
+            if (StorageService == null || LiveState.Plays.Count == 0) return;
 
             try
             {
-                _storageService.SaveSession(LiveState);
+                StorageService.SaveSession(LiveState);
             }
             catch { /* Silently ignore — don't crash the game over a failed save */ }
         }
@@ -365,11 +357,11 @@ namespace LazerLens.Services
         {
             if (sessionId == null)
             {
-                _viewedState = null;
+                viewedState = null;
             }
             else
             {
-                _viewedState = _storageService?.LoadSession(sessionId.Value);
+                viewedState = StorageService?.LoadSession(sessionId.Value);
             }
 
             OnSessionUpdated?.Invoke();
@@ -377,13 +369,14 @@ namespace LazerLens.Services
 
         public void ReturnToLive()
         {
-            _viewedState = null;
+            viewedState = null;
             OnSessionUpdated?.Invoke();
         }
 
         public List<SessionSummary> GetAllSessionSummaries()
         {
-            return _storageService?.GetAllSessions() ?? new List<SessionSummary>();
+            var sessions = StorageService?.GetAllSessions() ?? new List<SessionSummary>();
+            return sessions.Where(s => s.Id != LiveState.Id).ToList();
         }
 
         public void ResetSession()
@@ -392,8 +385,10 @@ namespace LazerLens.Services
             AutoSave();
 
             LiveState.Reset();
-            _viewedState = null;
+            viewedState = null;
             OnSessionUpdated?.Invoke();
         }
     }
 }
+
+

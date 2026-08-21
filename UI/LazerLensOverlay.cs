@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using osu.Framework.Allocation;
+using osu.Framework.Bindables;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Cursor;
 using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
+using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
 using osu.Game.Graphics;
@@ -17,6 +19,7 @@ using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Overlays;
+using osu.Game.Overlays.Settings;
 using osu.Game.Scoring;
 using osucc.Client;
 using osucc.UI.Overlays;
@@ -55,10 +58,18 @@ namespace LazerLens.UI
         Fail
     }
 
+    public enum SessionStatusFilter
+    {
+        All,
+        Ranked,
+        Loved,
+        Graveyard
+    }
+
     public partial class LazerLensOverlay : OsuCcShearedOverlay
     {
         private float ItemHeight => service.CompactMode.Value ? 38f : 56f;
-        private float ItemSpacing => 6f;
+        private static float ItemSpacing => 6f;
         private float SlotHeight => ItemHeight + ItemSpacing;
 
         private readonly LazerLensService service;
@@ -79,16 +90,7 @@ namespace LazerLens.UI
         private readonly Dictionary<Guid, SessionPlayHistoryItem> itemMap = new();
         private OsuSpriteText noHistoryText = null!;
         private OsuSpriteText historyCountText = null!;
-        private OsuTextBox searchTextBox = null!;
-
-        private SessionSortMode currentSort = SessionSortMode.Recent;
-        private bool sortAscending;
-        private SessionRulesetFilter currentRulesetFilter = SessionRulesetFilter.All;
-        private SessionOutcomeFilter currentOutcomeFilter = SessionOutcomeFilter.All;
-
-        private readonly List<SortPillButton> sortButtons = new();
-        private readonly List<RulesetPillButton> rulesetButtons = new();
-        private readonly List<OutcomePillButton> outcomeButtons = new();
+        private LazerLensFilterControl filterControl = null!;
 
         private bool isDataDirty = true;
         private int lastUpdatedSecond = -1;
@@ -103,12 +105,18 @@ namespace LazerLens.UI
         private Container archiveBanner = null!;
         private OsuSpriteText archiveBannerText = null!;
         private Container headerIconsContainer = null!;
+        private LazerLensSettingsModal settingsModal = null!;
+
+        public static bool IsSettingsModalOpen { get; set; }
 
         [BackgroundDependencyLoader]
         private void load()
         {
-            Header.Title = "Lazer Lens";
-            Header.Description = "Live performance tracking, session metrics and play history";
+            Header.Title = LazerLensStrings.Name;
+            Header.Description = LazerLensStrings.Description;
+            Header.Icon = FontAwesome.Solid.ChartBar;
+
+            AddInternal(settingsModal = new LazerLensSettingsModal(service));
 
             AddInternal(headerIconsContainer = new Container
             {
@@ -117,307 +125,192 @@ namespace LazerLens.UI
                 Depth = float.MinValue,
                 Alpha = 0,
                 Y = -50,
-                Children = new Drawable[]
+                Child = new HeaderSettingsButton(openPluginSettings)
                 {
-                    // Left Icon in Header (Placed closer to the text)
-                    new Container
-                    {
-                        Anchor = Anchor.TopLeft,
-                        Origin = Anchor.Centre,
-                        Position = new Vector2(120, 32),
-                        Size = new Vector2(44),
-                        Child = new SpriteIcon
-                        {
-                            Anchor = Anchor.Centre,
-                            Origin = Anchor.Centre,
-                            Size = new Vector2(28),
-                            Icon = FontAwesome.Solid.ChartBar,
-                            Colour = ColourProvider.Colour1,
-                        }
-                    },
-                    // Right Settings Button (Placed further left from the Close button)
-                    new HeaderSettingsButton(openPluginSettings)
-                    {
-                        Anchor = Anchor.TopRight,
-                        Origin = Anchor.Centre,
-                        Position = new Vector2(-160, 32),
-                    }
+                    Anchor = Anchor.TopRight,
+                    Origin = Anchor.Centre,
+                    Position = new Vector2(-160, 32),
                 }
             });
 
-            MainAreaContent.Add(new OverlayScrollContainer
+            MainAreaContent.AddRange(new Drawable[]
             {
-                RelativeSizeAxes = Axes.Both,
-                Child = new FillFlowContainer
+                new Box
                 {
-                    RelativeSizeAxes = Axes.X,
-                    AutoSizeAxes = Axes.Y,
-                    Direction = FillDirection.Vertical,
-                    Spacing = new Vector2(0, 16),
-                    Padding = new MarginPadding
+                    RelativeSizeAxes = Axes.Both,
+                    Colour = ColourProvider.Background6.Opacity(0.96f),
+                },
+                new OverlayScrollContainer
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    Child = new FillFlowContainer
                     {
-                        Horizontal = Padding * 2,
-                        Vertical = Padding,
-                    },
-                    Children = new Drawable[]
-                    {
-                        // 0. Session Selector Dropdown
-                        sessionSelector = new SessionSelectorDropdown(
-                            onSessionSelected: id => service.SelectSession(id),
-                            getSessions: () => service.GetAllSessionSummaries()
-                        ),
-
-                        // 0.5 Archive Banner (hidden by default)
-                        archiveBanner = new Container
+                        RelativeSizeAxes = Axes.X,
+                        AutoSizeAxes = Axes.Y,
+                        Direction = FillDirection.Vertical,
+                        Spacing = new Vector2(0, 12),
+                        Padding = new MarginPadding
                         {
-                            RelativeSizeAxes = Axes.X,
-                            Height = 32,
-                            Masking = true,
-                            CornerRadius = 6,
-                            Alpha = 0,
-                            Children = new Drawable[]
-                            {
-                                new Box
-                                {
-                                    RelativeSizeAxes = Axes.Both,
-                                    Colour = Color4Extensions.FromHex("ffcc00").Opacity(0.15f),
-                                },
-                                new Container
-                                {
-                                    RelativeSizeAxes = Axes.Both,
-                                    Padding = new MarginPadding { Horizontal = 12 },
-                                    Children = new Drawable[]
-                                    {
-                                        new FillFlowContainer
-                                        {
-                                            Anchor = Anchor.CentreLeft,
-                                            Origin = Anchor.CentreLeft,
-                                            AutoSizeAxes = Axes.Both,
-                                            Direction = FillDirection.Horizontal,
-                                            Spacing = new Vector2(8, 0),
-                                            Children = new Drawable[]
-                                            {
-                                                new SpriteIcon
-                                                {
-                                                    Anchor = Anchor.CentreLeft,
-                                                    Origin = Anchor.CentreLeft,
-                                                    Size = new Vector2(12),
-                                                    Icon = FontAwesome.Solid.Archive,
-                                                    Colour = Color4Extensions.FromHex("ffcc00"),
-                                                },
-                                                archiveBannerText = new OsuSpriteText
-                                                {
-                                                    Anchor = Anchor.CentreLeft,
-                                                    Origin = Anchor.CentreLeft,
-                                                    Font = OsuFont.Torus.With(size: 12, weight: FontWeight.SemiBold),
-                                                    Colour = Color4Extensions.FromHex("ffcc00"),
-                                                    Text = "Viewing archived session",
-                                                }
-                                            }
-                                        },
-                                        new OsuClickableContainer
-                                        {
-                                            Anchor = Anchor.CentreRight,
-                                            Origin = Anchor.CentreRight,
-                                            AutoSizeAxes = Axes.Both,
-                                            Action = () =>
-                                            {
-                                                sessionSelector.SelectLive();
-                                            },
-                                            Child = new OsuSpriteText
-                                            {
-                                                Font = OsuFont.Torus.With(size: 11, weight: FontWeight.Bold),
-                                                Colour = Color4Extensions.FromHex("00ffcc"),
-                                                Text = "[ Return to Live ]",
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                            Horizontal = Padding * 2,
+                            Vertical = Padding,
                         },
-
-                        // Divider 1
-                        new Box
+                        Children = new Drawable[]
                         {
-                            RelativeSizeAxes = Axes.X,
-                            Height = 2,
-                            Colour = Color4.White.Opacity(0.05f),
-                        },
+                            // 0. Session Selector Dropdown
+                            sessionSelector = new SessionSelectorDropdown(
+                                onSessionSelected: id => service.SelectSession(id),
+                                getSessions: () => service.GetAllSessionSummaries()
+                            ),
 
-                        // 1. KPI Cards Grid (4 columns)
-                        new GridContainer
-                        {
-                            RelativeSizeAxes = Axes.X,
-                            Height = 90,
-                            ColumnDimensions = new[]
+                            // 0.5 Archive Banner (hidden by default)
+                            archiveBanner = new Container
                             {
-                                new Dimension(GridSizeMode.Relative, 0.25f),
-                                new Dimension(GridSizeMode.Relative, 0.25f),
-                                new Dimension(GridSizeMode.Relative, 0.25f),
-                                new Dimension(GridSizeMode.Relative, 0.25f),
-                            },
-                            Content = new[]
-                            {
-                                new Drawable[]
+                                RelativeSizeAxes = Axes.X,
+                                Height = 32,
+                                Masking = true,
+                                CornerRadius = 6,
+                                Alpha = 0,
+                                Children = new Drawable[]
                                 {
-                                    new Container
+                                    new Box
                                     {
                                         RelativeSizeAxes = Axes.Both,
-                                        Padding = new MarginPadding { Right = 6 },
-                                        Child = timeCard = new MetricCard(FontAwesome.Solid.Clock, "Session Time", "00:00:00", "Started just now")
+                                        Colour = Color4Extensions.FromHex("ffcc00").Opacity(0.15f),
                                     },
                                     new Container
                                     {
                                         RelativeSizeAxes = Axes.Both,
-                                        Padding = new MarginPadding { Horizontal = 3 },
-                                        Child = playsCard = new MetricCard(FontAwesome.Solid.Play, "Total Plays", "0", "0 passes \u2022 0 fails")
-                                    },
-                                    new Container
-                                    {
-                                        RelativeSizeAxes = Axes.Both,
-                                        Padding = new MarginPadding { Horizontal = 3 },
-                                        Child = accCard = new MetricCard(FontAwesome.Solid.Percent, "Avg Accuracy", "0.00%", "Across all plays")
-                                    },
-                                    new Container
-                                    {
-                                        RelativeSizeAxes = Axes.Both,
-                                        Padding = new MarginPadding { Left = 6 },
-                                        Child = comboCard = new MetricCard(FontAwesome.Solid.Fire, "Max Combo", "0x", "Session peak")
-                                    }
-                                }
-                            }
-                        },
-
-                        // 2. Session Best Score Banner (Clickable)
-                        bestScoreBanner = new BestScoreBanner(openBestScoreBeatmap),
-
-                        // Divider 2
-                        new Box
-                        {
-                            RelativeSizeAxes = Axes.X,
-                            Height = 2,
-                            Colour = Color4.White.Opacity(0.05f),
-                        },
-
-                        // 3. Play History Header + Ruleset Filter + Outcome Filter + Sort Tabs
-                        new GridContainer
-                        {
-                            RelativeSizeAxes = Axes.X,
-                            Height = 36,
-                            ColumnDimensions = new[]
-                            {
-                                new Dimension(GridSizeMode.AutoSize), // Left (Filters)
-                                new Dimension(GridSizeMode.Distributed), // Middle (Search bar)
-                                new Dimension(GridSizeMode.AutoSize) // Right (Sort Tabs)
-                            },
-                            RowDimensions = new[]
-                            {
-                                new Dimension(GridSizeMode.Relative, 1f)
-                            },
-                            Content = new[]
-                            {
-                                new Drawable[]
-                                {
-                                    // Left: History Title + Ruleset Filters + Outcome Filters
-                                    new FillFlowContainer
-                                    {
-                                        Anchor = Anchor.CentreLeft,
-                                        Origin = Anchor.CentreLeft,
-                                        AutoSizeAxes = Axes.Both,
-                                        Direction = FillDirection.Horizontal,
-                                        Spacing = new Vector2(8, 0),
+                                        Padding = new MarginPadding { Horizontal = 12 },
                                         Children = new Drawable[]
                                         {
-                                            historyCountText = new OsuSpriteText
-                                            {
-                                                Anchor = Anchor.CentreLeft,
-                                                Origin = Anchor.CentreLeft,
-                                                Text = "PLAY HISTORY (0 PLAYS)",
-                                                Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
-                                                Colour = ColourProvider.Colour1,
-                                                Margin = new MarginPadding { Right = 4 },
-                                            },
-                                            // Ruleset Filters: all, osu!, osu!mania, osu!taiko, osu!catch
                                             new FillFlowContainer
                                             {
                                                 Anchor = Anchor.CentreLeft,
                                                 Origin = Anchor.CentreLeft,
                                                 AutoSizeAxes = Axes.Both,
                                                 Direction = FillDirection.Horizontal,
-                                                Spacing = new Vector2(3, 0),
-                                                Children = createRulesetFilterButtons()
+                                                Spacing = new Vector2(8, 0),
+                                                Children = new Drawable[]
+                                                {
+                                                    new SpriteIcon
+                                                    {
+                                                        Anchor = Anchor.CentreLeft,
+                                                        Origin = Anchor.CentreLeft,
+                                                        Size = new Vector2(12),
+                                                        Icon = FontAwesome.Solid.Archive,
+                                                        Colour = Color4Extensions.FromHex("ffcc00"),
+                                                    },
+                                                    archiveBannerText = new OsuSpriteText
+                                                    {
+                                                        Anchor = Anchor.CentreLeft,
+                                                        Origin = Anchor.CentreLeft,
+                                                        Font = OsuFont.Torus.With(size: 12, weight: FontWeight.SemiBold),
+                                                        Colour = Color4Extensions.FromHex("ffcc00"),
+                                                        Text = LazerLensStrings.ArchiveBanner(""),
+                                                    }
+                                                }
                                             },
-                                            // Outcome Filters: all, pass, fail
-                                            new FillFlowContainer
+                                            new OsuClickableContainer
                                             {
-                                                Anchor = Anchor.CentreLeft,
-                                                Origin = Anchor.CentreLeft,
+                                                Anchor = Anchor.CentreRight,
+                                                Origin = Anchor.CentreRight,
                                                 AutoSizeAxes = Axes.Both,
-                                                Direction = FillDirection.Horizontal,
-                                                Spacing = new Vector2(3, 0),
-                                                Children = createOutcomeFilterButtons()
+                                                Action = () =>
+                                                {
+                                                    sessionSelector.SelectLive();
+                                                },
+                                                Child = new OsuSpriteText
+                                                {
+                                                    Font = OsuFont.Torus.With(size: 11, weight: FontWeight.Bold),
+                                                    Colour = Color4Extensions.FromHex("00ffcc"),
+                                                    Text = LazerLensStrings.ReturnToLive,
+                                                }
                                             }
                                         }
-                                    },
-                                     // Middle: Search Bar (stretches, with margins)
-                                     new Container
-                                     {
-                                         Anchor = Anchor.CentreLeft,
-                                         Origin = Anchor.CentreLeft,
-                                         RelativeSizeAxes = Axes.X,
-                                         Height = 30,
-                                         Padding = new MarginPadding { Horizontal = 8 },
-                                         Child = searchTextBox = new SearchTextBox
-                                         {
-                                             Anchor = Anchor.CentreLeft,
-                                             Origin = Anchor.CentreLeft,
-                                             RelativeSizeAxes = Axes.X,
-                                             Width = 1.0f,
-                                             PlaceholderText = "Search maps...",
-                                             CornerRadius = 15
-                                         }
-                                     },
-                                    // Right: Sort Tabs
-                                    new FillFlowContainer
-                                    {
-                                        Anchor = Anchor.CentreRight,
-                                        Origin = Anchor.CentreRight,
-                                        AutoSizeAxes = Axes.Both,
-                                        Direction = FillDirection.Horizontal,
-                                        Spacing = new Vector2(4, 0),
-                                        Children = createSortButtons()
                                     }
                                 }
-                            }
-                        },
+                            },
 
-                        // Divider 3
-                        new Box
-                        {
-                            RelativeSizeAxes = Axes.X,
-                            Height = 2,
-                            Colour = Color4.White.Opacity(0.05f),
-                        },
-
-                        // 4. Play History Animated Container
-                        new Container
-                        {
-                            RelativeSizeAxes = Axes.X,
-                            AutoSizeAxes = Axes.Y,
-                            Children = new Drawable[]
+                            // 1. KPI Cards Grid (4 columns)
+                            new GridContainer
                             {
-                                noHistoryText = new OsuSpriteText
+                                RelativeSizeAxes = Axes.X,
+                                Height = 90,
+                                ColumnDimensions = new[]
                                 {
-                                    Anchor = Anchor.TopCentre,
-                                    Origin = Anchor.TopCentre,
-                                    Margin = new MarginPadding { Top = 40, Bottom = 40 },
-                                    Text = "No beatmaps played in this session yet. Go set some scores!",
-                                    Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Regular),
-                                    Colour = Color4.White.Opacity(0.4f),
+                                    new Dimension(GridSizeMode.Relative, 0.25f),
+                                    new Dimension(GridSizeMode.Relative, 0.25f),
+                                    new Dimension(GridSizeMode.Relative, 0.25f),
+                                    new Dimension(GridSizeMode.Relative, 0.25f),
                                 },
-                                historyContainer = new Container
+                                Content = new[]
                                 {
-                                    RelativeSizeAxes = Axes.X,
+                                    new Drawable[]
+                                    {
+                                        new Container
+                                        {
+                                            RelativeSizeAxes = Axes.Both,
+                                            Padding = new MarginPadding { Right = 6 },
+                                            Child = timeCard = new MetricCard(FontAwesome.Solid.Clock, LazerLensStrings.OverlaySessionTime, "00:00:00", LazerLensStrings.TimeStartedJustNow)
+                                        },
+                                        new Container
+                                        {
+                                            RelativeSizeAxes = Axes.Both,
+                                            Padding = new MarginPadding { Horizontal = 3 },
+                                            Child = playsCard = new MetricCard(FontAwesome.Solid.Play, LazerLensStrings.OverlayTotalPlays, "0", LazerLensStrings.PlaysPassFail(0, 0))
+                                        },
+                                        new Container
+                                        {
+                                            RelativeSizeAxes = Axes.Both,
+                                            Padding = new MarginPadding { Horizontal = 3 },
+                                            Child = accCard = new MetricCard(FontAwesome.Solid.Percent, LazerLensStrings.OverlayAvgAccuracy, "0.00%", LazerLensStrings.PlaysRecorded(0))
+                                        },
+                                        new Container
+                                        {
+                                            RelativeSizeAxes = Axes.Both,
+                                            Padding = new MarginPadding { Left = 6 },
+                                            Child = comboCard = new MetricCard(FontAwesome.Solid.Fire, LazerLensStrings.OverlayMaxCombo, "0x", LazerLensStrings.OverlaySessionPPGain("+0.0 pp"))
+                                        }
+                                    }
+                                }
+                            },
+
+                            // 2. Session Best Score Banner (Clickable)
+                            bestScoreBanner = new BestScoreBanner(openBestScoreBeatmap),
+
+                            // 3. Play History Header
+                            historyCountText = new OsuSpriteText
+                            {
+                                Text = LazerLensStrings.HistoryTitle(0),
+                                Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
+                                Colour = ColourProvider.Colour1,
+                                Margin = new MarginPadding { Top = 4 },
+                            },
+
+                            // 4. BeatmapListing-style Filter Control
+                            filterControl = new LazerLensFilterControl(),
+
+                            // 5. Play History Animated Container
+                            new Container
+                            {
+                                RelativeSizeAxes = Axes.X,
+                                AutoSizeAxes = Axes.Y,
+                                Margin = new MarginPadding { Top = 4 },
+                                Children = new Drawable[]
+                                {
+                                    noHistoryText = new OsuSpriteText
+                                    {
+                                        Anchor = Anchor.TopCentre,
+                                        Origin = Anchor.TopCentre,
+                                        Margin = new MarginPadding { Top = 40, Bottom = 40 },
+                                        Text = LazerLensStrings.HistoryEmpty,
+                                        Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Regular),
+                                        Colour = Color4.White.Opacity(0.4f),
+                                    },
+                                    historyContainer = new Container
+                                    {
+                                        RelativeSizeAxes = Axes.X,
+                                    }
                                 }
                             }
                         }
@@ -425,20 +318,39 @@ namespace LazerLens.UI
                 }
             });
 
-            searchTextBox.Current.ValueChanged += _ => RefreshData();
+            filterControl.SearchChanged += _ => RefreshData();
+            filterControl.RulesetChanged += _ => RefreshData();
+            filterControl.OutcomeChanged += _ => RefreshData();
+            filterControl.StatusChanged += _ => RefreshData();
+            filterControl.SortChanged += _ => RefreshData();
+            filterControl.SortDirectionToggled += _ => RefreshData();
 
-            service.OnSessionUpdated += () =>
+            service.OnSessionUpdated += onServiceSessionUpdated;
+
+            service.CompactMode.BindValueChanged(_ => Schedule(() =>
             {
-                Schedule(() =>
-                {
-                    isDataDirty = true;
-                    if (State.Value == Visibility.Visible)
-                        RefreshData();
-                });
-            };
+                if (IsDisposed) return;
+                isDataDirty = true;
+                if (State.Value == Visibility.Visible) RefreshData();
+            }));
 
-            service.CompactMode.BindValueChanged(_ => Schedule(() => { isDataDirty = true; if (State.Value == Visibility.Visible) RefreshData(); }));
-            service.ShowUR.BindValueChanged(_ => Schedule(() => { isDataDirty = true; if (State.Value == Visibility.Visible) RefreshData(); }));
+            service.ShowUR.BindValueChanged(_ => Schedule(() =>
+            {
+                if (IsDisposed) return;
+                isDataDirty = true;
+                if (State.Value == Visibility.Visible) RefreshData();
+            }));
+        }
+
+        private void onServiceSessionUpdated()
+        {
+            Schedule(() =>
+            {
+                if (IsDisposed) return;
+                isDataDirty = true;
+                if (State.Value == Visibility.Visible)
+                    RefreshData();
+            });
         }
 
         private static bool matchesSearch(SessionPlayRecord play, string query)
@@ -462,125 +374,16 @@ namespace LazerLens.UI
                 {
                     lastUpdatedSecond = totalSeconds;
                     string timeStr = $"{(int)duration.TotalHours:D2}:{duration.Minutes:D2}:{duration.Seconds:D2}";
-                    timeCard.UpdateValues(timeStr, $"Started at {service.LiveState.SessionStart.ToString("HH:mm", CultureInfo.InvariantCulture)}");
+                    timeCard.UpdateValues(timeStr, LazerLensStrings.TimeStartedAt(service.LiveState.SessionStart.ToString("HH:mm", CultureInfo.InvariantCulture)));
                 }
             }
-        }
-
-        private Drawable[] createRulesetFilterButtons()
-        {
-            var filters = new[]
-            {
-                (SessionRulesetFilter.All, "all"),
-                (SessionRulesetFilter.Osu, "osu!"),
-                (SessionRulesetFilter.Mania, "osu!mania"),
-                (SessionRulesetFilter.Taiko, "osu!taiko"),
-                (SessionRulesetFilter.Catch, "osu!catch"),
-            };
-
-            var list = new List<Drawable>();
-
-            foreach (var (filter, label) in filters)
-            {
-                var btn = new RulesetPillButton(filter, label, filter == currentRulesetFilter, onRulesetFilterSelected);
-                rulesetButtons.Add(btn);
-                list.Add(btn);
-            }
-
-            return list.ToArray();
-        }
-
-        private void onRulesetFilterSelected(SessionRulesetFilter filter)
-        {
-            if (currentRulesetFilter == filter) return;
-
-            currentRulesetFilter = filter;
-
-            foreach (var btn in rulesetButtons)
-                btn.SetActive(btn.Filter == currentRulesetFilter);
-
-            RefreshData();
-        }
-
-        private Drawable[] createOutcomeFilterButtons()
-        {
-            var filters = new[]
-            {
-                (SessionOutcomeFilter.All, "all"),
-                (SessionOutcomeFilter.Pass, "pass"),
-                (SessionOutcomeFilter.Fail, "fail"),
-            };
-
-            var list = new List<Drawable>();
-
-            foreach (var (filter, label) in filters)
-            {
-                var btn = new OutcomePillButton(filter, label, filter == currentOutcomeFilter, onOutcomeFilterSelected);
-                outcomeButtons.Add(btn);
-                list.Add(btn);
-            }
-
-            return list.ToArray();
-        }
-
-        private void onOutcomeFilterSelected(SessionOutcomeFilter filter)
-        {
-            if (currentOutcomeFilter == filter) return;
-
-            currentOutcomeFilter = filter;
-
-            foreach (var btn in outcomeButtons)
-                btn.SetActive(btn.Filter == currentOutcomeFilter);
-
-            RefreshData();
-        }
-
-        private Drawable[] createSortButtons()
-        {
-            var modes = new[]
-            {
-                SessionSortMode.Recent,
-                SessionSortMode.Score,
-                SessionSortMode.Accuracy,
-                SessionSortMode.PP,
-                SessionSortMode.Combo,
-                SessionSortMode.Grade,
-                SessionSortMode.Difficulty,
-            };
-
-            var list = new List<Drawable>();
-
-            foreach (var mode in modes)
-            {
-                var btn = new SortPillButton(mode, mode == currentSort, sortAscending, onSortSelected);
-                sortButtons.Add(btn);
-                list.Add(btn);
-            }
-
-            return list.ToArray();
-        }
-
-        private void onSortSelected(SessionSortMode mode)
-        {
-            if (currentSort == mode)
-            {
-                sortAscending = !sortAscending;
-            }
-            else
-            {
-                currentSort = mode;
-                sortAscending = false;
-            }
-
-            foreach (var btn in sortButtons)
-                btn.UpdateState(btn.Mode == currentSort, sortAscending);
-
-            RefreshData();
         }
 
         protected override void PopIn()
         {
             base.PopIn();
+
+            settingsModal?.Hide();
 
             headerIconsContainer.FadeIn(250, Easing.OutQuint);
             headerIconsContainer.MoveToY(0, 250, Easing.OutQuint);
@@ -593,12 +396,15 @@ namespace LazerLens.UI
         {
             base.PopOut();
 
+            settingsModal?.Hide();
+
             headerIconsContainer.FadeOut(250, Easing.InQuint);
             headerIconsContainer.MoveToY(-50, 250, Easing.InQuint);
         }
 
         public void RefreshData()
         {
+            if (IsDisposed) return;
             isDataDirty = false;
             var state = service.State;
 
@@ -608,7 +414,7 @@ namespace LazerLens.UI
                 if (service.IsViewingArchive)
                 {
                     archiveBanner.FadeIn(200, Easing.OutQuint);
-                    archiveBannerText.Text = $"Viewing archived session from {state.SessionStart.ToString("dd MMM yyyy, HH:mm", CultureInfo.InvariantCulture)}";
+                    archiveBannerText.Text = LazerLensStrings.ArchiveBanner(state.SessionStart.ToString("dd MMM yyyy, HH:mm", CultureInfo.InvariantCulture));
                 }
                 else
                 {
@@ -619,70 +425,72 @@ namespace LazerLens.UI
             // 1. Session Duration
             if (service.IsViewingArchive)
             {
-                // For archived sessions, show the stored duration
                 var archivedDuration = state.Plays.Count > 0
                     ? state.Plays.Last().Timestamp - state.SessionStart
                     : TimeSpan.Zero;
                 string timeStr = $"{(int)archivedDuration.TotalHours:D2}:{archivedDuration.Minutes:D2}:{archivedDuration.Seconds:D2}";
-                timeCard?.UpdateValues(timeStr, $"Archived: {state.SessionStart.ToString("dd MMM HH:mm", CultureInfo.InvariantCulture)}");
+                timeCard?.UpdateValues(timeStr, LazerLensStrings.TimeArchived(state.SessionStart.ToString("dd MMM HH:mm", CultureInfo.InvariantCulture)));
             }
             else
             {
                 var duration = state.SessionDuration;
                 string timeStr = $"{(int)duration.TotalHours:D2}:{duration.Minutes:D2}:{duration.Seconds:D2}";
-                timeCard?.UpdateValues(timeStr, $"Started at {state.SessionStart.ToString("HH:mm", CultureInfo.InvariantCulture)}");
+                timeCard?.UpdateValues(timeStr, LazerLensStrings.TimeStartedAt(state.SessionStart.ToString("HH:mm", CultureInfo.InvariantCulture)));
             }
 
             // 2. Total Plays
-            playsCard?.UpdateValues(state.TotalPlays.ToString(CultureInfo.InvariantCulture), $"{state.TotalPasses} pass \u2022 {state.TotalFails} fail");
+            playsCard?.UpdateValues(state.TotalPlays.ToString(CultureInfo.InvariantCulture), LazerLensStrings.PlaysPassFail(state.TotalPasses, state.TotalFails));
 
             // 3. Average Accuracy & UR
             var urPlays = state.Plays.Where(p => p.UnstableRate.HasValue && p.UnstableRate.Value > 0).ToList();
-            string urAvgStr = urPlays.Count > 0 ? $" \u2022 {urPlays.Average(p => p.UnstableRate!.Value):F1} avg UR" : "";
-            accCard?.UpdateValues($"{state.AverageAccuracy.ToString("F2", CultureInfo.InvariantCulture)}%", $"{state.Plays.Count} recorded plays{urAvgStr}");
+            string urAvgStr = urPlays.Count > 0 ? LazerLensStrings.AvgUr(urPlays.Average(p => p.UnstableRate!.Value).ToString("F1", CultureInfo.InvariantCulture)).ToString() : "";
+            accCard?.UpdateValues($"{state.AverageAccuracy.ToString("F2", CultureInfo.InvariantCulture)}%", LazerLensStrings.AccPlaysUr(state.Plays.Count, urAvgStr));
 
             // 4. Max Combo / Session PP Gain
             string ppGainStr = state.SessionPPGain >= 0 ? $"+{state.SessionPPGain.ToString("F1", CultureInfo.InvariantCulture)} pp" : $"{state.SessionPPGain.ToString("F1", CultureInfo.InvariantCulture)} pp";
-            comboCard?.UpdateValues($"{state.MaxCombo.ToString("N0", CultureInfo.InvariantCulture)}x", $"Session PP: {ppGainStr}");
+            comboCard?.UpdateValues($"{state.MaxCombo.ToString("N0", CultureInfo.InvariantCulture)}x", LazerLensStrings.OverlaySessionPPGain(ppGainStr));
 
             // 5. Best Score Banner
             bestScoreBanner?.UpdateScore(state.BestScore);
 
-            // 6. Filter by selected Ruleset and Outcome
+            if (filterControl == null) return;
+
+            // 6. Filter by selected Ruleset, Outcome, Status, and Search
             var filteredPlays = state.Plays.Where(p =>
-                matchesRuleset(p, currentRulesetFilter) &&
-                matchesOutcome(p, currentOutcomeFilter) &&
-                matchesSearch(p, searchTextBox.Current.Value)
+                matchesRuleset(p, filterControl.CurrentRuleset) &&
+                matchesOutcome(p, filterControl.CurrentOutcome) &&
+                matchesStatus(p, filterControl.CurrentStatus) &&
+                matchesSearch(p, filterControl.SearchTextBox?.Current.Value ?? "")
             );
 
-            // 7. Smoothly animate and rearrange existing Play History Items
-            IEnumerable<SessionPlayRecord> sortedPlays = currentSort switch
+            // 7. Sort
+            IEnumerable<SessionPlayRecord> sortedPlays = filterControl.CurrentSort switch
             {
-                SessionSortMode.Score => sortAscending
+                SessionSortMode.Score => filterControl.SortAscending
                     ? filteredPlays.OrderBy(p => p.TotalScore)
                     : filteredPlays.OrderByDescending(p => p.TotalScore),
 
-                SessionSortMode.Accuracy => sortAscending
+                SessionSortMode.Accuracy => filterControl.SortAscending
                     ? filteredPlays.OrderBy(p => p.Accuracy)
                     : filteredPlays.OrderByDescending(p => p.Accuracy),
 
-                SessionSortMode.PP => sortAscending
+                SessionSortMode.PP => filterControl.SortAscending
                     ? filteredPlays.OrderBy(p => p.PerformancePoints ?? 0).ThenBy(p => p.TotalScore)
                     : filteredPlays.OrderByDescending(p => p.PerformancePoints ?? 0).ThenByDescending(p => p.TotalScore),
 
-                SessionSortMode.Combo => sortAscending
+                SessionSortMode.Combo => filterControl.SortAscending
                     ? filteredPlays.OrderBy(p => p.MaxCombo)
                     : filteredPlays.OrderByDescending(p => p.MaxCombo),
 
-                SessionSortMode.Grade => sortAscending
+                SessionSortMode.Grade => filterControl.SortAscending
                     ? filteredPlays.OrderByDescending(p => getGradeRank(p.Rank)).ThenBy(p => p.Accuracy)
                     : filteredPlays.OrderBy(p => getGradeRank(p.Rank)).ThenByDescending(p => p.Accuracy),
 
-                SessionSortMode.Difficulty => sortAscending
+                SessionSortMode.Difficulty => filterControl.SortAscending
                     ? filteredPlays.OrderBy(p => p.StarRating)
                     : filteredPlays.OrderByDescending(p => p.StarRating),
 
-                _ => sortAscending
+                _ => filterControl.SortAscending
                     ? filteredPlays.AsEnumerable() // Oldest first
                     : filteredPlays.AsEnumerable().Reverse() // Recent (Newest first)
             };
@@ -690,14 +498,22 @@ namespace LazerLens.UI
             var playList = sortedPlays.ToList();
 
             if (historyCountText != null)
-                historyCountText.Text = $"PLAY HISTORY ({playList.Count} PLAYS)";
+                historyCountText.Text = LazerLensStrings.HistoryTitle(playList.Count);
 
             if (noHistoryText != null)
+            {
                 noHistoryText.Alpha = playList.Count == 0 ? 1 : 0;
+                if (playList.Count == 0)
+                {
+                    noHistoryText.Text = state.Plays.Count > 0
+                        ? LazerLensStrings.FilterEmpty
+                        : LazerLensStrings.HistoryEmpty;
+                }
+            }
 
             if (historyContainer == null) return;
 
-            // Remove stale items (e.g. on Filter change)
+            // Remove stale items
             var currentIds = new HashSet<Guid>(playList.Select(p => p.Id));
             var toRemove = itemMap.Keys.Where(k => !currentIds.Contains(k)).ToList();
             foreach (var id in toRemove)
@@ -709,7 +525,7 @@ namespace LazerLens.UI
                 }
             }
 
-            // Animate items smoothly to their new Y positions without disposing / recreating
+            // Animate items smoothly to their new Y positions
             for (int i = 0; i < playList.Count; i++)
             {
                 var play = playList[i];
@@ -728,7 +544,6 @@ namespace LazerLens.UI
                 }
                 else
                 {
-                    // Existing item - update and animate it to the correct row
                     item.UpdateData(play);
                     item.MoveToY(targetY, 300, Easing.OutQuint);
                 }
@@ -755,6 +570,20 @@ namespace LazerLens.UI
             _ => true
         };
 
+        private static bool matchesStatus(SessionPlayRecord play, SessionStatusFilter filter) => filter switch
+        {
+            SessionStatusFilter.All => true,
+            SessionStatusFilter.Ranked => play.Status.Equals("Ranked", StringComparison.OrdinalIgnoreCase) ||
+                                          play.Status.Equals("Approved", StringComparison.OrdinalIgnoreCase) ||
+                                          play.Status.Equals("Qualified", StringComparison.OrdinalIgnoreCase),
+            SessionStatusFilter.Loved => play.Status.Equals("Loved", StringComparison.OrdinalIgnoreCase),
+            SessionStatusFilter.Graveyard => play.Status.Equals("Graveyard", StringComparison.OrdinalIgnoreCase) ||
+                                             play.Status.Equals("Pending", StringComparison.OrdinalIgnoreCase) ||
+                                             play.Status.Equals("WIP", StringComparison.OrdinalIgnoreCase) ||
+                                             play.Status.Equals("Local", StringComparison.OrdinalIgnoreCase),
+            _ => true
+        };
+
         private static int getGradeRank(ScoreRank rank) => rank switch
         {
             ScoreRank.XH => 0,
@@ -771,8 +600,7 @@ namespace LazerLens.UI
 
         private void openPluginSettings()
         {
-            osucc.UI.Plugins.PluginsOverlayComponent.Instance?.ShowDetails("lazer-lens");
-            Hide();
+            settingsModal.Toggle();
         }
 
         private void openBestScoreBeatmap()
@@ -788,13 +616,19 @@ namespace LazerLens.UI
                 overlay?.FetchAndShowBeatmapSet(best.OnlineBeatmapSetID);
         }
 
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+            service.OnSessionUpdated -= onServiceSessionUpdated;
+        }
+
         private sealed partial class BestScoreBanner : OsuClickableContainer, IHasTooltip
         {
             [Resolved]
             private OverlayColourProvider colourProvider { get; set; } = null!;
 
             public override LocalisableString TooltipText => currentBest != null && (currentBest.OnlineBeatmapID > 0 || currentBest.OnlineBeatmapSetID > 0)
-                ? "Click to view beatmap info in overlay"
+                ? LazerLensStrings.TooltipViewBeatmap
                 : string.Empty;
 
             private SessionPlayRecord? currentBest;
@@ -875,15 +709,15 @@ namespace LazerLens.UI
                                         {
                                             titleText = new OsuSpriteText
                                             {
-                                                Text = "SESSION BEST SCORE",
+                                                Text = LazerLensStrings.BestScoreTitle,
                                                 Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
                                                 Colour = Color4.White,
                                             },
                                             subtitleText = new OsuSpriteText
                                             {
-                                                Text = "No scores recorded yet in this session",
-                                                Font = OsuFont.Torus.With(size: 13, weight: FontWeight.Regular),
-                                                Colour = Color4.White.Opacity(0.8f),
+                                                Text = LazerLensStrings.BestScoreEmpty,
+                                                Font = OsuFont.Torus.With(size: 12, weight: FontWeight.Regular),
+                                                Colour = Color4.White.Opacity(0.6f),
                                             }
                                         }
                                     }
@@ -908,13 +742,21 @@ namespace LazerLens.UI
                 {
                     string bestStarPrefix = best.StarRating > 0 ? $"[\u2605 {best.StarRating.ToString("F2", CultureInfo.InvariantCulture)}] " : "";
                     titleText.Text = $"{bestStarPrefix}{best.BeatmapArtist} - {best.BeatmapTitle} [{best.DifficultyName}]";
+                    string urString = best.UnstableRate.HasValue && best.UnstableRate.Value > 0 ? $" \u2022 {best.UnstableRate.Value.ToString("F1", CultureInfo.InvariantCulture)} UR" : "";
                     string ppString = best.PerformancePoints.HasValue && best.PerformancePoints.Value > 0 ? $" \u2022 {best.PerformancePoints.Value.ToString("F0", CultureInfo.InvariantCulture)}pp" : "";
-                    subtitleText.Text = $"Grade: {best.Grade} \u2022 {best.Accuracy.ToString("F2", CultureInfo.InvariantCulture)}% \u2022 {best.TotalScore.ToString("N0", CultureInfo.InvariantCulture)} pts \u2022 {best.MaxCombo}x combo{ppString} \u2022 {best.Status}";
+                    subtitleText.Text = LazerLensStrings.BestScoreDetail(
+                        best.Grade,
+                        best.Accuracy.ToString("F2", CultureInfo.InvariantCulture),
+                        best.TotalScore.ToString("N0", CultureInfo.InvariantCulture),
+                        best.MaxCombo,
+                        $"{urString}{ppString}",
+                        best.Status
+                    );
                 }
                 else
                 {
-                    titleText.Text = "SESSION BEST SCORE";
-                    subtitleText.Text = "No scores recorded yet in this session";
+                    titleText.Text = LazerLensStrings.BestScoreTitle;
+                    subtitleText.Text = LazerLensStrings.BestScoreEmpty;
                 }
             }
 
@@ -932,296 +774,12 @@ namespace LazerLens.UI
             }
         }
 
-        private sealed partial class RulesetPillButton : ClickableContainer
-        {
-            [Resolved]
-            private OverlayColourProvider colourProvider { get; set; } = null!;
-
-            public SessionRulesetFilter Filter { get; }
-            private readonly string label;
-            private readonly Action<SessionRulesetFilter> onSelect;
-            private bool isActive;
-
-            private readonly Box background;
-            private readonly OsuSpriteText textSprite;
-
-            public RulesetPillButton(SessionRulesetFilter filter, string label, bool active, Action<SessionRulesetFilter> onSelect)
-            {
-                Filter = filter;
-                this.label = label;
-                isActive = active;
-                this.onSelect = onSelect;
-
-                AutoSizeAxes = Axes.Both;
-                Action = () => onSelect(Filter);
-
-                InternalChild = new CircularContainer
-                {
-                    AutoSizeAxes = Axes.Both,
-                    Masking = true,
-                    Children = new Drawable[]
-                    {
-                        background = new Box
-                        {
-                            RelativeSizeAxes = Axes.Both,
-                        },
-                        new Container
-                        {
-                            AutoSizeAxes = Axes.Both,
-                            Padding = new MarginPadding { Horizontal = 8, Vertical = 4 },
-                            Child = textSprite = new OsuSpriteText
-                            {
-                                Text = label,
-                                Font = OsuFont.Torus.With(size: 11, weight: FontWeight.SemiBold),
-                            }
-                        }
-                    }
-                };
-            }
-
-            [BackgroundDependencyLoader]
-            private void load()
-            {
-                updateVisuals();
-            }
-
-            public void SetActive(bool active)
-            {
-                isActive = active;
-                updateVisuals();
-            }
-
-            private void updateVisuals()
-            {
-                if (colourProvider == null) return;
-
-                if (isActive)
-                {
-                    background.Colour = colourProvider.Colour1;
-                    textSprite.Colour = Color4.White;
-                }
-                else
-                {
-                    background.Colour = colourProvider.Background4;
-                    textSprite.Colour = Color4.White.Opacity(0.55f);
-                }
-            }
-
-            protected override bool OnHover(HoverEvent e)
-            {
-                if (!isActive)
-                    background.FadeColour(colourProvider.Background2, 100);
-                return base.OnHover(e);
-            }
-
-            protected override void OnHoverLost(HoverLostEvent e)
-            {
-                if (!isActive)
-                    background.FadeColour(colourProvider.Background4, 100);
-                base.OnHoverLost(e);
-            }
-        }
-
-        private sealed partial class OutcomePillButton : ClickableContainer
-        {
-            [Resolved]
-            private OverlayColourProvider colourProvider { get; set; } = null!;
-
-            public SessionOutcomeFilter Filter { get; }
-            private readonly string label;
-            private readonly Action<SessionOutcomeFilter> onSelect;
-            private bool isActive;
-
-            private readonly Box background;
-            private readonly OsuSpriteText textSprite;
-
-            public OutcomePillButton(SessionOutcomeFilter filter, string label, bool active, Action<SessionOutcomeFilter> onSelect)
-            {
-                Filter = filter;
-                this.label = label;
-                isActive = active;
-                this.onSelect = onSelect;
-
-                AutoSizeAxes = Axes.Both;
-                Action = () => onSelect(Filter);
-
-                InternalChild = new CircularContainer
-                {
-                    AutoSizeAxes = Axes.Both,
-                    Masking = true,
-                    Children = new Drawable[]
-                    {
-                        background = new Box
-                        {
-                            RelativeSizeAxes = Axes.Both,
-                        },
-                        new Container
-                        {
-                            AutoSizeAxes = Axes.Both,
-                            Padding = new MarginPadding { Horizontal = 8, Vertical = 4 },
-                            Child = textSprite = new OsuSpriteText
-                            {
-                                Text = label,
-                                Font = OsuFont.Torus.With(size: 11, weight: FontWeight.SemiBold),
-                            }
-                        }
-                    }
-                };
-            }
-
-            [BackgroundDependencyLoader]
-            private void load()
-            {
-                updateVisuals();
-            }
-
-            public void SetActive(bool active)
-            {
-                isActive = active;
-                updateVisuals();
-            }
-
-            private void updateVisuals()
-            {
-                if (colourProvider == null) return;
-
-                if (isActive)
-                {
-                    background.Colour = Filter switch
-                    {
-                        SessionOutcomeFilter.Pass => Color4.LimeGreen,
-                        SessionOutcomeFilter.Fail => Color4.Coral,
-                        _ => colourProvider.Colour0
-                    };
-                    textSprite.Colour = Color4.White;
-                }
-                else
-                {
-                    background.Colour = colourProvider.Background4;
-                    textSprite.Colour = Color4.White.Opacity(0.55f);
-                }
-            }
-
-            protected override bool OnHover(HoverEvent e)
-            {
-                if (!isActive)
-                    background.FadeColour(colourProvider.Background2, 100);
-                return base.OnHover(e);
-            }
-
-            protected override void OnHoverLost(HoverLostEvent e)
-            {
-                if (!isActive)
-                    background.FadeColour(colourProvider.Background4, 100);
-                base.OnHoverLost(e);
-            }
-        }
-
-        private sealed partial class SortPillButton : ClickableContainer
-        {
-            [Resolved]
-            private OverlayColourProvider colourProvider { get; set; } = null!;
-
-            public SessionSortMode Mode { get; }
-            private readonly Action<SessionSortMode> onSelect;
-            private bool isActive;
-            private bool isAscending;
-
-            private readonly Box background;
-            private readonly OsuSpriteText textSprite;
-
-            public SortPillButton(SessionSortMode mode, bool active, bool ascending, Action<SessionSortMode> onSelect)
-            {
-                Mode = mode;
-                isActive = active;
-                isAscending = ascending;
-                this.onSelect = onSelect;
-
-                AutoSizeAxes = Axes.Both;
-                Action = () => onSelect(Mode);
-
-                InternalChild = new CircularContainer
-                {
-                    AutoSizeAxes = Axes.Both,
-                    Masking = true,
-                    Children = new Drawable[]
-                    {
-                        background = new Box
-                        {
-                            RelativeSizeAxes = Axes.Both,
-                        },
-                        new Container
-                        {
-                            AutoSizeAxes = Axes.Both,
-                            Padding = new MarginPadding { Horizontal = 9, Vertical = 4 },
-                            Child = textSprite = new OsuSpriteText
-                            {
-                                Text = getDisplayText(),
-                                Font = OsuFont.Torus.With(size: 11, weight: FontWeight.SemiBold),
-                            }
-                        }
-                    }
-                };
-            }
-
-            [BackgroundDependencyLoader]
-            private void load()
-            {
-                updateVisuals();
-            }
-
-            public void UpdateState(bool active, bool ascending)
-            {
-                isActive = active;
-                isAscending = ascending;
-                updateVisuals();
-            }
-
-            private string getDisplayText()
-            {
-                if (!isActive) return Mode.ToString();
-                return isAscending ? $"{Mode} \u25B2" : $"{Mode} \u25BC";
-            }
-
-            private void updateVisuals()
-            {
-                if (colourProvider == null) return;
-
-                textSprite.Text = getDisplayText();
-
-                if (isActive)
-                {
-                    background.Colour = colourProvider.Colour0;
-                    textSprite.Colour = Color4.White;
-                }
-                else
-                {
-                    background.Colour = colourProvider.Background3;
-                    textSprite.Colour = Color4.White.Opacity(0.6f);
-                }
-            }
-
-            protected override bool OnHover(HoverEvent e)
-            {
-                if (!isActive)
-                    background.FadeColour(colourProvider.Background2, 100);
-                return base.OnHover(e);
-            }
-
-            protected override void OnHoverLost(HoverLostEvent e)
-            {
-                if (!isActive)
-                    background.FadeColour(colourProvider.Background3, 100);
-                base.OnHoverLost(e);
-            }
-        }
-
         private sealed partial class HeaderSettingsButton : ClickableContainer, IHasTooltip
         {
             [Resolved]
             private OverlayColourProvider colourProvider { get; set; } = null!;
 
-            public LocalisableString TooltipText => "Lazer Lens Settings";
+            public LocalisableString TooltipText => LazerLensStrings.HeaderSettingsTooltip;
 
             private readonly Box background;
             private readonly SpriteIcon icon;
@@ -1231,7 +789,7 @@ namespace LazerLens.UI
                 Size = new Vector2(36);
                 Action = action;
 
-                InternalChild = new CircularContainer
+                Child = new CircularContainer
                 {
                     RelativeSizeAxes = Axes.Both,
                     Masking = true,
@@ -1270,6 +828,331 @@ namespace LazerLens.UI
             {
                 background.FadeColour(colourProvider.Background4, 100);
                 icon.RotateTo(0, 200, Easing.OutQuint);
+                base.OnHoverLost(e);
+            }
+        }
+
+        private sealed partial class LazerLensSettingsModal : CompositeDrawable
+        {
+            [Resolved]
+            private OverlayColourProvider colourProvider { get; set; } = null!;
+
+            private readonly LazerLensService service;
+            private Container modalCard = null!;
+
+            public LazerLensSettingsModal(LazerLensService service)
+            {
+                this.service = service;
+                RelativeSizeAxes = Axes.Both;
+                Depth = -100;
+                Alpha = 0;
+            }
+
+            [BackgroundDependencyLoader]
+            private void load()
+            {
+                InternalChildren = new Drawable[]
+                {
+                    // Dim background (clicking closes modal, absorbs positional input to block tooltips underneath)
+                    new ClickableContainer
+                    {
+                        RelativeSizeAxes = Axes.Both,
+                        Action = Hide,
+                        Child = new Box
+                        {
+                            RelativeSizeAxes = Axes.Both,
+                            Colour = Color4.Black.Opacity(0.65f),
+                        }
+                    },
+                    // Modal Card
+                    modalCard = new Container
+                    {
+                        Anchor = Anchor.Centre,
+                        Origin = Anchor.Centre,
+                        Width = 520,
+                        AutoSizeAxes = Axes.Y,
+                        Masking = true,
+                        CornerRadius = 12,
+                        Children = new Drawable[]
+                        {
+                            new Box
+                            {
+                                RelativeSizeAxes = Axes.Both,
+                                Colour = colourProvider.Background5,
+                            },
+                            new FillFlowContainer
+                            {
+                                RelativeSizeAxes = Axes.X,
+                                AutoSizeAxes = Axes.Y,
+                                Direction = FillDirection.Vertical,
+                                Children = new Drawable[]
+                                {
+                                    // Header
+                                    new Container
+                                    {
+                                        RelativeSizeAxes = Axes.X,
+                                        Height = 44,
+                                        Padding = new MarginPadding { Horizontal = 16 },
+                                        Children = new Drawable[]
+                                        {
+                                            new FillFlowContainer
+                                            {
+                                                Anchor = Anchor.CentreLeft,
+                                                Origin = Anchor.CentreLeft,
+                                                AutoSizeAxes = Axes.Both,
+                                                Direction = FillDirection.Horizontal,
+                                                Spacing = new Vector2(8, 0),
+                                                Children = new Drawable[]
+                                                {
+                                                    new SpriteIcon
+                                                    {
+                                                        Anchor = Anchor.CentreLeft,
+                                                        Origin = Anchor.CentreLeft,
+                                                        Size = new Vector2(16),
+                                                        Icon = FontAwesome.Solid.Cog,
+                                                        Colour = colourProvider.Colour1,
+                                                    },
+                                                    new OsuSpriteText
+                                                    {
+                                                        Anchor = Anchor.CentreLeft,
+                                                        Origin = Anchor.CentreLeft,
+                                                        Text = LazerLensStrings.HeaderSettingsTooltip,
+                                                        Font = OsuFont.Torus.With(size: 15, weight: FontWeight.Bold),
+                                                        Colour = Color4.White,
+                                                    }
+                                                }
+                                            },
+                                            new OsuClickableContainer
+                                            {
+                                                Anchor = Anchor.CentreRight,
+                                                Origin = Anchor.CentreRight,
+                                                Size = new Vector2(24),
+                                                Action = Hide,
+                                                Child = new SpriteIcon
+                                                {
+                                                    Anchor = Anchor.Centre,
+                                                    Origin = Anchor.Centre,
+                                                    Size = new Vector2(12),
+                                                    Icon = FontAwesome.Solid.Times,
+                                                    Colour = colourProvider.Content2,
+                                                }
+                                            }
+                                        }
+                                    },
+                                    new Box
+                                    {
+                                        RelativeSizeAxes = Axes.X,
+                                        Height = 1,
+                                        Colour = colourProvider.Background4,
+                                    },
+                                    // Body
+                                    new Container
+                                    {
+                                        RelativeSizeAxes = Axes.X,
+                                        AutoSizeAxes = Axes.Y,
+                                        Padding = new MarginPadding(16),
+                                        Child = new FillFlowContainer
+                                        {
+                                            RelativeSizeAxes = Axes.X,
+                                            AutoSizeAxes = Axes.Y,
+                                            Direction = FillDirection.Vertical,
+                                            Spacing = new Vector2(0, 6),
+                                            Children = new Drawable[]
+                                            {
+                                                // Section 1: Gameplay & Tracking
+                                                new OsuSpriteText
+                                                {
+                                                    Text = LazerLensStrings.SettingsSectionGameplay,
+                                                    Font = OsuFont.Torus.With(size: 11, weight: FontWeight.Bold),
+                                                    Colour = colourProvider.Colour1,
+                                                    Margin = new MarginPadding { Top = 2, Bottom = 2 },
+                                                },
+                                                new SettingsCheckbox
+                                                {
+                                                    LabelText = LazerLensStrings.SettingsNotificationsCaption,
+                                                    TooltipText = LazerLensStrings.SettingsNotificationsSubtitle,
+                                                    Current = service.NotifyOnPlay,
+                                                },
+                                                new SettingsCheckbox
+                                                {
+                                                    LabelText = LazerLensStrings.SettingsTrackRetriesCaption,
+                                                    TooltipText = LazerLensStrings.SettingsTrackRetriesSubtitle,
+                                                    Current = service.TrackRetries,
+                                                },
+
+                                                // Section 2: Interface & Visuals
+                                                new OsuSpriteText
+                                                {
+                                                    Text = LazerLensStrings.SettingsSectionVisuals,
+                                                    Font = OsuFont.Torus.With(size: 11, weight: FontWeight.Bold),
+                                                    Colour = colourProvider.Colour1,
+                                                    Margin = new MarginPadding { Top = 8, Bottom = 2 },
+                                                },
+                                                new SettingsCheckbox
+                                                {
+                                                    LabelText = LazerLensStrings.SettingsCompactHistoryCaption,
+                                                    TooltipText = LazerLensStrings.SettingsCompactHistorySubtitle,
+                                                    Current = service.CompactMode,
+                                                },
+                                                new SettingsCheckbox
+                                                {
+                                                    LabelText = LazerLensStrings.SettingsShowURCaption,
+                                                    TooltipText = LazerLensStrings.SettingsShowURSubtitle,
+                                                    Current = service.ShowUR,
+                                                },
+
+                                                // Section 3: Data & Storage
+                                                new OsuSpriteText
+                                                {
+                                                    Text = LazerLensStrings.SettingsSectionData,
+                                                    Font = OsuFont.Torus.With(size: 11, weight: FontWeight.Bold),
+                                                    Colour = colourProvider.Colour1,
+                                                    Margin = new MarginPadding { Top = 8, Bottom = 2 },
+                                                },
+                                                new Container
+                                                {
+                                                    RelativeSizeAxes = Axes.X,
+                                                    Height = 36,
+                                                    Margin = new MarginPadding { Top = 4 },
+                                                    Child = new GridContainer
+                                                    {
+                                                        RelativeSizeAxes = Axes.Both,
+                                                        ColumnDimensions = new[]
+                                                        {
+                                                            new Dimension(GridSizeMode.Relative, 0.5f),
+                                                            new Dimension(GridSizeMode.Relative, 0.5f),
+                                                        },
+                                                        Content = new[]
+                                                        {
+                                                            new Drawable[]
+                                                            {
+                                                                new Container
+                                                                {
+                                                                    RelativeSizeAxes = Axes.Both,
+                                                                    Padding = new MarginPadding { Right = 4 },
+                                                                    Child = new SettingsActionButton(LazerLensStrings.SettingsOpenDirectory, FontAwesome.Solid.FolderOpen, () => service.OpenSessionsDirectory())
+                                                                },
+                                                                new Container
+                                                                {
+                                                                    RelativeSizeAxes = Axes.Both,
+                                                                    Padding = new MarginPadding { Left = 4 },
+                                                                    Child = new SettingsActionButton(LazerLensStrings.SettingsExportCsv, FontAwesome.Solid.FileExport, () =>
+                                                                    {
+                                                                        LazerLensPlugin.Instance?.ExportSessionsToCsv();
+                                                                    })
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                };
+            }
+
+            public new void Show()
+            {
+                if (IsDisposed) return;
+                IsSettingsModalOpen = true;
+                this.FadeIn(200, Easing.OutQuint);
+                modalCard.ScaleTo(0.95f).ScaleTo(1f, 250, Easing.OutQuint);
+            }
+
+            public new void Hide()
+            {
+                if (IsDisposed) return;
+                IsSettingsModalOpen = false;
+                this.FadeOut(150, Easing.InQuint);
+                modalCard.ScaleTo(0.95f, 150, Easing.InQuint);
+            }
+
+            public void Toggle()
+            {
+                if (Alpha > 0.5f)
+                    Hide();
+                else
+                    Show();
+            }
+        }
+
+        private sealed partial class SettingsActionButton : OsuClickableContainer
+        {
+            [Resolved]
+            private OverlayColourProvider colourProvider { get; set; } = null!;
+
+            private readonly LocalisableString label;
+            private readonly IconUsage icon;
+            private Box background = null!;
+
+            public SettingsActionButton(LocalisableString label, IconUsage icon, Action action)
+            {
+                this.label = label;
+                this.icon = icon;
+                this.Action = action;
+
+                RelativeSizeAxes = Axes.Both;
+            }
+
+            [BackgroundDependencyLoader]
+            private void load()
+            {
+                Child = new Container
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    Masking = true,
+                    CornerRadius = 8,
+                    Children = new Drawable[]
+                    {
+                        background = new Box
+                        {
+                            RelativeSizeAxes = Axes.Both,
+                            Colour = colourProvider.Background4,
+                        },
+                        new FillFlowContainer
+                        {
+                            Anchor = Anchor.Centre,
+                            Origin = Anchor.Centre,
+                            AutoSizeAxes = Axes.Both,
+                            Direction = FillDirection.Horizontal,
+                            Spacing = new Vector2(8, 0),
+                            Children = new Drawable[]
+                            {
+                                new SpriteIcon
+                                {
+                                    Anchor = Anchor.Centre,
+                                    Origin = Anchor.Centre,
+                                    Size = new Vector2(14),
+                                    Icon = icon,
+                                    Colour = colourProvider.Colour1,
+                                },
+                                new OsuSpriteText
+                                {
+                                    Anchor = Anchor.Centre,
+                                    Origin = Anchor.Centre,
+                                    Text = label,
+                                    Font = OsuFont.Torus.With(size: 12, weight: FontWeight.SemiBold),
+                                    Colour = Color4.White,
+                                }
+                            }
+                        }
+                    }
+                };
+            }
+
+            protected override bool OnHover(HoverEvent e)
+            {
+                background.FadeColour(colourProvider.Background3, 100);
+                return base.OnHover(e);
+            }
+
+            protected override void OnHoverLost(HoverLostEvent e)
+            {
+                background.FadeColour(colourProvider.Background4, 100);
                 base.OnHoverLost(e);
             }
         }

@@ -7,37 +7,35 @@
     <AssemblyName>LazerLens</AssemblyName>
     <RootNamespace>LazerLens</RootNamespace>
     <IsPlugin>true</IsPlugin>
-    <PluginId>lazer-lens</PluginId>
-    <PluginName>Lazer Lens</PluginName>
-    <PluginDescription>Tracks your play session metrics, play history, average accuracy, and session bests with an in-game overlay.</PluginDescription>
-    <AssemblyVersion>1.1.2</AssemblyVersion>
-    <FileVersion>1.1.2</FileVersion>
-    <PluginVersion>1.1.2</PluginVersion>
-    <Version>1.1.2</Version>
-    <PluginPriority>60</PluginPriority>
-    <PluginIconGlyph>ChartBar</PluginIconGlyph>
-    <PluginRepository>https://github.com/Meyblow/LazerLens</PluginRepository>
+    <PackageId>lazer-lens</PackageId>
+    <Title>Lazer Lens</Title>
+    <Description>Tracks your play session metrics, play history, average accuracy, and session bests with an in-game overlay.</Description>
+    <Version>1.2.0</Version>
+    <Priority>60</Priority>
+    <IconGlyph>ChartBar</IconGlyph>
+    <RepositoryUrl>https://github.com/Meyblow/LazerLens</RepositoryUrl>
+    <PackageTags>menu;song-select;settings;profile;tools;ui;visual</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
-    <PluginAuthor Include="Meyblow" Email="" OsuProfileId="39791134" />
-    <PluginTag Include="menu" />
-    <PluginTag Include="song-select" />
-    <PluginTag Include="settings" />
-    <PluginTag Include="profile" />
-    <PluginTag Include="tools" />
-    <PluginTag Include="ui" />
-    <PluginTag Include="visual" />
+    <Author Include="Meyblow" OsuProfileId="39791134" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="osucc.Host" />
-    <PackageReference Include="osucc.Build" PrivateAssets="all" />
-    <PackageReference Include="ppy.osu.Game" />
+    <PackageReference Include="osucc.Api" Version="2.2.0" />
+    <PackageReference Include="osucc.Build" Version="2.2.0" PrivateAssets="all" />
+    <PackageReference Include="ppy.osu.Game" Version="2026.702.1" />
   </ItemGroup>
 
-</Project>
+  <ItemGroup>
+    <EmbeddedResource Include="Localisation/*.json" />
+  </ItemGroup>
 
+  <Target Name="DeployToOsuCc" AfterTargets="Build" Condition="Exists('$(APPDATA)\osu\osu-cc\plugins\lazer-lens')">
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(APPDATA)\osu\osu-cc\plugins\lazer-lens" ContinueOnError="true" />
+  </Target>
+
+</Project>
 
 
 

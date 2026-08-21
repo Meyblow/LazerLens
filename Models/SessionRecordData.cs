@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using osu.Game.Rulesets.Scoring;
@@ -113,7 +113,10 @@ namespace LazerLens.Models
                     }
                 }
 
-                Enum.TryParse<ScoreRank>(playDto.Rank, out var rank);
+                if (!Enum.TryParse<ScoreRank>(playDto.Rank, out var rank))
+                {
+                    rank = ScoreRank.A;
+                }
 
                 var play = new SessionPlayRecord(
                     playDto.BeatmapTitle,
@@ -166,4 +169,3 @@ namespace LazerLens.Models
         }
     }
 }
-

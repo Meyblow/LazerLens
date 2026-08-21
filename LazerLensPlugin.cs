@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Reflection;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics.Sprites;
@@ -10,18 +11,32 @@ using osucc.Celebrations;
 using osucc.Client;
 using osucc.Plugin;
 using LazerLens.Models;
+using LazerLens.Patches;
 using LazerLens.Services;
 using LazerLens.UI;
+using osu.Game.Screens.Play;
+using osucc.Core;
 
 namespace LazerLens
 {
-    public class LazerLensPlugin : OsuCcPluginBase, IOsuCcIconProvider
+    public class LazerLensPlugin : OsuCcPlugin
     {
         public static LazerLensPlugin? Instance { get; private set; }
 
         public void LogMessage(string msg) => Host.Log(msg);
 
-        public IconUsage? Icon => FontAwesome.Solid.ChartBar;
+        public override IconUsage? Icon => FontAwesome.Solid.ChartBar;
+
+        private static readonly HashSet<int> recordedPlayerHashes = new();
+
+        public override IReadOnlyList<OsuCcPatch> Patches => new OsuCcPatch[]
+        {
+            new PlayerImportScorePatch(this, Host),
+            new PlayerConcludeFailedScorePatch(this, Host),
+            new PlayerRestartPatch(this, Host),
+            new PlayerPerformExitPatch(this, Host),
+            new ResultsScreenLoadCompletePatch(this, Host),
+        };
 
         private readonly LazerLensService trackerService = new();
         private LazerLensOverlay? overlay;
@@ -55,9 +70,8 @@ namespace LazerLens
 
             trackerService.OnNewPlayRecorded += onNewPlayRecorded;
 
-            LazerLensPatch.Install(Host);
-            LazerLensPatch.OnScoreImported += onScoreImported;
-            LazerLensPatch.OnScoreUpdated += onScoreUpdated;
+            int count = InstallPatches();
+            Host.Log($"LazerLens: installed {count}/5 patches.");
             Host.Log("LazerLens OnLoad() complete.");
         }
 
@@ -81,25 +95,25 @@ namespace LazerLens
             );
 
             // 3. Register settings subsection
-            Host.AddSettingsSubsection(() => new LazerLensSettingsSubsection(Host.GetSettings(), exportSessionsToCsv, trackerService.OpenSessionsDirectory));
+            Host.AddSettingsSubsection(() => new LazerLensSettingsSubsection(Host.GetSettings(), ExportSessionsToCsv, trackerService.OpenSessionsDirectory));
             Host.Log("LazerLens AttachToGame() complete.");
         }
 
-        private void exportSessionsToCsv()
+        public void ExportSessionsToCsv()
         {
             var exportPath = trackerService.ExportSessionsToCsv();
             if (exportPath != null)
             {
                 Host.Notify(
-                    new osu.Framework.Localisation.LocalisableString($"Successfully exported sessions to:\n{exportPath}"),
-                    osucc.Client.NotificationKind.Success
+                    LazerLensStrings.ExportSuccess(exportPath),
+                    NotificationKind.Success
                 );
             }
             else
             {
                 Host.Notify(
-                    new osu.Framework.Localisation.LocalisableString("Could not export sessions to CSV."),
-                    osucc.Client.NotificationKind.Error
+                    LazerLensStrings.ExportFailed(""),
+                    NotificationKind.Error
                 );
             }
         }
@@ -223,24 +237,99 @@ namespace LazerLens
             return cachedStatsProvider;
         }
 
-        private void onScoreImported(ScoreInfo score, bool passed, bool isRetry)
+        public static bool TryMarkPlayerRecorded(Player player)
         {
-            EnsureHooked();
-
-            LazerLensPatch.DebugLog($"LazerLensPlugin: onScoreImported received score: Title={score.BeatmapInfo?.Metadata?.Title}, Passed={passed}, isRetry={isRetry}");
-
-            try
+            lock (recordedPlayerHashes)
             {
-                trackerService.RecordScore(score, passed, isRetry);
-                LazerLensPatch.DebugLog("LazerLensPlugin: RecordScore completed successfully.");
-            }
-            catch (Exception ex)
-            {
-                LazerLensPatch.DebugLog($"LazerLensPlugin: RecordScore threw exception: {ex}");
+                int hash = player.GetHashCode();
+                if (recordedPlayerHashes.Contains(hash))
+                    return false;
+
+                if (recordedPlayerHashes.Count > 300)
+                    recordedPlayerHashes.Clear();
+
+                recordedPlayerHashes.Add(hash);
+                return true;
             }
         }
 
-        private void onScoreUpdated(ScoreInfo score)
+        public void RecordUnpassedPlayerScore(Player player)
+        {
+            try
+            {
+                if (player == null) return;
+
+                string typeName = player.GetType().Name;
+                if (typeName.Contains("Replay") || typeName.Contains("Spectator"))
+                    return;
+
+                if (!TryMarkPlayerRecorded(player))
+                    return;
+
+                if (player.GameplayState?.HasPassed == true)
+                    return;
+
+                var scoreInfo = player.Score?.ScoreInfo ?? player.GameplayState?.Score?.ScoreInfo ?? new ScoreInfo();
+
+                if (scoreInfo.BeatmapInfo == null && player.GameplayState?.Beatmap != null)
+                    scoreInfo.BeatmapInfo = player.GameplayState.Beatmap.BeatmapInfo;
+
+                if (scoreInfo.BeatmapInfo == null && player.Beatmap?.Value != null)
+                    scoreInfo.BeatmapInfo = player.Beatmap.Value.BeatmapInfo;
+
+                if (scoreInfo.Ruleset == null && player.GameplayState?.Ruleset != null)
+                    scoreInfo.Ruleset = player.GameplayState.Ruleset.RulesetInfo;
+
+                if (scoreInfo.Ruleset == null && player.Ruleset?.Value != null)
+                    scoreInfo.Ruleset = player.Ruleset.Value;
+
+                if (scoreInfo.Mods == null || scoreInfo.Mods.Length == 0)
+                {
+                    if (player.GameplayState?.Mods != null)
+                        scoreInfo.Mods = player.GameplayState.Mods.ToArray();
+                    else if (player.Mods?.Value != null)
+                        scoreInfo.Mods = player.Mods.Value.ToArray();
+                    else
+                        scoreInfo.Mods = Array.Empty<osu.Game.Rulesets.Mods.Mod>();
+                }
+
+                try
+                {
+                    var spProp = typeof(Player).GetProperty("ScoreProcessor", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                    var sp = spProp?.GetValue(player) as osu.Game.Rulesets.Scoring.ScoreProcessor;
+                    sp?.PopulateScore(scoreInfo);
+                }
+                catch (Exception spEx)
+                {
+                    Host.Log(LogLevel.Error, $"LazerLens ScoreProcessor populate error: {spEx}");
+                }
+
+                scoreInfo.Date = DateTimeOffset.Now;
+                scoreInfo.Rank = ScoreRank.F;
+
+                OnScoreImported(scoreInfo, false);
+            }
+            catch (Exception ex)
+            {
+                Host.Log(LogLevel.Error, $"LazerLens RecordUnpassedPlayerScore error: {ex}");
+            }
+        }
+
+        public void OnScoreImported(ScoreInfo score, bool passed)
+        {
+            EnsureHooked();
+
+            try
+            {
+                trackerService.RecordScore(score, passed);
+            }
+            catch (Exception ex)
+            {
+                Host.Log(LogLevel.Error, $"LazerLens RecordScore exception: {ex}");
+            }
+        }
+
+        public void OnScoreUpdated(ScoreInfo score)
         {
             EnsureHooked();
 
@@ -250,7 +339,7 @@ namespace LazerLens
             }
             catch (Exception ex)
             {
-                LazerLensPatch.DebugLog($"LazerLensPlugin: UpdateScore threw exception: {ex}");
+                Host.Log(LogLevel.Error, $"LazerLens UpdateScore exception: {ex}");
             }
         }
 
@@ -260,13 +349,13 @@ namespace LazerLens
             {
                 ClientCelebrations.Show(new Celebration(new CelebrationOptions
                 {
-                    TitleText = "New Session Best!",
+                    TitleText = LazerLensStrings.NotificationNewBest.ToString(),
                     SubtitleText = $"{play.BeatmapArtist} - {play.BeatmapTitle}",
                     AccentColour = Color4Extensions.FromHex("00ffcc"),
                 }));
 
                 Host.Notify(
-                    new LocalisableString($"New Session Best!\n{play.BeatmapArtist} - {play.BeatmapTitle} ({play.Accuracy:F2}%)"),
+                    LazerLensStrings.NotificationNewBestDetails(play.BeatmapArtist, play.BeatmapTitle, play.Accuracy.ToString("F2", CultureInfo.InvariantCulture)),
                     NotificationKind.Success
                 );
             }
@@ -275,7 +364,7 @@ namespace LazerLens
                 string ppStr = play.PerformancePoints.HasValue ? $" \u2022 {play.PerformancePoints.Value:F0}pp" : "";
 
                 Host.Notify(
-                    new LocalisableString($"Added to tracker: {play.BeatmapTitle}\nAcc: {play.Accuracy:F2}% \u2022 Grade: {play.Grade}{ppStr}"),
+                    LazerLensStrings.AddedToTracker(play.BeatmapTitle, play.Accuracy.ToString("F2", CultureInfo.InvariantCulture), play.Grade, ppStr),
                     NotificationKind.Info
                 );
             }
@@ -287,8 +376,6 @@ namespace LazerLens
 
             // Save current session before disposing
             trackerService.AutoSave();
-            LazerLensPatch.OnScoreImported -= onScoreImported;
-            LazerLensPatch.OnScoreUpdated -= onScoreUpdated;
             trackerService.OnNewPlayRecorded -= onNewPlayRecorded;
 
             trackerService.NotifyOnPlay.UnbindAll();
@@ -323,13 +410,13 @@ namespace LazerLens
 
             overlayRegistration?.Dispose();
             overlayRegistration = null;
-            
+
             overlay = null;
             Instance = null;
-            
+
             Host.Log("Plugin disposal complete.");
+            GC.SuppressFinalize(this);
             base.Dispose();
         }
     }
 }
-

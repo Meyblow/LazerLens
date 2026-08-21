@@ -10,18 +10,21 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
 using osu.Game.Graphics;
+using osu.Game.Graphics.Backgrounds;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Online.Leaderboards;
 using osu.Game.Overlays;
+using osu.Game.Rulesets;
+using osu.Game.Rulesets.Scoring;
 using osu.Game.Scoring;
+using osu.Game.Beatmaps;
+using osu.Game.Beatmaps.Drawables;
 using osucc.Client;
 using osuTK;
 using osuTK.Graphics;
-using osu.Game.Beatmaps;
 using LazerLens.Models;
 using LazerLens.Services;
-using osu.Framework.Screens;
 
 namespace LazerLens.UI.Components
 {
@@ -30,26 +33,26 @@ namespace LazerLens.UI.Components
         [Resolved]
         private OverlayColourProvider colourProvider { get; set; } = null!;
 
+        [Resolved]
+        private OsuColour colours { get; set; } = null!;
+
+        [Resolved(canBeNull: true)]
+        private RulesetStore? rulesets { get; set; }
+
         [Resolved(canBeNull: true)]
         private BeatmapSetOverlay? beatmapSetOverlay { get; set; }
 
-        [Resolved(canBeNull: true)]
-        private osu.Game.OsuGame? game { get; set; }
-
-        public override LocalisableString TooltipText => (currentPlay.OriginalScore != null)
-            ? "Click to view score screen"
+        public override LocalisableString TooltipText => LazerLensOverlay.IsSettingsModalOpen
+            ? string.Empty
             : (currentPlay.OnlineBeatmapID > 0 || currentPlay.OnlineBeatmapSetID > 0
-                ? "Click to view beatmap info in overlay"
-                : "Local beatmap (no online ID)");
+                ? LazerLensStrings.TooltipViewBeatmap
+                : LazerLensStrings.TooltipLocalBeatmap);
 
         private SessionPlayRecord currentPlay;
         private readonly LazerLensService service;
         private Box background = null!;
         private Box hoverOverlay = null!;
-        private osu.Game.Beatmaps.Drawables.BeatmapSetOnlineStatusPill statusPill = null!;
-        private OsuSpriteText ppTextSprite = null!;
-        private OsuTextFlowContainer hitsTextFlow = null!;
-        private OsuSpriteText urTextSprite = null!;
+        private GridContainer grid = null!;
 
         public SessionPlayHistoryItem(SessionPlayRecord play, LazerLensService service)
         {
@@ -57,24 +60,235 @@ namespace LazerLens.UI.Components
             this.service = service;
 
             RelativeSizeAxes = Axes.X;
-
             Action = openBeatmapInfo;
+        }
 
-            string modString = play.Mods.Length > 0 ? "+" + string.Join("", play.Mods) : "NoMod";
-            string starPrefix = play.StarRating > 0 ? $"[\u2605 {play.StarRating.ToString("F2", CultureInfo.InvariantCulture)}] " : "";
+        public void UpdateData(SessionPlayRecord play)
+        {
+            if (ReferenceEquals(this.currentPlay, play) ||
+                (this.currentPlay.Id == play.Id &&
+                 this.currentPlay.TotalScore == play.TotalScore &&
+                 this.currentPlay.Accuracy == play.Accuracy &&
+                 this.currentPlay.Rank == play.Rank &&
+                 this.currentPlay.UnstableRate == play.UnstableRate &&
+                 this.currentPlay.MaxCombo == play.MaxCombo &&
+                 this.currentPlay.Passed == play.Passed &&
+                 this.currentPlay.PerformancePoints == play.PerformancePoints &&
+                 this.currentPlay.ProfilePerformancePoints == play.ProfilePerformancePoints))
+            {
+                return;
+            }
 
-            string ppDisplay = formatPp(play);
+            this.currentPlay = play;
+            Clear();
+            Child = buildContent();
+        }
 
-            Child = new Container
+        private Dimension[] getColumnDimensions() => new[]
+        {
+            new Dimension(GridSizeMode.Absolute, 52),  // 1. Rank Badge
+            new Dimension(GridSizeMode.Distributed),   // 2. Title, Difficulty & Stars
+            new Dimension(GridSizeMode.Absolute, 80),  // 3. Acc
+            new Dimension(GridSizeMode.Absolute, 80),  // 4. Score
+            service.ShowUR.Value
+                ? new Dimension(GridSizeMode.Absolute, 80)
+                : new Dimension(GridSizeMode.Absolute, 0),  // 5. UR
+            new Dimension(GridSizeMode.Absolute, 80),  // 6. Hits
+            new Dimension(GridSizeMode.Absolute, 80),  // 7. Combo
+            new Dimension(GridSizeMode.Absolute, 80),  // 8. PP
+            new Dimension(GridSizeMode.Absolute, 80),  // 9. Time
+        };
+
+        [BackgroundDependencyLoader]
+        private void load()
+        {
+            service.CompactMode.BindValueChanged(e =>
+            {
+                if (IsDisposed) return;
+                Height = e.NewValue ? 40 : 58;
+            }, true);
+
+            Child = buildContent();
+        }
+
+        private Container buildContent()
+        {
+            string modString = currentPlay.Mods.Length > 0 ? "+" + string.Join("", currentPlay.Mods) : "NoMod";
+            string ppDisplay = formatPp(currentPlay);
+
+            string rulesetName = currentPlay.RulesetName == "osu" ? "osu!" : currentPlay.RulesetName;
+
+            var statusContainer = new Container
+            {
+                Anchor = Anchor.CentreLeft,
+                Origin = Anchor.CentreLeft,
+                AutoSizeAxes = Axes.Both,
+            };
+            if (Enum.TryParse<BeatmapOnlineStatus>(currentPlay.Status, true, out var onlineStatus))
+            {
+                statusContainer.Child = new Container
+                {
+                    Anchor = Anchor.CentreLeft,
+                    Origin = Anchor.CentreLeft,
+                    AutoSizeAxes = Axes.Both,
+                    Scale = new Vector2(0.72f),
+                    Child = new BeatmapSetOnlineStatusPill
+                    {
+                        Status = onlineStatus,
+                        Anchor = Anchor.CentreLeft,
+                        Origin = Anchor.CentreLeft,
+                    }
+                };
+            }
+            else
+            {
+                statusContainer.Child = new OsuSpriteText
+                {
+                    Text = currentPlay.Status,
+                    Font = OsuFont.Torus.With(size: 11, weight: FontWeight.SemiBold),
+                    Colour = colourProvider.Highlight1,
+                    Anchor = Anchor.CentreLeft,
+                    Origin = Anchor.CentreLeft,
+                };
+            }
+
+            bool hasUr = currentPlay.UnstableRate.HasValue && currentPlay.UnstableRate.Value > 0;
+            string urText = hasUr ? currentPlay.UnstableRate!.Value.ToString("F2", CultureInfo.InvariantCulture) : "-";
+            Color4 urColour = hasUr ? Color4Extensions.FromHex("#00ffcc") : colourProvider.Content2;
+
+            var urFlow = new FillFlowContainer
+            {
+                AutoSizeAxes = Axes.Both,
+                Anchor = Anchor.Centre,
+                Origin = Anchor.Centre,
+                Direction = FillDirection.Vertical,
+                Spacing = new Vector2(0, 3),
+                Children = new Drawable[]
+                {
+                    new OsuSpriteText
+                    {
+                        Anchor = Anchor.TopCentre,
+                        Origin = Anchor.TopCentre,
+                        Text = urText,
+                        Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
+                        Colour = urColour,
+                    },
+                    new OsuSpriteText
+                    {
+                        Anchor = Anchor.TopCentre,
+                        Origin = Anchor.TopCentre,
+                        Text = "UR",
+                        Font = OsuFont.Torus.With(size: 10, weight: FontWeight.Regular),
+                        Colour = colourProvider.Content2,
+                    }
+                }
+            };
+
+            var urContainer = new Container
+            {
+                RelativeSizeAxes = Axes.Both,
+                Alpha = service.ShowUR.Value ? 1 : 0,
+                Child = urFlow
+            };
+
+            service.ShowUR.BindValueChanged(v =>
+            {
+                if (IsDisposed) return;
+                urContainer.Alpha = v.NewValue ? 1 : 0;
+                if (grid != null)
+                    grid.ColumnDimensions = getColumnDimensions();
+            }, true);
+
+            Color4 diffColour = colours != null ? colours.ForStarDifficulty(currentPlay.StarRating) : colourProvider.Highlight1;
+
+            Drawable? rulesetIcon = null;
+            if (rulesets != null)
+            {
+                var rInfo = rulesets.GetRuleset(currentPlay.RulesetName)
+                    ?? rulesets.AvailableRulesets.FirstOrDefault(r =>
+                        string.Equals(r.ShortName, currentPlay.RulesetName, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(r.Name, currentPlay.RulesetName, StringComparison.OrdinalIgnoreCase) ||
+                        (currentPlay.RulesetName.Contains("taiko", StringComparison.OrdinalIgnoreCase) && r.ShortName == "taiko") ||
+                        (currentPlay.RulesetName.Contains("catch", StringComparison.OrdinalIgnoreCase) && r.ShortName == "fruits") ||
+                        (currentPlay.RulesetName.Contains("fruit", StringComparison.OrdinalIgnoreCase) && r.ShortName == "fruits") ||
+                        (currentPlay.RulesetName.Contains("mania", StringComparison.OrdinalIgnoreCase) && r.ShortName == "mania"))
+                    ?? rulesets.GetRuleset(0);
+
+                if (rInfo != null)
+                {
+                    try
+                    {
+                        var iconDrawable = rInfo.CreateInstance()?.CreateIcon();
+                        if (iconDrawable != null)
+                        {
+                            iconDrawable.Size = new Vector2(10);
+                            iconDrawable.Anchor = Anchor.Centre;
+                            iconDrawable.Origin = Anchor.Centre;
+                            rulesetIcon = iconDrawable;
+                        }
+                    }
+                    catch { }
+                }
+            }
+
+            if (rulesetIcon == null)
+            {
+                rulesetIcon = new SpriteIcon
+                {
+                    Anchor = Anchor.Centre,
+                    Origin = Anchor.Centre,
+                    Size = new Vector2(8),
+                    Icon = FontAwesome.Solid.Circle,
+                };
+            }
+
+            return new Container
             {
                 RelativeSizeAxes = Axes.Both,
                 Masking = true,
-                CornerRadius = 8,
+                CornerRadius = 10,
+                BorderThickness = 1.5f,
+                BorderColour = diffColour.Opacity(0.9f),
                 Children = new Drawable[]
                 {
                     background = new Box
                     {
                         RelativeSizeAxes = Axes.Both,
+                        Colour = colourProvider.Background4
+                    },
+                    // Subtle geometric triangles pattern in the card background
+                    new TrianglesV2
+                    {
+                        RelativeSizeAxes = Axes.Both,
+                        Colour = diffColour.Opacity(0.35f),
+                    },
+                    // Left colored accent rounded pill with ruleset icon
+                    new Container
+                    {
+                        Anchor = Anchor.CentreLeft,
+                        Origin = Anchor.CentreLeft,
+                        RelativeSizeAxes = Axes.Y,
+                        Height = 0.72f,
+                        Width = 18,
+                        Masking = true,
+                        CornerRadius = 9,
+                        Margin = new MarginPadding { Left = 5 },
+                        Children = new Drawable[]
+                        {
+                            new Box
+                            {
+                                RelativeSizeAxes = Axes.Both,
+                                Colour = diffColour,
+                            },
+                            new Container
+                            {
+                                Anchor = Anchor.Centre,
+                                Origin = Anchor.Centre,
+                                Size = new Vector2(10),
+                                Colour = Color4.Black.Opacity(0.8f),
+                                Child = rulesetIcon,
+                            }
+                        }
                     },
                     hoverOverlay = new Box
                     {
@@ -82,46 +296,32 @@ namespace LazerLens.UI.Components
                         Colour = Color4.White,
                         Alpha = 0,
                     },
-                    new GridContainer
+                    grid = new GridContainer
                     {
                         RelativeSizeAxes = Axes.Both,
-                        Padding = new MarginPadding { Horizontal = 14, Vertical = 6 },
-                        ColumnDimensions = new[]
-                        {
-                            new Dimension(GridSizeMode.Absolute, 54),  // 1. Fixed Pill Rank Badge
-                            new Dimension(GridSizeMode.Distributed),   // 2. Title & Status
-                            new Dimension(GridSizeMode.Absolute, 85),  // 3. Acc & Mods
-                            new Dimension(GridSizeMode.Absolute, 80),  // 4. Score
-                            new Dimension(GridSizeMode.Absolute, 115), // 5. Hits & UR (300/100/50/0 & UR)
-                            new Dimension(GridSizeMode.Absolute, 70),  // 6. Max Combo
-                            new Dimension(GridSizeMode.Absolute, 95),  // 7. PP (XX / YY)
-                            new Dimension(GridSizeMode.Absolute, 65),  // 8. Time
-                        },
+                        Padding = new MarginPadding { Left = 26, Right = 8, Vertical = 4 },
+                        ColumnDimensions = getColumnDimensions(),
                         Content = new[]
                         {
                             new Drawable[]
                             {
-                                // 1. Vanilla Rank Badge strictly constrained to 48x24
+                                // Column 1: Rank Badge
                                 new Container
                                 {
                                     RelativeSizeAxes = Axes.Both,
-                                    Child = new Container
+                                    Padding = new MarginPadding { Horizontal = 4 },
+                                    Child = new UpdateableRank(currentPlay.Rank)
                                     {
-                                        Size = new Vector2(48, 24),
-                                        Anchor = Anchor.CentreLeft,
-                                        Origin = Anchor.CentreLeft,
-                                        Masking = true,
-                                        CornerRadius = 12,
-                                        Child = new UpdateableRank(play.Rank)
-                                        {
-                                            RelativeSizeAxes = Axes.Both,
-                                        }
+                                        Anchor = Anchor.Centre,
+                                        Origin = Anchor.Centre,
+                                        Size = new Vector2(40, 20),
                                     }
                                 },
-                                // 2. Title & Subtitle
+                                // Column 2: Beatmap & Difficulty Details (Vanilla SongSelect style)
                                 new Container
                                 {
                                     RelativeSizeAxes = Axes.Both,
+                                    Padding = new MarginPadding { Left = 6, Right = 6 },
                                     Child = new FillFlowContainer
                                     {
                                         RelativeSizeAxes = Axes.X,
@@ -129,45 +329,80 @@ namespace LazerLens.UI.Components
                                         Anchor = Anchor.CentreLeft,
                                         Origin = Anchor.CentreLeft,
                                         Direction = FillDirection.Vertical,
-                                        Spacing = new Vector2(0, 3),
-                                        Padding = new MarginPadding { Right = 10 },
+                                        Spacing = new Vector2(0, 2),
+                                        Padding = new MarginPadding { Right = 6 },
                                         Children = new Drawable[]
                                         {
-                                            new OsuSpriteText
-                                            {
-                                                Text = $"{starPrefix}{play.BeatmapArtist} - {play.BeatmapTitle}",
-                                                Font = OsuFont.Torus.With(size: 14, weight: FontWeight.SemiBold),
-                                                RelativeSizeAxes = Axes.X,
-                                            },
+                                            // Top Line: Title - Artist
                                             new FillFlowContainer
                                             {
-                                                AutoSizeAxes = Axes.Both,
+                                                RelativeSizeAxes = Axes.X,
+                                                AutoSizeAxes = Axes.Y,
                                                 Direction = FillDirection.Horizontal,
                                                 Spacing = new Vector2(4, 0),
                                                 Children = new Drawable[]
                                                 {
+                                                    new TruncatingSpriteText
+                                                    {
+                                                        Text = $"{currentPlay.BeatmapArtist} - {currentPlay.BeatmapTitle}",
+                                                        Font = OsuFont.Torus.With(size: 13, weight: FontWeight.Bold),
+                                                        Colour = Color4.White,
+                                                        RelativeSizeAxes = Axes.X,
+                                                    }
+                                                }
+                                            },
+                                            // Bottom Line: StarRatingDisplay + OnlineStatus + DifficultyName
+                                            new FillFlowContainer
+                                            {
+                                                AutoSizeAxes = Axes.Both,
+                                                Direction = FillDirection.Horizontal,
+                                                Spacing = new Vector2(6, 0),
+                                                Children = new Drawable[]
+                                                {
+                                                    new Container
+                                                    {
+                                                        Anchor = Anchor.CentreLeft,
+                                                        Origin = Anchor.CentreLeft,
+                                                        AutoSizeAxes = Axes.Both,
+                                                        Scale = new Vector2(0.80f),
+                                                        Child = new StarRatingDisplay(new StarDifficulty(currentPlay.StarRating, 0), StarRatingDisplaySize.Small)
+                                                        {
+                                                            Anchor = Anchor.CentreLeft,
+                                                            Origin = Anchor.CentreLeft,
+                                                        }
+                                                    },
+                                                    statusContainer,
                                                     new OsuSpriteText
                                                     {
                                                         Anchor = Anchor.CentreLeft,
                                                         Origin = Anchor.CentreLeft,
-                                                        Text = $"[{play.DifficultyName}] ({play.RulesetName})",
-                                                        Font = OsuFont.Torus.With(size: 11, weight: FontWeight.Regular),
-                                                        Colour = Color4.White.Opacity(0.55f),
+                                                        Text = $"[{currentPlay.DifficultyName}]",
+                                                        Font = OsuFont.Torus.With(size: 11, weight: FontWeight.SemiBold),
+                                                        Colour = colourProvider.Content1,
                                                     },
-                                                    statusPill = new osu.Game.Beatmaps.Drawables.BeatmapSetOnlineStatusPill
-                                                    {
-                                                        Anchor = Anchor.CentreLeft,
-                                                        Origin = Anchor.CentreLeft,
-                                                        Scale = new Vector2(0.8f),
-                                                        Margin = new MarginPadding { Left = 3 },
-                                                        Status = Enum.TryParse<BeatmapOnlineStatus>(play.Status, true, out var st) ? st : BeatmapOnlineStatus.None
-                                                    }
                                                 }
                                             }
                                         }
                                     }
                                 },
-                                // 3. Accuracy & Mods (Baseline aligned)
+                                // Column 3: Accuracy
+                                buildCell(
+                                    $"{currentPlay.Accuracy.ToString("F2", CultureInfo.InvariantCulture)}%",
+                                    modString,
+                                    colourProvider.Content1,
+                                    colourProvider.Content2,
+                                    true
+                                ),
+                                // Column 4: Score
+                                buildCell(
+                                    currentPlay.TotalScore.ToString("N0", CultureInfo.InvariantCulture),
+                                    LazerLensStrings.SortScore,
+                                    Color4.White.Opacity(0.95f),
+                                    colourProvider.Content2
+                                ),
+                                // Column 5: UR
+                                urContainer,
+                                // Column 6: Hits
                                 new Container
                                 {
                                     RelativeSizeAxes = Axes.Both,
@@ -180,393 +415,182 @@ namespace LazerLens.UI.Components
                                         Spacing = new Vector2(0, 3),
                                         Children = new Drawable[]
                                         {
+                                            buildHitsFlow(),
                                             new OsuSpriteText
                                             {
                                                 Anchor = Anchor.TopCentre,
                                                 Origin = Anchor.TopCentre,
-                                                Text = $"{play.Accuracy.ToString("F2", CultureInfo.InvariantCulture)}%",
-                                                Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
-                                                Colour = play.Accuracy >= 95 ? Color4.LightGreen : Color4.White,
-                                            },
-                                            new OsuSpriteText
-                                            {
-                                                Anchor = Anchor.TopCentre,
-                                                Origin = Anchor.TopCentre,
-                                                Text = modString,
-                                                Font = OsuFont.Torus.With(size: 11, weight: FontWeight.SemiBold),
-                                                Colour = modString == "NoMod" ? Color4.White.Opacity(0.4f) : Color4.Yellow,
-                                            }
-                                        }
-                                    }
-                                },
-                                // 4. Score (Baseline aligned)
-                                new Container
-                                {
-                                    RelativeSizeAxes = Axes.Both,
-                                    Child = new FillFlowContainer
-                                    {
-                                        AutoSizeAxes = Axes.Both,
-                                        Anchor = Anchor.Centre,
-                                        Origin = Anchor.Centre,
-                                        Direction = FillDirection.Vertical,
-                                        Spacing = new Vector2(0, 3),
-                                        Children = new Drawable[]
-                                        {
-                                            new OsuSpriteText
-                                            {
-                                                Anchor = Anchor.TopCentre,
-                                                Origin = Anchor.TopCentre,
-                                                Text = play.TotalScore.ToString("N0", CultureInfo.InvariantCulture),
-                                                Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
-                                                Colour = Color4.White.Opacity(0.95f),
-                                            },
-                                            new OsuSpriteText
-                                            {
-                                                Anchor = Anchor.TopCentre,
-                                                Origin = Anchor.TopCentre,
-                                                Text = "SCORE",
+                                                Text = LazerLensStrings.SortHits,
                                                 Font = OsuFont.Torus.With(size: 10, weight: FontWeight.Regular),
-                                                Colour = Color4.White.Opacity(0.35f),
+                                                Colour = colourProvider.Content2,
                                             }
                                         }
                                     }
                                 },
-                                // 5. Hits (300/100/0) & UR (Baseline aligned)
-                                new Container
-                                {
-                                    RelativeSizeAxes = Axes.Both,
-                                    Child = new FillFlowContainer
-                                    {
-                                        AutoSizeAxes = Axes.Both,
-                                        Anchor = Anchor.Centre,
-                                        Origin = Anchor.Centre,
-                                        Direction = FillDirection.Vertical,
-                                        Spacing = new Vector2(0, 3),
-                                        Children = new Drawable[]
-                                        {
-                                            hitsTextFlow = new OsuTextFlowContainer(cp => {
-                                                cp.Font = OsuFont.Torus.With(size: 13, weight: FontWeight.Bold);
-                                            })
-                                            {
-                                                AutoSizeAxes = Axes.Both,
-                                                Anchor = Anchor.TopCentre,
-                                                Origin = Anchor.TopCentre,
-                                            },
-                                            urTextSprite = new OsuSpriteText
-                                            {
-                                                Anchor = Anchor.TopCentre,
-                                                Origin = Anchor.TopCentre,
-                                                Text = formatUrString(play),
-                                                Font = OsuFont.Torus.With(size: 10, weight: FontWeight.SemiBold),
-                                                Colour = play.UnstableRate.HasValue ? Color4Extensions.FromHex("00ffcc") : Color4.White.Opacity(0.35f),
-                                            }
-                                        }
-                                    }
-                                },
-                                // 6. Max Combo (Baseline aligned)
-                                new Container
-                                {
-                                    RelativeSizeAxes = Axes.Both,
-                                    Child = new FillFlowContainer
-                                    {
-                                        AutoSizeAxes = Axes.Both,
-                                        Anchor = Anchor.Centre,
-                                        Origin = Anchor.Centre,
-                                        Direction = FillDirection.Vertical,
-                                        Spacing = new Vector2(0, 3),
-                                        Children = new Drawable[]
-                                        {
-                                            new OsuSpriteText
-                                            {
-                                                Anchor = Anchor.TopCentre,
-                                                Origin = Anchor.TopCentre,
-                                                Text = $"{play.MaxCombo}x",
-                                                Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
-                                                Colour = Color4.White.Opacity(0.95f),
-                                            },
-                                            new OsuSpriteText
-                                            {
-                                                Anchor = Anchor.TopCentre,
-                                                Origin = Anchor.TopCentre,
-                                                Text = "COMBO",
-                                                Font = OsuFont.Torus.With(size: 10, weight: FontWeight.Regular),
-                                                Colour = Color4.White.Opacity(0.35f),
-                                            }
-                                        }
-                                    }
-                                },
-                                // 7. PP: XX / YY (Baseline aligned)
-                                new Container
-                                {
-                                    RelativeSizeAxes = Axes.Both,
-                                    Child = new FillFlowContainer
-                                    {
-                                        AutoSizeAxes = Axes.Both,
-                                        Anchor = Anchor.Centre,
-                                        Origin = Anchor.Centre,
-                                        Direction = FillDirection.Vertical,
-                                        Spacing = new Vector2(0, 3),
-                                        Children = new Drawable[]
-                                        {
-                                            ppTextSprite = new OsuSpriteText
-                                            {
-                                                Anchor = Anchor.TopCentre,
-                                                Origin = Anchor.TopCentre,
-                                                Text = ppDisplay,
-                                                Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
-                                                Colour = getPpColour(play),
-                                            },
-                                            new OsuSpriteText
-                                            {
-                                                Anchor = Anchor.TopCentre,
-                                                Origin = Anchor.TopCentre,
-                                                Text = "PP (PLAY/PROF)",
-                                                Font = OsuFont.Torus.With(size: 10, weight: FontWeight.Regular),
-                                                Colour = Color4.White.Opacity(0.35f),
-                                            }
-                                        }
-                                    }
-                                },
-                                // 8. Time (Baseline aligned)
-                                new Container
-                                {
-                                    RelativeSizeAxes = Axes.Both,
-                                    Child = new FillFlowContainer
-                                    {
-                                        AutoSizeAxes = Axes.Both,
-                                        Anchor = Anchor.Centre,
-                                        Origin = Anchor.Centre,
-                                        Direction = FillDirection.Vertical,
-                                        Spacing = new Vector2(0, 3),
-                                        Children = new Drawable[]
-                                        {
-                                            new OsuSpriteText
-                                            {
-                                                Anchor = Anchor.TopCentre,
-                                                Origin = Anchor.TopCentre,
-                                                Text = play.Timestamp.ToString("HH:mm:ss", CultureInfo.InvariantCulture),
-                                                Font = OsuFont.Torus.With(size: 13, weight: FontWeight.Regular),
-                                                Colour = Color4.White.Opacity(0.6f),
-                                            },
-                                            new OsuSpriteText
-                                            {
-                                                Anchor = Anchor.TopCentre,
-                                                Origin = Anchor.TopCentre,
-                                                Text = "TIME",
-                                                Font = OsuFont.Torus.With(size: 10, weight: FontWeight.Regular),
-                                                Colour = Color4.White.Opacity(0.35f),
-                                            }
-                                        }
-                                    }
-                                }
+                                // Column 7: Combo
+                                buildCell(
+                                    $"{currentPlay.MaxCombo.ToString("N0", CultureInfo.InvariantCulture)}x",
+                                    LazerLensStrings.SortCombo,
+                                    colourProvider.Content1,
+                                    colourProvider.Content2
+                                ),
+                                // Column 8: PP
+                                buildCell(
+                                    ppDisplay,
+                                    "PP",
+                                    colourProvider.Content1,
+                                    colourProvider.Content2
+                                ),
+                                // Column 9: Time
+                                buildCell(
+                                    currentPlay.Timestamp.ToLocalTime().ToString("HH:mm:ss", CultureInfo.InvariantCulture),
+                                    currentPlay.Timestamp.ToLocalTime().ToString("dd MMM", CultureInfo.InvariantCulture),
+                                    colourProvider.Content1,
+                                    colourProvider.Content2
+                                )
                             }
                         }
                     }
                 }
             };
-            updateHitsTextFlow(play);
         }
 
-
-        public void UpdateData(SessionPlayRecord newPlay)
+        private FillFlowContainer buildHitsFlow()
         {
-            this.currentPlay = newPlay;
-
-            if (statusPill != null)
+            var flow = new FillFlowContainer
             {
-                statusPill.Status = Enum.TryParse<BeatmapOnlineStatus>(newPlay.Status, true, out var st) ? st : BeatmapOnlineStatus.None;
-            }
+                AutoSizeAxes = Axes.Both,
+                Anchor = Anchor.TopCentre,
+                Origin = Anchor.TopCentre,
+                Direction = FillDirection.Horizontal,
+                Spacing = new Vector2(1, 0),
+            };
 
-            if (ppTextSprite != null)
-            {
-                ppTextSprite.Text = formatPp(newPlay);
-                ppTextSprite.Colour = getPpColour(newPlay);
-            }
+            int n300 = currentPlay.CountGreat;
+            int n100 = currentPlay.CountOk;
+            int n50 = currentPlay.CountMeh;
+            int nMiss = currentPlay.CountMiss;
 
-            if (hitsTextFlow != null)
+            flow.Add(new OsuSpriteText
             {
-                updateHitsTextFlow(newPlay);
-            }
+                Text = n300.ToString(CultureInfo.InvariantCulture),
+                Font = OsuFont.Torus.With(size: 13, weight: FontWeight.Bold),
+                Colour = Color4Extensions.FromHex("#5cd4f3"),
+            });
 
-            if (urTextSprite != null)
+            flow.Add(new OsuSpriteText
             {
-                urTextSprite.Text = formatUrString(newPlay);
-                urTextSprite.Colour = newPlay.UnstableRate.HasValue ? Color4Extensions.FromHex("00ffcc") : Color4.White.Opacity(0.35f);
-            }
+                Text = "/",
+                Font = OsuFont.Torus.With(size: 11, weight: FontWeight.Regular),
+                Colour = colourProvider.Content2.Opacity(0.5f),
+                Margin = new MarginPadding { Horizontal = 1 },
+            });
+
+            flow.Add(new OsuSpriteText
+            {
+                Text = n100.ToString(CultureInfo.InvariantCulture),
+                Font = OsuFont.Torus.With(size: 13, weight: FontWeight.Bold),
+                Colour = Color4Extensions.FromHex("#87d332"),
+            });
+
+            flow.Add(new OsuSpriteText
+            {
+                Text = "/",
+                Font = OsuFont.Torus.With(size: 11, weight: FontWeight.Regular),
+                Colour = colourProvider.Content2.Opacity(0.5f),
+                Margin = new MarginPadding { Horizontal = 1 },
+            });
+
+            flow.Add(new OsuSpriteText
+            {
+                Text = n50.ToString(CultureInfo.InvariantCulture),
+                Font = OsuFont.Torus.With(size: 13, weight: FontWeight.Bold),
+                Colour = Color4Extensions.FromHex("#e5a228"),
+            });
+
+            flow.Add(new OsuSpriteText
+            {
+                Text = "/",
+                Font = OsuFont.Torus.With(size: 11, weight: FontWeight.Regular),
+                Colour = colourProvider.Content2.Opacity(0.5f),
+                Margin = new MarginPadding { Horizontal = 1 },
+            });
+
+            flow.Add(new OsuSpriteText
+            {
+                Text = nMiss.ToString(CultureInfo.InvariantCulture),
+                Font = OsuFont.Torus.With(size: 13, weight: FontWeight.Bold),
+                Colour = nMiss > 0 ? Color4Extensions.FromHex("#ed4242") : colourProvider.Content2,
+            });
+
+            return flow;
         }
 
-        private void updateHitsTextFlow(SessionPlayRecord play)
+        private static string formatPp(SessionPlayRecord p)
         {
-            hitsTextFlow.Clear();
-            string ruleset = play.RulesetName.ToLowerInvariant();
+            if (p.PerformancePoints.HasValue && p.PerformancePoints.Value > 0)
+                return $"{p.PerformancePoints.Value.ToString("F0", CultureInfo.InvariantCulture)} PP";
 
-            Color4 col300 = Color4Extensions.FromHex("00ffcc");
-            Color4 col100 = Color4Extensions.FromHex("aaff00");
-            Color4 col50 = Color4Extensions.FromHex("ffcc22");
-            Color4 colMiss = Color4Extensions.FromHex("ff2222");
-            Color4 slashCol = Color4.White.Opacity(0.5f);
+            return "-";
+        }
 
-            void addSlash() => hitsTextFlow.AddText(" / ", cp => cp.Colour = slashCol);
-
-            if (ruleset.Contains("taiko"))
+        private static Container buildCell(string primary, LocalisableString secondary, Color4 primaryColour, Color4 secondaryColour, bool primaryBold = false)
+        {
+            return new Container
             {
-                hitsTextFlow.AddText(play.CountGreat.ToString(), cp => cp.Colour = col300);
-                addSlash();
-                hitsTextFlow.AddText(play.CountOk.ToString(), cp => cp.Colour = col100);
-                addSlash();
-                hitsTextFlow.AddText(play.CountMiss.ToString(), cp => cp.Colour = colMiss);
-            }
-            else if (ruleset.Contains("catch"))
-            {
-                hitsTextFlow.AddText(play.CountGreat.ToString(), cp => cp.Colour = col300);
-                addSlash();
-                hitsTextFlow.AddText(play.CountLargeTickHit.ToString(), cp => cp.Colour = col100);
-                addSlash();
-                hitsTextFlow.AddText(play.CountSmallTickHit.ToString(), cp => cp.Colour = col50);
-                addSlash();
-                hitsTextFlow.AddText((play.CountMiss + play.CountLargeTickMiss).ToString(), cp => cp.Colour = colMiss);
-            }
-            else if (ruleset.Contains("mania"))
-            {
-                if (play.CountPerfect > 0)
+                RelativeSizeAxes = Axes.Both,
+                Child = new FillFlowContainer
                 {
-                    hitsTextFlow.AddText(play.CountPerfect.ToString(), cp => cp.Colour = col300);
-                    addSlash();
-                }
-                hitsTextFlow.AddText(play.CountGreat.ToString(), cp => cp.Colour = col300);
-                addSlash();
-                hitsTextFlow.AddText(play.CountOk.ToString(), cp => cp.Colour = col100);
-                addSlash();
-                hitsTextFlow.AddText(play.CountMeh.ToString(), cp => cp.Colour = col50);
-                addSlash();
-                hitsTextFlow.AddText(play.CountMiss.ToString(), cp => cp.Colour = colMiss);
-            }
-            else
-            {
-                // Standard osu! (std): Always strictly 300 / 100 / 50 / 0
-                hitsTextFlow.AddText(play.CountGreat.ToString(), cp => cp.Colour = col300);
-                addSlash();
-                hitsTextFlow.AddText(play.CountOk.ToString(), cp => cp.Colour = col100);
-                addSlash();
-                hitsTextFlow.AddText(play.CountMeh.ToString(), cp => cp.Colour = col50);
-                addSlash();
-                hitsTextFlow.AddText(play.CountMiss.ToString(), cp => cp.Colour = colMiss);
-            }
-        }
-
-        private static string formatUrString(SessionPlayRecord play)
-        {
-            if (play.UnstableRate.HasValue && play.UnstableRate.Value > 0)
-                return $"{play.UnstableRate.Value.ToString("F2", CultureInfo.InvariantCulture)} UR";
-
-            return "HITS";
-        }
-
-        private static string formatPp(SessionPlayRecord play)
-        {
-            if (play.PerformancePoints.HasValue)
-            {
-                string xx = play.PerformancePoints.Value.ToString("F0", CultureInfo.InvariantCulture);
-                string yy;
-
-                if (play.Status is "Ranked" or "Approved")
-                {
-                    if (play.ProfilePerformancePoints.HasValue)
+                    AutoSizeAxes = Axes.Both,
+                    Anchor = Anchor.Centre,
+                    Origin = Anchor.Centre,
+                    Direction = FillDirection.Vertical,
+                    Spacing = new Vector2(0, 3),
+                    Children = new Drawable[]
                     {
-                        double prof = play.ProfilePerformancePoints.Value;
-                        yy = prof > 0 ? $"+{prof.ToString("F0", CultureInfo.InvariantCulture)}" : prof.ToString("F0", CultureInfo.InvariantCulture);
-                    }
-                    else
-                    {
-                        yy = "0";
+                        new OsuSpriteText
+                        {
+                            Anchor = Anchor.TopCentre,
+                            Origin = Anchor.TopCentre,
+                            Text = primary,
+                            Font = OsuFont.Torus.With(size: 14, weight: primaryBold ? FontWeight.Bold : FontWeight.SemiBold),
+                            Colour = primaryColour,
+                        },
+                        new OsuSpriteText
+                        {
+                            Anchor = Anchor.TopCentre,
+                            Origin = Anchor.TopCentre,
+                            Text = secondary,
+                            Font = OsuFont.Torus.With(size: 10, weight: FontWeight.Regular),
+                            Colour = secondaryColour,
+                        }
                     }
                 }
-                else
-                {
-                    yy = "0";
-                }
-
-                return $"{xx} / {yy}";
-            }
-
-            return "- / -";
-        }
-
-        private static Color4 getPpColour(SessionPlayRecord play)
-        {
-            if (play.ProfilePerformancePoints.HasValue)
-            {
-                if (play.ProfilePerformancePoints.Value > 0)
-                    return Color4.Cyan;
-                if (play.ProfilePerformancePoints.Value < 0)
-                    return Color4.Coral;
-            }
-
-            if (play.PerformancePoints.HasValue && play.PerformancePoints.Value > 0)
-                return Color4.White.Opacity(0.85f);
-
-            return Color4.White.Opacity(0.4f);
-        }
-
-        [BackgroundDependencyLoader]
-        private void load()
-        {
-            background.Colour = colourProvider.Background4;
-
-            service.CompactMode.BindValueChanged(e => Height = e.NewValue ? 38 : 56, true);
-            service.ShowUR.BindValueChanged(e => 
-            {
-                if (urTextSprite != null)
-                {
-                    urTextSprite.Alpha = e.NewValue ? 1 : 0;
-                }
-            }, true);
-        }
-
-        private void openBeatmapInfo()
-        {
-            if (currentPlay.OriginalScore != null && game != null)
-            {
-                // Hide the LazerLens overlay
-                var parent = this.Parent;
-                while (parent != null)
-                {
-                    if (parent is osucc.UI.Overlays.OsuCcShearedOverlay overlayContainer)
-                    {
-                        overlayContainer.Hide();
-                        break;
-                    }
-                    parent = parent.Parent;
-                }
-
-                // Show the score screen
-                game.PerformFromScreen(s => s.Push(new osu.Game.Screens.Ranking.SoloResultsScreen(currentPlay.OriginalScore)));
-                return;
-            }
-
-            var overlay = beatmapSetOverlay ?? ClientApi.Game?.Dependencies?.Get(typeof(BeatmapSetOverlay)) as BeatmapSetOverlay;
-
-            if (currentPlay.OnlineBeatmapID > 0)
-            {
-                overlay?.FetchAndShowBeatmap(currentPlay.OnlineBeatmapID);
-            }
-            else if (currentPlay.OnlineBeatmapSetID > 0)
-            {
-                overlay?.FetchAndShowBeatmapSet(currentPlay.OnlineBeatmapSetID);
-            }
+            };
         }
 
         protected override bool OnHover(HoverEvent e)
         {
-            hoverOverlay.FadeTo(0.08f, 150);
+            background.FadeColour(colourProvider.Background3, 100);
+            hoverOverlay.FadeTo(0.04f, 100);
             return base.OnHover(e);
         }
 
         protected override void OnHoverLost(HoverLostEvent e)
         {
-            hoverOverlay.FadeTo(0, 150);
+            background.FadeColour(colourProvider.Background4, 100);
+            hoverOverlay.FadeTo(0, 100);
             base.OnHoverLost(e);
+        }
+
+        private void openBeatmapInfo()
+        {
+            var overlay = beatmapSetOverlay ?? ClientApi.Game?.Dependencies?.Get(typeof(BeatmapSetOverlay)) as BeatmapSetOverlay;
+
+            if (currentPlay.OnlineBeatmapID > 0)
+                overlay?.FetchAndShowBeatmap(currentPlay.OnlineBeatmapID);
+            else if (currentPlay.OnlineBeatmapSetID > 0)
+                overlay?.FetchAndShowBeatmapSet(currentPlay.OnlineBeatmapSetID);
         }
     }
 }
-
