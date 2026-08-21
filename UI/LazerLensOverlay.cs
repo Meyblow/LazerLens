@@ -39,6 +39,9 @@ namespace LazerLens.UI
         [LocalisableDescription(typeof(LazerLensStrings), nameof(LazerLensStrings.TabSession))]
         Session,
 
+        [LocalisableDescription(typeof(LazerLensStrings), nameof(LazerLensStrings.TabArchive))]
+        Archive,
+
         [LocalisableDescription(typeof(LazerLensStrings), nameof(LazerLensStrings.TabSettings))]
         Settings,
     }
@@ -93,23 +96,41 @@ namespace LazerLens.UI
         [Resolved(canBeNull: true)]
         private BeatmapSetOverlay? beatmapSetOverlay { get; set; }
 
-        private MetricCard timeCard = null!;
-        private MetricCard playsCard = null!;
-        private MetricCard accCard = null!;
-        private MetricCard comboCard = null!;
+        // Live Tab Components
+        private FillFlowContainer liveContent = null!;
+        private MetricCard liveTimeCard = null!;
+        private MetricCard livePlaysCard = null!;
+        private MetricCard liveAccCard = null!;
+        private MetricCard liveComboCard = null!;
+        private BestScoreBanner liveBestScoreBanner = null!;
+        private Container liveHistoryContainer = null!;
+        private readonly Dictionary<Guid, SessionPlayHistoryItem> liveItemMap = new();
+        private OsuSpriteText liveNoHistoryText = null!;
+        private OsuSpriteText liveHistoryCountText = null!;
+        private LazerLensFilterControl liveFilterControl = null!;
 
-        private BestScoreBanner bestScoreBanner = null!;
-        private Container historyContainer = null!;
-        private readonly Dictionary<Guid, SessionPlayHistoryItem> itemMap = new();
-        private OsuSpriteText noHistoryText = null!;
-        private OsuSpriteText historyCountText = null!;
-        private LazerLensFilterControl filterControl = null!;
+        // Archive Tab Components
+        private Container archiveContent = null!;
+        private FillFlowContainer archiveCardsList = null!;
+        private readonly List<ArchiveSessionCard> archiveCards = new();
+        private Guid? selectedArchiveSessionId;
+        private SessionState? currentArchivedState;
+        private OsuSpriteText archiveListHeader = null!;
+        private Container archiveEmptyContainer = null!;
+        private FillFlowContainer archiveDetailContent = null!;
+        private MetricCard archiveTimeCard = null!;
+        private MetricCard archivePlaysCard = null!;
+        private MetricCard archiveAccCard = null!;
+        private MetricCard archiveComboCard = null!;
+        private BestScoreBanner archiveBestScoreBanner = null!;
+        private Container archiveHistoryContainer = null!;
+        private readonly Dictionary<Guid, SessionPlayHistoryItem> archiveItemMap = new();
+        private OsuSpriteText archiveNoHistoryText = null!;
+        private OsuSpriteText archiveHistoryCountText = null!;
+        private LazerLensFilterControl archiveFilterControl = null!;
 
-        private FillFlowContainer sessionContent = null!;
+        // Settings Tab Components
         private FillFlowContainer settingsContent = null!;
-        private SessionSelectorDropdown sessionSelector = null!;
-        private Container archiveBanner = null!;
-        private OsuSpriteText archiveBannerText = null!;
 
         private bool isDataDirty = true;
         private int lastUpdatedSecond = -1;
@@ -135,33 +156,7 @@ namespace LazerLens.UI
             };
             tabControl.Current.BindTo(currentSection);
 
-            Header.ContentRow.Add(new GridContainer
-            {
-                RelativeSizeAxes = Axes.X,
-                AutoSizeAxes = Axes.Y,
-                ColumnDimensions = new[]
-                {
-                    new Dimension(GridSizeMode.AutoSize),
-                    new Dimension(GridSizeMode.Distributed),
-                    new Dimension(GridSizeMode.Absolute, 220),
-                },
-                Content = new[]
-                {
-                    new Drawable[]
-                    {
-                        tabControl,
-                        Empty(),
-                        sessionSelector = new SessionSelectorDropdown(
-                            id => service.SelectSession(id),
-                            () => service.GetAllSessionSummaries()
-                        )
-                        {
-                            Anchor = Anchor.CentreRight,
-                            Origin = Anchor.CentreRight,
-                        }
-                    }
-                }
-            });
+            Header.ContentRow.Add(tabControl);
 
             MainAreaContent.Add(new Container
             {
@@ -169,197 +164,26 @@ namespace LazerLens.UI
                 AutoSizeAxes = Axes.Y,
                 Children = new Drawable[]
                 {
-                    // Tab 1: Session Content
-                    sessionContent = new FillFlowContainer
-                    {
-                        RelativeSizeAxes = Axes.X,
-                        AutoSizeAxes = Axes.Y,
-                        Direction = FillDirection.Vertical,
-                        Spacing = new Vector2(0, 10),
-                        Padding = new MarginPadding { Top = 10 },
-                        Children = new Drawable[]
-                        {
-                            // Archive Banner
-                            archiveBanner = new Container
-                            {
-                                RelativeSizeAxes = Axes.X,
-                                Height = 36,
-                                Masking = true,
-                                CornerRadius = 6,
-                                Alpha = 0,
-                                Children = new Drawable[]
-                                {
-                                    new Box
-                                    {
-                                        RelativeSizeAxes = Axes.Both,
-                                        Colour = Color4Extensions.FromHex("ffcc00").Opacity(0.2f),
-                                    },
-                                    archiveBannerText = new OsuSpriteText
-                                    {
-                                        Anchor = Anchor.Centre,
-                                        Origin = Anchor.Centre,
-                                        Font = OsuFont.Torus.With(size: 13, weight: FontWeight.SemiBold),
-                                        Colour = Color4Extensions.FromHex("ffcc00"),
-                                    }
-                                }
-                            },
+                    // TAB 1: Live Session Content
+                    liveContent = buildLiveContent(),
 
-                            // 1. KPI Metric Cards Row
-                            new Container
-                            {
-                                RelativeSizeAxes = Axes.X,
-                                Height = 82,
-                                Child = new GridContainer
-                                {
-                                    RelativeSizeAxes = Axes.Both,
-                                    ColumnDimensions = new[]
-                                    {
-                                        new Dimension(GridSizeMode.Relative, 0.25f),
-                                        new Dimension(GridSizeMode.Relative, 0.25f),
-                                        new Dimension(GridSizeMode.Relative, 0.25f),
-                                        new Dimension(GridSizeMode.Relative, 0.25f),
-                                    },
-                                    Content = new[]
-                                    {
-                                        new Drawable[]
-                                        {
-                                            new Container
-                                            {
-                                                RelativeSizeAxes = Axes.Both,
-                                                Padding = new MarginPadding { Right = 6 },
-                                                Child = timeCard = new MetricCard(FontAwesome.Solid.Clock, LazerLensStrings.OverlaySessionTime, "00:00:00", LazerLensStrings.TimeStartedJustNow)
-                                            },
-                                            new Container
-                                            {
-                                                RelativeSizeAxes = Axes.Both,
-                                                Padding = new MarginPadding { Horizontal = 3 },
-                                                Child = playsCard = new MetricCard(FontAwesome.Solid.Play, LazerLensStrings.OverlayTotalPlays, "0", LazerLensStrings.PlaysPassFail(0, 0))
-                                            },
-                                            new Container
-                                            {
-                                                RelativeSizeAxes = Axes.Both,
-                                                Padding = new MarginPadding { Horizontal = 3 },
-                                                Child = accCard = new MetricCard(FontAwesome.Solid.Percent, LazerLensStrings.OverlayAvgAccuracy, "0.00%", LazerLensStrings.PlaysRecorded(0))
-                                            },
-                                            new Container
-                                            {
-                                                RelativeSizeAxes = Axes.Both,
-                                                Padding = new MarginPadding { Left = 6 },
-                                                Child = comboCard = new MetricCard(FontAwesome.Solid.Fire, LazerLensStrings.OverlayMaxCombo, "0x", LazerLensStrings.OverlaySessionPPGain("+0.0 pp"))
-                                            }
-                                        }
-                                    }
-                                }
-                            },
+                    // TAB 2: Archive Sessions Content
+                    archiveContent = buildArchiveContent(),
 
-                            // 2. Best Score Banner (Clickable)
-                            bestScoreBanner = new BestScoreBanner(openBestScoreBeatmap),
-
-                            // 3. Play History Header
-                            historyCountText = new OsuSpriteText
-                            {
-                                Text = LazerLensStrings.HistoryTitle(0),
-                                Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
-                                Colour = ColourProvider.Colour1,
-                                Margin = new MarginPadding { Top = 4 },
-                            },
-
-                            // 4. Filter Control
-                            filterControl = new LazerLensFilterControl(),
-
-                            // 5. Play History Items Container
-                            new Container
-                            {
-                                RelativeSizeAxes = Axes.X,
-                                AutoSizeAxes = Axes.Y,
-                                Margin = new MarginPadding { Top = 4 },
-                                Children = new Drawable[]
-                                {
-                                    noHistoryText = new OsuSpriteText
-                                    {
-                                        Text = LazerLensStrings.HistoryEmpty,
-                                        Font = OsuFont.Torus.With(size: 13, weight: FontWeight.Regular),
-                                        Colour = Color4.White.Opacity(0.5f),
-                                        Anchor = Anchor.TopCentre,
-                                        Origin = Anchor.TopCentre,
-                                        Margin = new MarginPadding { Vertical = 24 },
-                                        Alpha = 0,
-                                    },
-                                    historyContainer = new Container
-                                    {
-                                        RelativeSizeAxes = Axes.X,
-                                    }
-                                }
-                            }
-                        }
-                    },
-
-                    // Tab 2: Settings Content
-                    settingsContent = new FillFlowContainer
-                    {
-                        RelativeSizeAxes = Axes.X,
-                        AutoSizeAxes = Axes.Y,
-                        Direction = FillDirection.Vertical,
-                        Spacing = new Vector2(0, 16),
-                        Padding = new MarginPadding { Top = 16, Horizontal = 40 },
-                        Alpha = 0,
-                        Children = new Drawable[]
-                        {
-                            createSettingsSection(LazerLensStrings.SettingsSectionGameplay, new Drawable[]
-                            {
-                                new SettingsCheckbox
-                                {
-                                    LabelText = LazerLensStrings.SettingsNotificationsCaption,
-                                    Current = service.NotifyOnPlay,
-                                    Keywords = new[] { "notifications", "notify", "toast" },
-                                },
-                                new SettingsCheckbox
-                                {
-                                    LabelText = LazerLensStrings.SettingsTrackRetriesCaption,
-                                    Current = service.TrackRetries,
-                                    Keywords = new[] { "retries", "retry", "fail", "pass" },
-                                },
-                            }),
-                            createSettingsSection(LazerLensStrings.SettingsSectionVisuals, new Drawable[]
-                            {
-                                new SettingsCheckbox
-                                {
-                                    LabelText = LazerLensStrings.SettingsCompactHistoryCaption,
-                                    Current = service.CompactMode,
-                                    Keywords = new[] { "compact", "history", "ui" },
-                                },
-                                new SettingsCheckbox
-                                {
-                                    LabelText = LazerLensStrings.SettingsShowURCaption,
-                                    Current = service.ShowUR,
-                                    Keywords = new[] { "ur", "unstable rate" },
-                                },
-                            }),
-                            createSettingsSection(LazerLensStrings.SettingsSectionData, new Drawable[]
-                            {
-                                new SettingsActionButton(FontAwesome.Solid.FolderOpen, LazerLensStrings.SettingsOpenDirectory, () => service.OpenSessionsDirectory()),
-                                new SettingsActionButton(FontAwesome.Solid.FileCsv, LazerLensStrings.SettingsExportCsv, () => exportCsvAction?.Invoke()),
-                            }),
-                        }
-                    }
+                    // TAB 3: Settings Content
+                    settingsContent = buildSettingsContent(),
                 }
             });
 
             currentSection.BindValueChanged(e =>
             {
-                sessionSelector?.Close();
+                liveContent.FadeTo(e.NewValue == LazerLensSection.Session ? 1 : 0, 200, Easing.OutQuint);
+                archiveContent.FadeTo(e.NewValue == LazerLensSection.Archive ? 1 : 0, 200, Easing.OutQuint);
+                settingsContent.FadeTo(e.NewValue == LazerLensSection.Settings ? 1 : 0, 200, Easing.OutQuint);
 
-                if (e.NewValue == LazerLensSection.Session)
+                if (e.NewValue == LazerLensSection.Archive)
                 {
-                    sessionContent.FadeIn(200, Easing.OutQuint);
-                    settingsContent.FadeOut(200, Easing.OutQuint);
-                    sessionSelector.FadeIn(200, Easing.OutQuint);
-                }
-                else
-                {
-                    sessionContent.FadeOut(200, Easing.OutQuint);
-                    settingsContent.FadeIn(200, Easing.OutQuint);
-                    sessionSelector.FadeOut(200, Easing.OutQuint);
+                    refreshArchiveList();
                 }
             }, true);
 
@@ -377,40 +201,418 @@ namespace LazerLens.UI
                 RefreshData();
             });
 
-            filterControl.SearchChanged += _ =>
-            {
-                if (IsDisposed) return;
-                RefreshData();
-            };
+            bindFilter(liveFilterControl);
+            bindFilter(archiveFilterControl);
+        }
 
-            filterControl.RulesetChanged += _ =>
-            {
-                if (IsDisposed) return;
-                RefreshData();
-            };
+        private void bindFilter(LazerLensFilterControl filter)
+        {
+            filter.SearchChanged += _ => { if (!IsDisposed) RefreshData(); };
+            filter.RulesetChanged += _ => { if (!IsDisposed) RefreshData(); };
+            filter.OutcomeChanged += _ => { if (!IsDisposed) RefreshData(); };
+            filter.StatusChanged += _ => { if (!IsDisposed) RefreshData(); };
+            filter.SortChanged += _ => { if (!IsDisposed) RefreshData(); };
+            filter.SortDirectionToggled += _ => { if (!IsDisposed) RefreshData(); };
+        }
 
-            filterControl.OutcomeChanged += _ =>
+        private FillFlowContainer buildLiveContent()
+        {
+            return new FillFlowContainer
             {
-                if (IsDisposed) return;
-                RefreshData();
-            };
+                RelativeSizeAxes = Axes.X,
+                AutoSizeAxes = Axes.Y,
+                Direction = FillDirection.Vertical,
+                Spacing = new Vector2(0, 10),
+                Padding = new MarginPadding { Top = 10 },
+                Children = new Drawable[]
+                {
+                    // 1. KPI Metric Cards Row
+                    new Container
+                    {
+                        RelativeSizeAxes = Axes.X,
+                        Height = 82,
+                        Child = new GridContainer
+                        {
+                            RelativeSizeAxes = Axes.Both,
+                            ColumnDimensions = new[]
+                            {
+                                new Dimension(GridSizeMode.Relative, 0.25f),
+                                new Dimension(GridSizeMode.Relative, 0.25f),
+                                new Dimension(GridSizeMode.Relative, 0.25f),
+                                new Dimension(GridSizeMode.Relative, 0.25f),
+                            },
+                            Content = new[]
+                            {
+                                new Drawable[]
+                                {
+                                    new Container
+                                    {
+                                        RelativeSizeAxes = Axes.Both,
+                                        Padding = new MarginPadding { Right = 6 },
+                                        Child = liveTimeCard = new MetricCard(FontAwesome.Solid.Clock, LazerLensStrings.OverlaySessionTime, "00:00:00", LazerLensStrings.TimeStartedJustNow)
+                                    },
+                                    new Container
+                                    {
+                                        RelativeSizeAxes = Axes.Both,
+                                        Padding = new MarginPadding { Horizontal = 3 },
+                                        Child = livePlaysCard = new MetricCard(FontAwesome.Solid.Play, LazerLensStrings.OverlayTotalPlays, "0", LazerLensStrings.PlaysPassFail(0, 0))
+                                    },
+                                    new Container
+                                    {
+                                        RelativeSizeAxes = Axes.Both,
+                                        Padding = new MarginPadding { Horizontal = 3 },
+                                        Child = liveAccCard = new MetricCard(FontAwesome.Solid.Percent, LazerLensStrings.OverlayAvgAccuracy, "0.00%", LazerLensStrings.PlaysRecorded(0))
+                                    },
+                                    new Container
+                                    {
+                                        RelativeSizeAxes = Axes.Both,
+                                        Padding = new MarginPadding { Left = 6 },
+                                        Child = liveComboCard = new MetricCard(FontAwesome.Solid.Fire, LazerLensStrings.OverlayMaxCombo, "0x", LazerLensStrings.OverlaySessionPPGain("+0.0 pp"))
+                                    }
+                                }
+                            }
+                        }
+                    },
 
-            filterControl.StatusChanged += _ =>
-            {
-                if (IsDisposed) return;
-                RefreshData();
-            };
+                    // 2. Best Score Banner (Clickable)
+                    liveBestScoreBanner = new BestScoreBanner(() => openBeatmap(service.LiveState.BestScore)),
 
-            filterControl.SortChanged += _ =>
-            {
-                if (IsDisposed) return;
-                RefreshData();
-            };
+                    // 3. Play History Header
+                    liveHistoryCountText = new OsuSpriteText
+                    {
+                        Text = LazerLensStrings.HistoryTitle(0),
+                        Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
+                        Colour = ColourProvider.Colour1,
+                        Margin = new MarginPadding { Top = 4 },
+                    },
 
-            filterControl.SortDirectionToggled += _ =>
+                    // 4. Filter Control
+                    liveFilterControl = new LazerLensFilterControl(),
+
+                    // 5. Play History Items Container
+                    new Container
+                    {
+                        RelativeSizeAxes = Axes.X,
+                        AutoSizeAxes = Axes.Y,
+                        Margin = new MarginPadding { Top = 4 },
+                        Children = new Drawable[]
+                        {
+                            liveNoHistoryText = new OsuSpriteText
+                            {
+                                Text = LazerLensStrings.HistoryEmpty,
+                                Font = OsuFont.Torus.With(size: 13, weight: FontWeight.Regular),
+                                Colour = Color4.White.Opacity(0.5f),
+                                Anchor = Anchor.TopCentre,
+                                Origin = Anchor.TopCentre,
+                                Margin = new MarginPadding { Vertical = 24 },
+                                Alpha = 0,
+                            },
+                            liveHistoryContainer = new Container
+                            {
+                                RelativeSizeAxes = Axes.X,
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        private Container buildArchiveContent()
+        {
+            return new Container
             {
-                if (IsDisposed) return;
-                RefreshData();
+                RelativeSizeAxes = Axes.X,
+                AutoSizeAxes = Axes.Y,
+                Alpha = 0,
+                Padding = new MarginPadding { Top = 10 },
+                Children = new Drawable[]
+                {
+                    new GridContainer
+                    {
+                        RelativeSizeAxes = Axes.X,
+                        AutoSizeAxes = Axes.Y,
+                        ColumnDimensions = new[]
+                        {
+                            new Dimension(GridSizeMode.Absolute, 320),
+                            new Dimension(GridSizeMode.Distributed),
+                        },
+                        Content = new[]
+                        {
+                            new Drawable[]
+                            {
+                                // Left Column: Sessions List & Actions
+                                new FillFlowContainer
+                                {
+                                    RelativeSizeAxes = Axes.X,
+                                    AutoSizeAxes = Axes.Y,
+                                    Direction = FillDirection.Vertical,
+                                    Spacing = new Vector2(0, 10),
+                                    Padding = new MarginPadding { Right = 14 },
+                                    Children = new Drawable[]
+                                    {
+                                        archiveListHeader = new OsuSpriteText
+                                        {
+                                            Text = LazerLensStrings.ArchiveSavedSessions(0),
+                                            Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
+                                            Colour = ColourProvider.Colour1,
+                                        },
+                                        new FillFlowContainer
+                                        {
+                                            RelativeSizeAxes = Axes.X,
+                                            AutoSizeAxes = Axes.Y,
+                                            Direction = FillDirection.Horizontal,
+                                            Spacing = new Vector2(8, 0),
+                                            Children = new Drawable[]
+                                            {
+                                                new Container
+                                                {
+                                                    RelativeSizeAxes = Axes.X,
+                                                    Width = 0.5f,
+                                                    Child = new SettingsActionButton(FontAwesome.Solid.FolderOpen, LazerLensStrings.SettingsOpenDirectory, () => service.OpenSessionsDirectory())
+                                                    {
+                                                        Height = 32,
+                                                    }
+                                                },
+                                                new Container
+                                                {
+                                                    RelativeSizeAxes = Axes.X,
+                                                    Width = 0.5f,
+                                                    Child = new SettingsActionButton(FontAwesome.Solid.FileCsv, LazerLensStrings.SettingsExportCsv, () => exportCsvAction?.Invoke())
+                                                    {
+                                                        Height = 32,
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        new OsuScrollContainer
+                                        {
+                                            RelativeSizeAxes = Axes.X,
+                                            Height = 520,
+                                            ScrollbarVisible = true,
+                                            Child = archiveCardsList = new FillFlowContainer
+                                            {
+                                                RelativeSizeAxes = Axes.X,
+                                                AutoSizeAxes = Axes.Y,
+                                                Direction = FillDirection.Vertical,
+                                                Spacing = new Vector2(0, 6),
+                                            }
+                                        }
+                                    }
+                                },
+
+                                // Right Column: Selected Session Details
+                                new Container
+                                {
+                                    RelativeSizeAxes = Axes.X,
+                                    AutoSizeAxes = Axes.Y,
+                                    Children = new Drawable[]
+                                    {
+                                        archiveEmptyContainer = new Container
+                                        {
+                                            RelativeSizeAxes = Axes.X,
+                                            Height = 260,
+                                            Masking = true,
+                                            CornerRadius = 8,
+                                            Children = new Drawable[]
+                                            {
+                                                new Box
+                                                {
+                                                    RelativeSizeAxes = Axes.Both,
+                                                    Colour = ColourProvider.Background4,
+                                                },
+                                                new FillFlowContainer
+                                                {
+                                                    Anchor = Anchor.Centre,
+                                                    Origin = Anchor.Centre,
+                                                    AutoSizeAxes = Axes.Both,
+                                                    Direction = FillDirection.Vertical,
+                                                    Spacing = new Vector2(0, 8),
+                                                    Children = new Drawable[]
+                                                    {
+                                                        new SpriteIcon
+                                                        {
+                                                            Anchor = Anchor.TopCentre,
+                                                            Origin = Anchor.TopCentre,
+                                                            Size = new Vector2(36),
+                                                            Icon = FontAwesome.Solid.History,
+                                                            Colour = ColourProvider.Highlight1.Opacity(0.7f),
+                                                        },
+                                                        new OsuSpriteText
+                                                        {
+                                                            Anchor = Anchor.TopCentre,
+                                                            Origin = Anchor.TopCentre,
+                                                            Text = LazerLensStrings.ArchiveEmptyTitle,
+                                                            Font = OsuFont.Torus.With(size: 16, weight: FontWeight.Bold),
+                                                            Colour = Color4.White,
+                                                        },
+                                                        new OsuSpriteText
+                                                        {
+                                                            Anchor = Anchor.TopCentre,
+                                                            Origin = Anchor.TopCentre,
+                                                            Text = LazerLensStrings.ArchiveEmptySubtitle,
+                                                            Font = OsuFont.Torus.With(size: 13, weight: FontWeight.Regular),
+                                                            Colour = Color4.White.Opacity(0.6f),
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+
+                                        archiveDetailContent = new FillFlowContainer
+                                        {
+                                            RelativeSizeAxes = Axes.X,
+                                            AutoSizeAxes = Axes.Y,
+                                            Direction = FillDirection.Vertical,
+                                            Spacing = new Vector2(0, 10),
+                                            Alpha = 0,
+                                            Children = new Drawable[]
+                                            {
+                                                // 1. KPI Metric Cards Row
+                                                new Container
+                                                {
+                                                    RelativeSizeAxes = Axes.X,
+                                                    Height = 82,
+                                                    Child = new GridContainer
+                                                    {
+                                                        RelativeSizeAxes = Axes.Both,
+                                                        ColumnDimensions = new[]
+                                                        {
+                                                            new Dimension(GridSizeMode.Relative, 0.25f),
+                                                            new Dimension(GridSizeMode.Relative, 0.25f),
+                                                            new Dimension(GridSizeMode.Relative, 0.25f),
+                                                            new Dimension(GridSizeMode.Relative, 0.25f),
+                                                        },
+                                                        Content = new[]
+                                                        {
+                                                            new Drawable[]
+                                                            {
+                                                                new Container
+                                                                {
+                                                                    RelativeSizeAxes = Axes.Both,
+                                                                    Padding = new MarginPadding { Right = 6 },
+                                                                    Child = archiveTimeCard = new MetricCard(FontAwesome.Solid.Clock, LazerLensStrings.OverlaySessionTime, "00:00:00", "")
+                                                                },
+                                                                new Container
+                                                                {
+                                                                    RelativeSizeAxes = Axes.Both,
+                                                                    Padding = new MarginPadding { Horizontal = 3 },
+                                                                    Child = archivePlaysCard = new MetricCard(FontAwesome.Solid.Play, LazerLensStrings.OverlayTotalPlays, "0", LazerLensStrings.PlaysPassFail(0, 0))
+                                                                },
+                                                                new Container
+                                                                {
+                                                                    RelativeSizeAxes = Axes.Both,
+                                                                    Padding = new MarginPadding { Horizontal = 3 },
+                                                                    Child = archiveAccCard = new MetricCard(FontAwesome.Solid.Percent, LazerLensStrings.OverlayAvgAccuracy, "0.00%", LazerLensStrings.PlaysRecorded(0))
+                                                                },
+                                                                new Container
+                                                                {
+                                                                    RelativeSizeAxes = Axes.Both,
+                                                                    Padding = new MarginPadding { Left = 6 },
+                                                                    Child = archiveComboCard = new MetricCard(FontAwesome.Solid.Fire, LazerLensStrings.OverlayMaxCombo, "0x", LazerLensStrings.OverlaySessionPPGain("+0.0 pp"))
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                },
+
+                                                // 2. Best Score Banner
+                                                archiveBestScoreBanner = new BestScoreBanner(() => openBeatmap(currentArchivedState?.BestScore)),
+
+                                                // 3. Play History Header
+                                                archiveHistoryCountText = new OsuSpriteText
+                                                {
+                                                    Text = LazerLensStrings.HistoryTitle(0),
+                                                    Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
+                                                    Colour = ColourProvider.Colour1,
+                                                    Margin = new MarginPadding { Top = 4 },
+                                                },
+
+                                                // 4. Filter Control
+                                                archiveFilterControl = new LazerLensFilterControl(),
+
+                                                // 5. Play History Items Container
+                                                new Container
+                                                {
+                                                    RelativeSizeAxes = Axes.X,
+                                                    AutoSizeAxes = Axes.Y,
+                                                    Margin = new MarginPadding { Top = 4 },
+                                                    Children = new Drawable[]
+                                                    {
+                                                        archiveNoHistoryText = new OsuSpriteText
+                                                        {
+                                                            Text = LazerLensStrings.HistoryEmpty,
+                                                            Font = OsuFont.Torus.With(size: 13, weight: FontWeight.Regular),
+                                                            Colour = Color4.White.Opacity(0.5f),
+                                                            Anchor = Anchor.TopCentre,
+                                                            Origin = Anchor.TopCentre,
+                                                            Margin = new MarginPadding { Vertical = 24 },
+                                                            Alpha = 0,
+                                                        },
+                                                        archiveHistoryContainer = new Container
+                                                        {
+                                                            RelativeSizeAxes = Axes.X,
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        private FillFlowContainer buildSettingsContent()
+        {
+            return new FillFlowContainer
+            {
+                RelativeSizeAxes = Axes.X,
+                AutoSizeAxes = Axes.Y,
+                Direction = FillDirection.Vertical,
+                Spacing = new Vector2(0, 16),
+                Padding = new MarginPadding { Top = 16, Horizontal = 40 },
+                Alpha = 0,
+                Children = new Drawable[]
+                {
+                    createSettingsSection(LazerLensStrings.SettingsSectionGameplay, new Drawable[]
+                    {
+                        new SettingsCheckbox
+                        {
+                            LabelText = LazerLensStrings.SettingsNotificationsCaption,
+                            Current = service.NotifyOnPlay,
+                            Keywords = new[] { "notifications", "notify", "toast" },
+                        },
+                        new SettingsCheckbox
+                        {
+                            LabelText = LazerLensStrings.SettingsTrackRetriesCaption,
+                            Current = service.TrackRetries,
+                            Keywords = new[] { "retries", "retry", "fail", "pass" },
+                        },
+                    }),
+                    createSettingsSection(LazerLensStrings.SettingsSectionVisuals, new Drawable[]
+                    {
+                        new SettingsCheckbox
+                        {
+                            LabelText = LazerLensStrings.SettingsCompactHistoryCaption,
+                            Current = service.CompactMode,
+                            Keywords = new[] { "compact", "history", "ui" },
+                        },
+                        new SettingsCheckbox
+                        {
+                            LabelText = LazerLensStrings.SettingsShowURCaption,
+                            Current = service.ShowUR,
+                            Keywords = new[] { "ur", "unstable rate" },
+                        },
+                    }),
+                    createSettingsSection(LazerLensStrings.SettingsSectionData, new Drawable[]
+                    {
+                        new SettingsActionButton(FontAwesome.Solid.FolderOpen, LazerLensStrings.SettingsOpenDirectory, () => service.OpenSessionsDirectory()),
+                        new SettingsActionButton(FontAwesome.Solid.FileCsv, LazerLensStrings.SettingsExportCsv, () => exportCsvAction?.Invoke()),
+                    }),
+                }
             };
         }
 
@@ -459,6 +661,101 @@ namespace LazerLens.UI
             };
         }
 
+        private void refreshArchiveList()
+        {
+            if (IsDisposed) return;
+
+            var summaries = service.GetAllSessionSummaries();
+            archiveListHeader.Text = LazerLensStrings.ArchiveSavedSessions(summaries.Count);
+
+            archiveCardsList.Clear();
+            archiveCards.Clear();
+
+            if (summaries.Count == 0)
+            {
+                archiveEmptyContainer.FadeIn(200);
+                archiveDetailContent.FadeOut(200);
+                selectedArchiveSessionId = null;
+                currentArchivedState = null;
+                return;
+            }
+
+            archiveEmptyContainer.FadeOut(150);
+            archiveDetailContent.FadeIn(200);
+
+            if (!selectedArchiveSessionId.HasValue || !summaries.Any(s => s.Id == selectedArchiveSessionId.Value))
+            {
+                selectedArchiveSessionId = summaries.First().Id;
+            }
+
+            foreach (var summary in summaries)
+            {
+                bool isSelected = summary.Id == selectedArchiveSessionId;
+                var id = summary.Id;
+
+                var card = new ArchiveSessionCard(summary, isSelected, () =>
+                {
+                    selectArchivedSession(id);
+                });
+
+                archiveCards.Add(card);
+                archiveCardsList.Add(card);
+            }
+
+            loadArchivedSessionDetail(selectedArchiveSessionId.Value);
+        }
+
+        private void selectArchivedSession(Guid id)
+        {
+            if (selectedArchiveSessionId == id) return;
+
+            selectedArchiveSessionId = id;
+
+            foreach (var card in archiveCards)
+            {
+                card.SetSelected(card.Summary.Id == id);
+            }
+
+            loadArchivedSessionDetail(id);
+        }
+
+        private void loadArchivedSessionDetail(Guid id)
+        {
+            currentArchivedState = service.StorageService?.LoadSession(id);
+            refreshArchiveDetail();
+        }
+
+        private void refreshArchiveDetail()
+        {
+            if (currentArchivedState == null) return;
+            var state = currentArchivedState;
+
+            // 1. Duration
+            var archivedDuration = state.Plays.Count > 0
+                ? state.Plays.Last().Timestamp - state.SessionStart
+                : TimeSpan.Zero;
+            string timeStr = $"{(int)archivedDuration.TotalHours:D2}:{archivedDuration.Minutes:D2}:{archivedDuration.Seconds:D2}";
+            archiveTimeCard?.UpdateValues(timeStr, LazerLensStrings.TimeArchived(state.SessionStart.ToLocalTime().ToString("dd MMM HH:mm", CultureInfo.InvariantCulture)));
+
+            // 2. Plays
+            archivePlaysCard?.UpdateValues(state.TotalPlays.ToString(CultureInfo.InvariantCulture), LazerLensStrings.PlaysPassFail(state.TotalPasses, state.TotalFails));
+
+            // 3. Acc & UR
+            var urPlays = state.Plays.Where(p => p.UnstableRate.HasValue && p.UnstableRate.Value > 0).ToList();
+            string urAvgStr = urPlays.Count > 0 ? LazerLensStrings.AvgUr(urPlays.Average(p => p.UnstableRate!.Value).ToString("F1", CultureInfo.InvariantCulture)).ToString() : "";
+            archiveAccCard?.UpdateValues($"{state.AverageAccuracy.ToString("F2", CultureInfo.InvariantCulture)}%", LazerLensStrings.AccPlaysUr(state.Plays.Count, urAvgStr));
+
+            // 4. Max Combo & Top PP
+            string ppGainStr = state.SessionPPGain >= 0 ? $"+{state.SessionPPGain.ToString("F1", CultureInfo.InvariantCulture)} pp" : $"{state.SessionPPGain.ToString("F1", CultureInfo.InvariantCulture)} pp";
+            archiveComboCard?.UpdateValues($"{state.MaxCombo.ToString("N0", CultureInfo.InvariantCulture)}x", LazerLensStrings.OverlaySessionPPGain(ppGainStr));
+
+            // 5. Best Score Banner
+            archiveBestScoreBanner?.UpdateScore(state.BestScore);
+
+            // 6. Play History
+            renderHistoryItems(state.Plays, archiveFilterControl, archiveHistoryContainer, archiveHistoryCountText, archiveNoHistoryText, archiveItemMap);
+        }
+
         private void onServiceSessionUpdated()
         {
             if (IsDisposed) return;
@@ -471,6 +768,169 @@ namespace LazerLens.UI
             {
                 isDataDirty = true;
             }
+        }
+
+        protected override void Update()
+        {
+            base.Update();
+
+            if (State.Value == Visibility.Visible && liveTimeCard != null)
+            {
+                var duration = service.LiveState.SessionDuration;
+                int totalSeconds = (int)duration.TotalSeconds;
+
+                if (totalSeconds != lastUpdatedSecond)
+                {
+                    lastUpdatedSecond = totalSeconds;
+                    string timeStr = $"{(int)duration.TotalHours:D2}:{duration.Minutes:D2}:{duration.Seconds:D2}";
+                    liveTimeCard.UpdateValues(timeStr, LazerLensStrings.TimeStartedAt(service.LiveState.SessionStart.ToLocalTime().ToString("HH:mm", CultureInfo.InvariantCulture)));
+                }
+            }
+        }
+
+        protected override void PopIn()
+        {
+            base.PopIn();
+
+            if (isDataDirty)
+                RefreshData();
+
+            if (currentSection.Value == LazerLensSection.Archive)
+                refreshArchiveList();
+        }
+
+        public void RefreshData()
+        {
+            if (IsDisposed) return;
+            isDataDirty = false;
+            var state = service.LiveState;
+
+            // 1. Session Duration
+            var duration = state.SessionDuration;
+            string timeStr = $"{(int)duration.TotalHours:D2}:{duration.Minutes:D2}:{duration.Seconds:D2}";
+            liveTimeCard?.UpdateValues(timeStr, LazerLensStrings.TimeStartedAt(state.SessionStart.ToLocalTime().ToString("HH:mm", CultureInfo.InvariantCulture)));
+
+            // 2. Total Plays
+            livePlaysCard?.UpdateValues(state.TotalPlays.ToString(CultureInfo.InvariantCulture), LazerLensStrings.PlaysPassFail(state.TotalPasses, state.TotalFails));
+
+            // 3. Average Accuracy & UR
+            var urPlays = state.Plays.Where(p => p.UnstableRate.HasValue && p.UnstableRate.Value > 0).ToList();
+            string urAvgStr = urPlays.Count > 0 ? LazerLensStrings.AvgUr(urPlays.Average(p => p.UnstableRate!.Value).ToString("F1", CultureInfo.InvariantCulture)).ToString() : "";
+            liveAccCard?.UpdateValues($"{state.AverageAccuracy.ToString("F2", CultureInfo.InvariantCulture)}%", LazerLensStrings.AccPlaysUr(state.Plays.Count, urAvgStr));
+
+            // 4. Max Combo / Session PP Gain
+            string ppGainStr = state.SessionPPGain >= 0 ? $"+{state.SessionPPGain.ToString("F1", CultureInfo.InvariantCulture)} pp" : $"{state.SessionPPGain.ToString("F1", CultureInfo.InvariantCulture)} pp";
+            liveComboCard?.UpdateValues($"{state.MaxCombo.ToString("N0", CultureInfo.InvariantCulture)}x", LazerLensStrings.OverlaySessionPPGain(ppGainStr));
+
+            // 5. Best Score Banner
+            liveBestScoreBanner?.UpdateScore(state.BestScore);
+
+            // 6. Play History
+            renderHistoryItems(state.Plays, liveFilterControl, liveHistoryContainer, liveHistoryCountText, liveNoHistoryText, liveItemMap);
+
+            // 7. Refresh archive if viewing archive
+            if (currentSection.Value == LazerLensSection.Archive && currentArchivedState != null)
+            {
+                refreshArchiveDetail();
+            }
+        }
+
+        private void renderHistoryItems(
+            List<SessionPlayRecord> plays,
+            LazerLensFilterControl filter,
+            Container container,
+            OsuSpriteText countText,
+            OsuSpriteText emptyText,
+            Dictionary<Guid, SessionPlayHistoryItem> map)
+        {
+            if (filter == null || container == null) return;
+
+            var filteredPlays = plays.Where(p =>
+                matchesRuleset(p, filter.CurrentRuleset) &&
+                matchesOutcome(p, filter.CurrentOutcome) &&
+                matchesStatus(p, filter.CurrentStatus) &&
+                matchesSearch(p, filter.SearchTextBox?.Current.Value ?? "")
+            );
+
+            IEnumerable<SessionPlayRecord> sortedPlays = filter.CurrentSort switch
+            {
+                SessionSortMode.Score => filter.SortAscending
+                    ? filteredPlays.OrderBy(p => p.TotalScore)
+                    : filteredPlays.OrderByDescending(p => p.TotalScore),
+
+                SessionSortMode.Accuracy => filter.SortAscending
+                    ? filteredPlays.OrderBy(p => p.Accuracy)
+                    : filteredPlays.OrderByDescending(p => p.Accuracy),
+
+                SessionSortMode.PP => filter.SortAscending
+                    ? filteredPlays.OrderBy(p => p.PerformancePoints ?? 0).ThenBy(p => p.TotalScore)
+                    : filteredPlays.OrderByDescending(p => p.PerformancePoints ?? 0).ThenByDescending(p => p.TotalScore),
+
+                SessionSortMode.Combo => filter.SortAscending
+                    ? filteredPlays.OrderBy(p => p.MaxCombo).ThenBy(p => p.TotalScore)
+                    : filteredPlays.OrderByDescending(p => p.MaxCombo).ThenByDescending(p => p.TotalScore),
+
+                SessionSortMode.Grade => filter.SortAscending
+                    ? filteredPlays.OrderBy(p => p.Rank).ThenBy(p => p.TotalScore)
+                    : filteredPlays.OrderByDescending(p => p.Rank).ThenByDescending(p => p.TotalScore),
+
+                SessionSortMode.Difficulty => filter.SortAscending
+                    ? filteredPlays.OrderBy(p => p.StarRating).ThenBy(p => p.TotalScore)
+                    : filteredPlays.OrderByDescending(p => p.StarRating).ThenByDescending(p => p.TotalScore),
+
+                _ => filter.SortAscending
+                    ? filteredPlays.OrderBy(p => p.Timestamp)
+                    : filteredPlays.OrderByDescending(p => p.Timestamp)
+            };
+
+            var finalPlaysList = sortedPlays.ToList();
+
+            if (countText != null)
+                countText.Text = LazerLensStrings.HistoryTitle(finalPlaysList.Count);
+
+            var currentVisibleIds = new HashSet<Guid>();
+            float currentY = 0f;
+
+            for (int i = 0; i < finalPlaysList.Count; i++)
+            {
+                var play = finalPlaysList[i];
+                currentVisibleIds.Add(play.Id);
+
+                if (!map.TryGetValue(play.Id, out var item))
+                {
+                    item = new SessionPlayHistoryItem(play, service);
+                    map[play.Id] = item;
+                    container.Add(item);
+                }
+                else
+                {
+                    item.UpdateData(play);
+                }
+
+                float targetY = currentY;
+                item.MoveToY(targetY, 200, Easing.OutQuint);
+                item.FadeIn(150);
+
+                currentY += SlotHeight;
+            }
+
+            container.Height = currentY;
+
+            var toRemove = new List<Guid>();
+            foreach (var (id, item) in map)
+            {
+                if (!currentVisibleIds.Contains(id))
+                {
+                    item.FadeOut(150).Expire();
+                    toRemove.Add(id);
+                }
+            }
+
+            foreach (var id in toRemove)
+                map.Remove(id);
+
+            if (emptyText != null)
+                emptyText.Alpha = finalPlaysList.Count == 0 ? 1 : 0;
         }
 
         private static bool matchesRuleset(SessionPlayRecord play, SessionRulesetFilter filter)
@@ -517,199 +977,16 @@ namespace LazerLens.UI
                    (play.DifficultyName?.Contains(query, StringComparison.OrdinalIgnoreCase) == true);
         }
 
-        protected override void Update()
+        private void openBeatmap(SessionPlayRecord? score)
         {
-            base.Update();
-
-            if (State.Value == Visibility.Visible && timeCard != null && !service.IsViewingArchive)
-            {
-                var duration = service.LiveState.SessionDuration;
-                int totalSeconds = (int)duration.TotalSeconds;
-
-                if (totalSeconds != lastUpdatedSecond)
-                {
-                    lastUpdatedSecond = totalSeconds;
-                    string timeStr = $"{(int)duration.TotalHours:D2}:{duration.Minutes:D2}:{duration.Seconds:D2}";
-                    timeCard.UpdateValues(timeStr, LazerLensStrings.TimeStartedAt(service.LiveState.SessionStart.ToLocalTime().ToString("HH:mm", CultureInfo.InvariantCulture)));
-                }
-            }
-        }
-
-        protected override void PopIn()
-        {
-            base.PopIn();
-
-            if (isDataDirty)
-                RefreshData();
-        }
-
-        protected override bool OnMouseDown(MouseDownEvent e)
-        {
-            sessionSelector?.Close();
-            return base.OnMouseDown(e);
-        }
-
-        public void RefreshData()
-        {
-            if (IsDisposed) return;
-            isDataDirty = false;
-            var state = service.State;
-
-            // Archive banner visibility
-            if (archiveBanner != null)
-            {
-                if (service.IsViewingArchive)
-                {
-                    archiveBanner.FadeIn(200, Easing.OutQuint);
-                    archiveBannerText.Text = LazerLensStrings.ArchiveBanner(state.SessionStart.ToLocalTime().ToString("dd MMM yyyy, HH:mm", CultureInfo.InvariantCulture));
-                }
-                else
-                {
-                    archiveBanner.FadeOut(150, Easing.InQuint);
-                }
-            }
-
-            // 1. Session Duration
-            if (service.IsViewingArchive)
-            {
-                var archivedDuration = state.Plays.Count > 0
-                    ? state.Plays.Last().Timestamp - state.SessionStart
-                    : TimeSpan.Zero;
-                string timeStr = $"{(int)archivedDuration.TotalHours:D2}:{archivedDuration.Minutes:D2}:{archivedDuration.Seconds:D2}";
-                timeCard?.UpdateValues(timeStr, LazerLensStrings.TimeArchived(state.SessionStart.ToLocalTime().ToString("dd MMM HH:mm", CultureInfo.InvariantCulture)));
-            }
-            else
-            {
-                var duration = state.SessionDuration;
-                string timeStr = $"{(int)duration.TotalHours:D2}:{duration.Minutes:D2}:{duration.Seconds:D2}";
-                timeCard?.UpdateValues(timeStr, LazerLensStrings.TimeStartedAt(state.SessionStart.ToLocalTime().ToString("HH:mm", CultureInfo.InvariantCulture)));
-            }
-
-            // 2. Total Plays
-            playsCard?.UpdateValues(state.TotalPlays.ToString(CultureInfo.InvariantCulture), LazerLensStrings.PlaysPassFail(state.TotalPasses, state.TotalFails));
-
-            // 3. Average Accuracy & UR
-            var urPlays = state.Plays.Where(p => p.UnstableRate.HasValue && p.UnstableRate.Value > 0).ToList();
-            string urAvgStr = urPlays.Count > 0 ? LazerLensStrings.AvgUr(urPlays.Average(p => p.UnstableRate!.Value).ToString("F1", CultureInfo.InvariantCulture)).ToString() : "";
-            accCard?.UpdateValues($"{state.AverageAccuracy.ToString("F2", CultureInfo.InvariantCulture)}%", LazerLensStrings.AccPlaysUr(state.Plays.Count, urAvgStr));
-
-            // 4. Max Combo / Session PP Gain
-            string ppGainStr = state.SessionPPGain >= 0 ? $"+{state.SessionPPGain.ToString("F1", CultureInfo.InvariantCulture)} pp" : $"{state.SessionPPGain.ToString("F1", CultureInfo.InvariantCulture)} pp";
-            comboCard?.UpdateValues($"{state.MaxCombo.ToString("N0", CultureInfo.InvariantCulture)}x", LazerLensStrings.OverlaySessionPPGain(ppGainStr));
-
-            // 5. Best Score Banner
-            bestScoreBanner?.UpdateScore(state.BestScore);
-
-            if (filterControl == null) return;
-
-            // 6. Filter by selected Ruleset, Outcome, Status, and Search
-            var filteredPlays = state.Plays.Where(p =>
-                matchesRuleset(p, filterControl.CurrentRuleset) &&
-                matchesOutcome(p, filterControl.CurrentOutcome) &&
-                matchesStatus(p, filterControl.CurrentStatus) &&
-                matchesSearch(p, filterControl.SearchTextBox?.Current.Value ?? "")
-            );
-
-            // 7. Sort
-            IEnumerable<SessionPlayRecord> sortedPlays = filterControl.CurrentSort switch
-            {
-                SessionSortMode.Score => filterControl.SortAscending
-                    ? filteredPlays.OrderBy(p => p.TotalScore)
-                    : filteredPlays.OrderByDescending(p => p.TotalScore),
-
-                SessionSortMode.Accuracy => filterControl.SortAscending
-                    ? filteredPlays.OrderBy(p => p.Accuracy)
-                    : filteredPlays.OrderByDescending(p => p.Accuracy),
-
-                SessionSortMode.PP => filterControl.SortAscending
-                    ? filteredPlays.OrderBy(p => p.PerformancePoints ?? 0).ThenBy(p => p.TotalScore)
-                    : filteredPlays.OrderByDescending(p => p.PerformancePoints ?? 0).ThenByDescending(p => p.TotalScore),
-
-                SessionSortMode.Combo => filterControl.SortAscending
-                    ? filteredPlays.OrderBy(p => p.MaxCombo).ThenBy(p => p.TotalScore)
-                    : filteredPlays.OrderByDescending(p => p.MaxCombo).ThenByDescending(p => p.TotalScore),
-
-                SessionSortMode.Grade => filterControl.SortAscending
-                    ? filteredPlays.OrderBy(p => p.Rank).ThenBy(p => p.TotalScore)
-                    : filteredPlays.OrderByDescending(p => p.Rank).ThenByDescending(p => p.TotalScore),
-
-                SessionSortMode.Difficulty => filterControl.SortAscending
-                    ? filteredPlays.OrderBy(p => p.StarRating).ThenBy(p => p.TotalScore)
-                    : filteredPlays.OrderByDescending(p => p.StarRating).ThenByDescending(p => p.TotalScore),
-
-                _ => filterControl.SortAscending
-                    ? filteredPlays.OrderBy(p => p.Timestamp)
-                    : filteredPlays.OrderByDescending(p => p.Timestamp)
-            };
-
-            var finalPlaysList = sortedPlays.ToList();
-
-            // 8. Update count title
-            if (historyCountText != null)
-            {
-                historyCountText.Text = LazerLensStrings.HistoryTitle(finalPlaysList.Count);
-            }
-
-            // 9. Update History Container
-            if (historyContainer != null)
-            {
-                var currentVisibleIds = new HashSet<Guid>();
-                float currentY = 0f;
-
-                for (int i = 0; i < finalPlaysList.Count; i++)
-                {
-                    var play = finalPlaysList[i];
-                    currentVisibleIds.Add(play.Id);
-
-                    if (!itemMap.TryGetValue(play.Id, out var item))
-                    {
-                        item = new SessionPlayHistoryItem(play, service);
-                        itemMap[play.Id] = item;
-                        historyContainer.Add(item);
-                    }
-                    else
-                    {
-                        item.UpdateData(play);
-                    }
-
-                    float targetY = currentY;
-                    item.MoveToY(targetY, 200, Easing.OutQuint);
-                    item.FadeIn(150);
-
-                    currentY += SlotHeight;
-                }
-
-                historyContainer.Height = currentY;
-
-                // Fade out and remove items that are no longer visible
-                var toRemove = new List<Guid>();
-                foreach (var (id, item) in itemMap)
-                {
-                    if (!currentVisibleIds.Contains(id))
-                    {
-                        item.FadeOut(150).Expire();
-                        toRemove.Add(id);
-                    }
-                }
-
-                foreach (var id in toRemove)
-                    itemMap.Remove(id);
-
-                noHistoryText.Alpha = finalPlaysList.Count == 0 ? 1 : 0;
-            }
-        }
-
-        private void openBestScoreBeatmap()
-        {
-            var best = service.LiveState.BestScore;
-            if (best == null) return;
+            if (score == null) return;
 
             var overlay = beatmapSetOverlay ?? ClientApi.Game?.Dependencies?.Get(typeof(BeatmapSetOverlay)) as BeatmapSetOverlay;
 
-            if (best.OnlineBeatmapID > 0)
-                overlay?.FetchAndShowBeatmap(best.OnlineBeatmapID);
-            else if (best.OnlineBeatmapSetID > 0)
-                overlay?.FetchAndShowBeatmapSet(best.OnlineBeatmapSetID);
+            if (score.OnlineBeatmapID > 0)
+                overlay?.FetchAndShowBeatmap(score.OnlineBeatmapID);
+            else if (score.OnlineBeatmapSetID > 0)
+                overlay?.FetchAndShowBeatmapSet(score.OnlineBeatmapSetID);
         }
 
         protected override void Dispose(bool isDisposing)
