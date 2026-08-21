@@ -22,6 +22,7 @@ using osu.Game.Overlays;
 using osu.Game.Overlays.Settings;
 using osu.Game.Scoring;
 using osucc.Client;
+using osucc.Localisation;
 using osucc.UI.Overlays;
 using osuTK;
 using osuTK.Graphics;
@@ -128,8 +129,8 @@ namespace LazerLens.UI
                 Child = new HeaderSettingsButton(openPluginSettings)
                 {
                     Anchor = Anchor.TopRight,
-                    Origin = Anchor.Centre,
-                    Position = new Vector2(-160, 32),
+                    Origin = Anchor.CentreRight,
+                    Position = new Vector2(-110, 32),
                 }
             });
 
@@ -782,31 +783,46 @@ namespace LazerLens.UI
             public LocalisableString TooltipText => LazerLensStrings.HeaderSettingsTooltip;
 
             private readonly Box background;
-            private readonly SpriteIcon icon;
+            private readonly SpriteIcon iconSprite;
+            private readonly OsuSpriteText textSprite;
 
             public HeaderSettingsButton(Action action)
             {
-                Size = new Vector2(36);
                 Action = action;
+                AutoSizeAxes = Axes.Both;
+                Masking = true;
+                CornerRadius = 6;
 
-                Child = new CircularContainer
+                InternalChildren = new Drawable[]
                 {
-                    RelativeSizeAxes = Axes.Both,
-                    Masking = true,
-                    Children = new Drawable[]
+                    background = new Box
                     {
-                        background = new Box
+                        RelativeSizeAxes = Axes.Both,
+                    },
+                    new FillFlowContainer
+                    {
+                        AutoSizeAxes = Axes.Both,
+                        Direction = FillDirection.Horizontal,
+                        Spacing = new Vector2(8, 0),
+                        Padding = new MarginPadding { Horizontal = 14, Vertical = 8 },
+                        Children = new Drawable[]
                         {
-                            RelativeSizeAxes = Axes.Both,
+                            iconSprite = new SpriteIcon
+                            {
+                                Size = new Vector2(14),
+                                Anchor = Anchor.CentreLeft,
+                                Origin = Anchor.CentreLeft,
+                                Icon = FontAwesome.Solid.Cog,
+                            },
+                            textSprite = new OsuSpriteText
+                            {
+                                Anchor = Anchor.CentreLeft,
+                                Origin = Anchor.CentreLeft,
+                                Text = PluginsOverlayStrings.DetailsSettingsTitle,
+                                Font = OsuFont.Torus.With(size: 14, weight: FontWeight.SemiBold),
+                            },
                         },
-                        icon = new SpriteIcon
-                        {
-                            Anchor = Anchor.Centre,
-                            Origin = Anchor.Centre,
-                            Size = new Vector2(18),
-                            Icon = FontAwesome.Solid.Cog,
-                        }
-                    }
+                    },
                 };
             }
 
@@ -814,20 +830,21 @@ namespace LazerLens.UI
             private void load()
             {
                 background.Colour = colourProvider.Background4;
-                icon.Colour = colourProvider.Colour1;
+                iconSprite.Colour = colourProvider.Colour1;
+                textSprite.Colour = Color4.White;
             }
 
             protected override bool OnHover(HoverEvent e)
             {
-                background.FadeColour(colourProvider.Background2, 100);
-                icon.RotateTo(45, 200, Easing.OutQuint);
+                background.FadeColour(colourProvider.Background3, 100);
+                iconSprite.RotateTo(45, 200, Easing.OutQuint);
                 return base.OnHover(e);
             }
 
             protected override void OnHoverLost(HoverLostEvent e)
             {
                 background.FadeColour(colourProvider.Background4, 100);
-                icon.RotateTo(0, 200, Easing.OutQuint);
+                iconSprite.RotateTo(0, 200, Easing.OutQuint);
                 base.OnHoverLost(e);
             }
         }
