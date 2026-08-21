@@ -23,19 +23,8 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
-    - name: Pack osu-cc local packages
-      run: |
-        git clone --depth 1 https://github.com/rus07tam/osu-cc.git /tmp/osu-cc
-        mkdir -p local_feed
-        FEED_DIR=$(pwd)/local_feed
-        cd /tmp/osu-cc
-        dotnet pack osucc.Shared/osucc.Shared.csproj -c Release -p:OsuCcSharedVersion=2.0.2 -p:OsuCcHostVersion=2.2.0 -p:OsuCcBuildVersion=2.2.0 -o "$FEED_DIR"
-        dotnet pack osucc.Api/osucc.Api.csproj -c Release -p:OsuCcSharedVersion=2.0.2 -p:OsuCcHostVersion=2.2.0 -p:OsuCcBuildVersion=2.2.0 -o "$FEED_DIR"
-        dotnet pack build/osucc.Build/osucc.Build.csproj -c Release -p:OsuCcSharedVersion=2.0.2 -p:OsuCcHostVersion=2.2.0 -p:OsuCcBuildVersion=2.2.0 -o "$FEED_DIR"
-        cd -
-
     - name: Restore dependencies
-      run: dotnet restore -s https://api.nuget.org/v3/index.json -s $(pwd)/local_feed
+      run: dotnet restore
 
     - name: Build plugin
       run: dotnet build -c Release --no-restore

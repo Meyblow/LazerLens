@@ -2,4 +2,3 @@ bin/
 obj/
 *.user
 .vs/
-nuget.config
