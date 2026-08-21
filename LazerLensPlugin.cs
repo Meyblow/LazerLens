@@ -82,7 +82,7 @@ namespace LazerLens
             trackerService.AttachStorage(Host.GetStorage());
 
             // 1. Instantiate the session overlay and register it with the game's overlay manager
-            overlay = new LazerLensOverlay(trackerService);
+            overlay = new LazerLensOverlay(trackerService, ExportSessionsToCsv);
             overlayRegistration = Host.RegisterBlockingOverlay(overlay);
 
             // 2. Add toolbar button

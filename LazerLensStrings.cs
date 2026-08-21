@@ -13,6 +13,8 @@ namespace LazerLens
 
         public static LocalisableString TooltipMain => OsuCcLocalisation.Get(getKey(nameof(TooltipMain)), "Lazer Lens");
         public static LocalisableString TooltipSub => OsuCcLocalisation.Get(getKey(nameof(TooltipSub)), "Session stats and history");
+        public static LocalisableString TabSession => OsuCcLocalisation.Get(getKey(nameof(TabSession)), "Session");
+        public static LocalisableString TabSettings => OsuCcLocalisation.Get(getKey(nameof(TabSettings)), "Settings");
         public static LocalisableString TooltipViewBeatmap => OsuCcLocalisation.Get(getKey(nameof(TooltipViewBeatmap)), "Click to view beatmap info in overlay");
         public static LocalisableString TooltipLocalBeatmap => OsuCcLocalisation.Get(getKey(nameof(TooltipLocalBeatmap)), "Local beatmap (no online ID)");
         public static LocalisableString HeaderSettingsTooltip => OsuCcLocalisation.Get(getKey(nameof(HeaderSettingsTooltip)), "Lazer Lens Settings");

@@ -42,11 +42,9 @@ namespace LazerLens.UI.Components
         [Resolved(canBeNull: true)]
         private BeatmapSetOverlay? beatmapSetOverlay { get; set; }
 
-        public override LocalisableString TooltipText => LazerLensOverlay.IsSettingsModalOpen
-            ? string.Empty
-            : (currentPlay.OnlineBeatmapID > 0 || currentPlay.OnlineBeatmapSetID > 0
-                ? LazerLensStrings.TooltipViewBeatmap
-                : LazerLensStrings.TooltipLocalBeatmap);
+        public override LocalisableString TooltipText => currentPlay.OnlineBeatmapID > 0 || currentPlay.OnlineBeatmapSetID > 0
+            ? LazerLensStrings.TooltipViewBeatmap
+            : LazerLensStrings.TooltipLocalBeatmap;
 
         private SessionPlayRecord currentPlay;
         private readonly LazerLensService service;

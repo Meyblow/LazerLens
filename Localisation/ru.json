@@ -3,6 +3,8 @@
   "lazer-lens:description": "Отслеживает показатели вашей игровой сессии, историю игр, среднюю точность и лучшие результаты сессии с помощью внутриигрового оверлея.",
   "lazer-lens:TooltipMain": "Lazer Lens",
   "lazer-lens:TooltipSub": "Статистика и история сессии",
+  "lazer-lens:TabSession": "Сессия",
+  "lazer-lens:TabSettings": "Настройки",
   "lazer-lens:TooltipViewBeatmap": "Нажмите для просмотра карты в оверлее",
   "lazer-lens:TooltipLocalBeatmap": "Локальная карта (нет ID на сервере)",
   "lazer-lens:HeaderSettingsTooltip": "Настройки Lazer Lens",
