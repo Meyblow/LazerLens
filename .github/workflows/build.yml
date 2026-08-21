@@ -26,14 +26,13 @@ jobs:
     - name: Pack osu-cc local packages
       run: |
         git clone --depth 1 https://github.com/rus07tam/osu-cc.git /tmp/osu-cc
-        mkdir -p /tmp/feed
-        dotnet pack /tmp/osu-cc/osucc.Shared/osucc.Shared.csproj -c Release -p:OsuCcHostVersion=2.2.0 -p:OsuCcBuildVersion=2.2.0 -o /tmp/feed
-        dotnet pack /tmp/osu-cc/osucc.Api/osucc.Api.csproj -c Release -p:OsuCcHostVersion=2.2.0 -p:OsuCcBuildVersion=2.2.0 -o /tmp/feed
-        dotnet pack /tmp/osu-cc/build/osucc.Build/osucc.Build.csproj -c Release -p:OsuCcHostVersion=2.2.0 -p:OsuCcBuildVersion=2.2.0 -o /tmp/feed
-        dotnet nuget add source /tmp/feed -n osu-cc-local
+        mkdir -p local_feed
+        dotnet pack /tmp/osu-cc/osucc.Shared/osucc.Shared.csproj -c Release -p:OsuCcSharedVersion=2.0.2 -p:OsuCcHostVersion=2.2.0 -p:OsuCcBuildVersion=2.2.0 -o ./local_feed
+        dotnet pack /tmp/osu-cc/osucc.Api/osucc.Api.csproj -c Release -p:OsuCcSharedVersion=2.0.2 -p:OsuCcHostVersion=2.2.0 -p:OsuCcBuildVersion=2.2.0 -o ./local_feed
+        dotnet pack /tmp/osu-cc/build/osucc.Build/osucc.Build.csproj -c Release -p:OsuCcSharedVersion=2.0.2 -p:OsuCcHostVersion=2.2.0 -p:OsuCcBuildVersion=2.2.0 -o ./local_feed
 
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore -s https://api.nuget.org/v3/index.json -s $(pwd)/local_feed
 
     - name: Build plugin
       run: dotnet build -c Release --no-restore
