@@ -26,7 +26,9 @@ jobs:
     - name: Pack osu-cc local packages
       run: |
         git clone --depth 1 https://github.com/rus07tam/osu-cc.git /tmp/osu-cc
-        dotnet build /tmp/osu-cc/osucc.build.proj -t:PackPackages -c Release
+        cd /tmp/osu-cc
+        dotnet build osucc.build.proj -c Release --nologo
+        cd -
         dotnet nuget add source /tmp/osu-cc/artifacts/nuget -n osu-cc-local
 
     - name: Restore dependencies
