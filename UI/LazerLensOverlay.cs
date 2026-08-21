@@ -807,12 +807,18 @@ namespace LazerLens.UI
                         Padding = new MarginPadding { Horizontal = 14, Vertical = 8 },
                         Children = new Drawable[]
                         {
-                            iconSprite = new SpriteIcon
+                            new Container
                             {
                                 Size = new Vector2(14),
                                 Anchor = Anchor.CentreLeft,
                                 Origin = Anchor.CentreLeft,
-                                Icon = FontAwesome.Solid.Cog,
+                                Child = iconSprite = new SpriteIcon
+                                {
+                                    Size = new Vector2(14),
+                                    Anchor = Anchor.Centre,
+                                    Origin = Anchor.Centre,
+                                    Icon = FontAwesome.Solid.Cog,
+                                }
                             },
                             textSprite = new OsuSpriteText
                             {
