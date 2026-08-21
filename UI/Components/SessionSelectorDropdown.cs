@@ -35,6 +35,8 @@ namespace LazerLens.UI.Components
         private SpriteIcon arrowIcon = null!;
         private FillFlowContainer dropdownContent = null!;
         private Container dropdownContainer = null!;
+        private OsuScrollContainer dropdownScrollContainer = null!;
+        private SessionSelectorButton toggleButton = null!;
         private bool isOpen;
 
         public Guid? CurrentSessionId { get; private set; }
@@ -53,13 +55,13 @@ namespace LazerLens.UI.Components
 
             InternalChildren = new Drawable[]
             {
-                new SessionSelectorButton(this),
+                toggleButton = new SessionSelectorButton(this),
                 dropdownContainer = new Container
                 {
                     Width = 240,
                     AutoSizeAxes = Axes.Y,
                     BypassAutoSizeAxes = Axes.Both,
-                    Position = new Vector2(0, 36),
+                    Position = new Vector2(0, 38),
                     Anchor = Anchor.TopRight,
                     Origin = Anchor.TopRight,
                     Depth = -100,
@@ -69,8 +71,8 @@ namespace LazerLens.UI.Components
                     EdgeEffect = new osu.Framework.Graphics.Effects.EdgeEffectParameters
                     {
                         Type = osu.Framework.Graphics.Effects.EdgeEffectType.Shadow,
-                        Colour = Color4.Black.Opacity(0.45f),
-                        Radius = 8,
+                        Colour = Color4.Black.Opacity(0.5f),
+                        Radius = 10,
                     },
                     Children = new Drawable[]
                     {
@@ -79,13 +81,19 @@ namespace LazerLens.UI.Components
                             RelativeSizeAxes = Axes.Both,
                             Colour = colourProvider.Background5,
                         },
-                        dropdownContent = new FillFlowContainer
+                        dropdownScrollContainer = new OsuScrollContainer
                         {
                             RelativeSizeAxes = Axes.X,
-                            AutoSizeAxes = Axes.Y,
-                            Direction = FillDirection.Vertical,
-                            Spacing = new Vector2(0, 2),
-                            Padding = new MarginPadding(6),
+                            Height = 50,
+                            ScrollbarVisible = true,
+                            Child = dropdownContent = new FillFlowContainer
+                            {
+                                RelativeSizeAxes = Axes.X,
+                                AutoSizeAxes = Axes.Y,
+                                Direction = FillDirection.Vertical,
+                                Spacing = new Vector2(0, 2),
+                                Padding = new MarginPadding(6),
+                            }
                         }
                     }
                 }
@@ -112,6 +120,8 @@ namespace LazerLens.UI.Components
                 arrowIcon.RotateTo(0, 200, Easing.OutQuint);
             }
         }
+
+        public void Close() => close();
 
         public void SelectLive()
         {
@@ -164,6 +174,23 @@ namespace LazerLens.UI.Components
                 var id = s.Id;
                 dropdownContent.Add(new SessionDropdownItem(label, detail, isSelected, () => SelectSession(id)));
             }
+
+            int count = 1 + sessions.Count;
+            float targetHeight = Math.Clamp(count * 40f + 12f, 50f, 220f);
+            dropdownScrollContainer.Height = targetHeight;
+        }
+
+        public override bool ReceivePositionalInputAt(Vector2 screenSpacePos) =>
+            isOpen ? true : base.ReceivePositionalInputAt(screenSpacePos);
+
+        protected override bool OnMouseDown(MouseDownEvent e)
+        {
+            if (isOpen && !dropdownContainer.ReceivePositionalInputAt(e.ScreenSpaceMouseDownPosition) && !toggleButton.ReceivePositionalInputAt(e.ScreenSpaceMouseDownPosition))
+            {
+                close();
+                return false;
+            }
+            return base.OnMouseDown(e);
         }
 
         private sealed partial class SessionSelectorButton : OsuClickableContainer
@@ -179,20 +206,19 @@ namespace LazerLens.UI.Components
             public SessionSelectorButton(SessionSelectorDropdown parent)
             {
                 this.parent = parent;
+                RelativeSizeAxes = Axes.X;
+                Height = 32;
+                Action = () => parent.Toggle();
             }
 
             [BackgroundDependencyLoader]
             private void load()
             {
-                RelativeSizeAxes = Axes.X;
-                Height = 34;
-                Action = () => parent.Toggle();
-
                 Child = new Container
                 {
                     RelativeSizeAxes = Axes.Both,
                     Masking = true,
-                    CornerRadius = 8,
+                    CornerRadius = 6,
                     Children = new Drawable[]
                     {
                         background = new Box

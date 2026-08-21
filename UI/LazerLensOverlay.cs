@@ -337,16 +337,8 @@ namespace LazerLens.UI
                             }),
                             createSettingsSection(LazerLensStrings.SettingsSectionData, new Drawable[]
                             {
-                                new SettingsButton
-                                {
-                                    Text = LazerLensStrings.SettingsOpenDirectory,
-                                    Action = () => service.OpenSessionsDirectory(),
-                                },
-                                new SettingsButton
-                                {
-                                    Text = LazerLensStrings.SettingsExportCsv,
-                                    Action = () => exportCsvAction?.Invoke(),
-                                },
+                                new SettingsActionButton(FontAwesome.Solid.FolderOpen, LazerLensStrings.SettingsOpenDirectory, () => service.OpenSessionsDirectory()),
+                                new SettingsActionButton(FontAwesome.Solid.FileCsv, LazerLensStrings.SettingsExportCsv, () => exportCsvAction?.Invoke()),
                             }),
                         }
                     }
@@ -355,6 +347,8 @@ namespace LazerLens.UI
 
             currentSection.BindValueChanged(e =>
             {
+                sessionSelector?.Close();
+
                 if (e.NewValue == LazerLensSection.Session)
                 {
                     sessionContent.FadeIn(200, Easing.OutQuint);
@@ -549,6 +543,12 @@ namespace LazerLens.UI
                 RefreshData();
         }
 
+        protected override bool OnMouseDown(MouseDownEvent e)
+        {
+            sessionSelector?.Close();
+            return base.OnMouseDown(e);
+        }
+
         public void RefreshData()
         {
             if (IsDisposed) return;
@@ -716,6 +716,84 @@ namespace LazerLens.UI
         {
             base.Dispose(isDisposing);
             service.OnSessionUpdated -= onServiceSessionUpdated;
+        }
+
+        private sealed partial class SettingsActionButton : OsuClickableContainer
+        {
+            [Resolved]
+            private OverlayColourProvider colourProvider { get; set; } = null!;
+
+            private readonly IconUsage icon;
+            private readonly LocalisableString text;
+            private Box background = null!;
+
+            public SettingsActionButton(IconUsage icon, LocalisableString text, Action action)
+            {
+                this.icon = icon;
+                this.text = text;
+                Action = action;
+
+                RelativeSizeAxes = Axes.X;
+                Height = 38;
+            }
+
+            [BackgroundDependencyLoader]
+            private void load()
+            {
+                Child = new Container
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    Masking = true,
+                    CornerRadius = 6,
+                    Children = new Drawable[]
+                    {
+                        background = new Box
+                        {
+                            RelativeSizeAxes = Axes.Both,
+                            Colour = colourProvider.Background3,
+                        },
+                        new FillFlowContainer
+                        {
+                            Anchor = Anchor.Centre,
+                            Origin = Anchor.Centre,
+                            AutoSizeAxes = Axes.Both,
+                            Direction = FillDirection.Horizontal,
+                            Spacing = new Vector2(10, 0),
+                            Children = new Drawable[]
+                            {
+                                new SpriteIcon
+                                {
+                                    Anchor = Anchor.CentreLeft,
+                                    Origin = Anchor.CentreLeft,
+                                    Size = new Vector2(14),
+                                    Icon = icon,
+                                    Colour = colourProvider.Highlight1,
+                                },
+                                new OsuSpriteText
+                                {
+                                    Anchor = Anchor.CentreLeft,
+                                    Origin = Anchor.CentreLeft,
+                                    Text = text,
+                                    Font = OsuFont.Torus.With(size: 13, weight: FontWeight.SemiBold),
+                                    Colour = Color4.White,
+                                }
+                            }
+                        }
+                    }
+                };
+            }
+
+            protected override bool OnHover(HoverEvent e)
+            {
+                background.FadeColour(colourProvider.Background2, 100);
+                return base.OnHover(e);
+            }
+
+            protected override void OnHoverLost(HoverLostEvent e)
+            {
+                background.FadeColour(colourProvider.Background3, 100);
+                base.OnHoverLost(e);
+            }
         }
 
         private sealed partial class BestScoreBanner : OsuClickableContainer, IHasTooltip
@@ -905,7 +983,6 @@ namespace LazerLens.UI
                     Text.Text = value.GetLocalisableDescription().ToLower();
                     Text.Font = OsuFont.GetFont(size: 14);
                     Text.Margin = new MarginPadding { Vertical = 16.5f };
-                    Bar.Margin = new MarginPadding { Bottom = bar_height };
                 }
             }
         }
