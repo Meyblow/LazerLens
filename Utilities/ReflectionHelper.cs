@@ -89,27 +89,48 @@ namespace LazerLens.Utilities
         }
 
         /// <summary>
-        /// Checks whether the Player instance has failed (HP = 0 or FailOverlay triggered).
+        /// Checks whether the Player instance has failed (HP = 0, HasFailed bindable, or FailOverlay triggered).
         /// </summary>
         public static bool IsPlayerFailed(Player player)
         {
             try
             {
-                var hpProp = typeof(Player).GetProperty("HealthProcessor", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                var hp = hpProp?.GetValue(player) as HealthProcessor;
-                if (hp?.HasFailed == true)
+                if (player == null) return false;
+
+                if (player.GameplayState?.HasPassed == true)
+                    return false;
+
+                if (player.GameplayState?.Score?.ScoreInfo?.Rank == ScoreRank.F)
                     return true;
 
-                var failOverlayProp = typeof(Player).GetProperty("FailOverlay", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                if (failOverlayProp?.GetValue(player) is FailOverlay failOverlay &&
-                    failOverlay.State.Value == osu.Framework.Graphics.Containers.Visibility.Visible)
+                for (Type? t = player.GetType(); t != null; t = t.BaseType)
                 {
-                    return true;
+                    var hpProp = t.GetProperty("HealthProcessor", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+                    if (hpProp?.GetValue(player) is HealthProcessor hp)
+                    {
+                        if (hp.HasFailed || hp.Health.Value <= 0.0001)
+                            return true;
+                    }
+
+                    var hpField = t.GetField("healthProcessor", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
+                               ?? t.GetField("_healthProcessor", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+                    if (hpField?.GetValue(player) is HealthProcessor hpF)
+                    {
+                        if (hpF.HasFailed || hpF.Health.Value <= 0.0001)
+                            return true;
+                    }
+
+                    var foField = t.GetField("failOverlay", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
+                               ?? t.GetField("_failOverlay", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+                    if (foField?.GetValue(player) is FailOverlay fo && fo.State.Value == osu.Framework.Graphics.Containers.Visibility.Visible)
+                    {
+                        return true;
+                    }
                 }
             }
             catch
             {
-                // Defensive fallback: assume not failed if reflection fails
+                // Defensive fallback
             }
 
             return false;
@@ -122,9 +143,38 @@ namespace LazerLens.Utilities
         {
             try
             {
-                var spProp = typeof(Player).GetProperty("ScoreProcessor", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                var sp = spProp?.GetValue(player) as ScoreProcessor;
-                sp?.PopulateScore(scoreInfo);
+                if (player == null || scoreInfo == null) return;
+
+                for (Type? t = player.GetType(); t != null; t = t.BaseType)
+                {
+                    var spProp = t.GetProperty("ScoreProcessor", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+                    if (spProp?.GetValue(player) is ScoreProcessor sp)
+                    {
+                        sp.PopulateScore(scoreInfo);
+                        return;
+                    }
+
+                    var spField = t.GetField("scoreProcessor", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
+                               ?? t.GetField("_scoreProcessor", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+                    if (spField?.GetValue(player) is ScoreProcessor spF)
+                    {
+                        spF.PopulateScore(scoreInfo);
+                        return;
+                    }
+                }
+
+                if (player.GameplayState?.Score?.ScoreInfo != null)
+                {
+                    var stateInfo = player.GameplayState.Score.ScoreInfo;
+                    if (scoreInfo.TotalScore == 0 && stateInfo.TotalScore > 0)
+                        scoreInfo.TotalScore = stateInfo.TotalScore;
+                    if (scoreInfo.Accuracy == 0 && stateInfo.Accuracy > 0)
+                        scoreInfo.Accuracy = stateInfo.Accuracy;
+                    if (scoreInfo.MaxCombo == 0 && stateInfo.MaxCombo > 0)
+                        scoreInfo.MaxCombo = stateInfo.MaxCombo;
+                    if (scoreInfo.Statistics == null || scoreInfo.Statistics.Count == 0)
+                        scoreInfo.Statistics = stateInfo.Statistics;
+                }
             }
             catch
             {

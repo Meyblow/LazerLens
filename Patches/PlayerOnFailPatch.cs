@@ -1,5 +1,3 @@
-using System;
-using osu.Game.Scoring;
 using osu.Game.Screens.Play;
 using osucc.Core;
 using osucc.Plugin;
@@ -7,12 +5,12 @@ using osucc.Plugin;
 namespace LazerLens.Patches
 {
     /// <summary>
-    /// Hooks Player.ConcludeFailedScore to capture native failed plays with complete score details.
+    /// Hooks Player.OnFail (called immediately when player health drops to 0) to capture failed scores.
     /// </summary>
-    public sealed class PlayerConcludeFailedScorePatch : PluginPatch<LazerLensPlugin>
+    public sealed class PlayerOnFailPatch : PluginPatch<LazerLensPlugin>
     {
-        public PlayerConcludeFailedScorePatch(LazerLensPlugin plugin, IOsuCcPluginHost host)
-            : base(plugin, host, typeof(Player), "ConcludeFailedScore", MethodType.Postfix)
+        public PlayerOnFailPatch(LazerLensPlugin plugin, IOsuCcPluginHost host)
+            : base(plugin, host, typeof(Player), "OnFail", MethodType.Postfix)
         {
         }
 

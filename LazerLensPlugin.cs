@@ -34,6 +34,7 @@ namespace LazerLens
         {
             new PlayerImportScorePatch(this, Host),
             new PlayerConcludeFailedScorePatch(this, Host),
+            new PlayerOnFailPatch(this, Host),
             new PlayerRestartPatch(this, Host),
             new PlayerPerformExitPatch(this, Host),
             new ResultsScreenLoadCompletePatch(this, Host),
@@ -68,7 +69,7 @@ namespace LazerLens
             trackerService.OnNewPlayRecorded += onNewPlayRecorded;
 
             int count = InstallPatches();
-            Host.Log($"LazerLens: installed {count}/5 patches.");
+            Host.Log($"LazerLens: installed {count}/6 patches.");
             Host.Log("LazerLens OnLoad() complete.");
         }
 
@@ -193,7 +194,7 @@ namespace LazerLens
 
         private static bool isPlayerFailed(Player player) => ReflectionHelper.IsPlayerFailed(player);
 
-        public void RecordUnpassedPlayerScore(Player player)
+        public void RecordUnpassedPlayerScore(Player player, bool forceFailed = false)
         {
             try
             {
@@ -203,7 +204,7 @@ namespace LazerLens
                 if (typeName.Contains("Replay") || typeName.Contains("Spectator"))
                     return;
 
-                bool isFailed = isPlayerFailed(player);
+                bool isFailed = forceFailed || isPlayerFailed(player);
                 if (!isFailed && !trackerService.TrackRetries.Value)
                     return;
 
@@ -237,18 +238,11 @@ namespace LazerLens
                         scoreInfo.Mods = Array.Empty<osu.Game.Rulesets.Mods.Mod>();
                 }
 
-                try
-                {
-                    var spProp = typeof(Player).GetProperty("ScoreProcessor", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-                    var sp = spProp?.GetValue(player) as osu.Game.Rulesets.Scoring.ScoreProcessor;
-                    sp?.PopulateScore(scoreInfo);
-                }
-                catch (Exception spEx)
-                {
-                    Host.Log(LogLevel.Error, $"LazerLens ScoreProcessor populate error: {spEx}");
-                }
+                ReflectionHelper.TryPopulateScoreProcessor(player, scoreInfo);
 
-                scoreInfo.Date = DateTimeOffset.Now;
+                if (scoreInfo.Date == default)
+                    scoreInfo.Date = DateTimeOffset.Now;
+
                 scoreInfo.Rank = ScoreRank.F;
 
                 OnScoreImported(scoreInfo, false);
