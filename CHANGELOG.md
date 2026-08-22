@@ -2,6 +2,20 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [1.3.1] - 2026-08-22
+
+### Added
+- **Dedicated Archive Tab**: Full past sessions viewer with search, filtering, and detailed statistics.
+- **Repositioned Header Search Bar**: Search input is now cleanly integrated directly into the play history header row.
+
+### Fixed
+- **Failed Plays Tracking**: Fixed Harmony postfix signature for `Player.ConcludeFailedScore` and improved reflection to reliably detect failed plays via `HealthProcessor.HasFailed`, health value, and fail overlay.
+- **Active Tab Bar Indicator Alignment**: Aligned the active tab pill indicator with the horizontal baseline across all tabs.
+- **Scrollbar Overlap on Session Cards**: Added right padding to the saved sessions list so the scrollbar no longer overlaps session cards or PP badges.
+- **Saved Sessions Scroll Clipping**: Fixed scroll clipping in the archive list by separating the header into an isolated container.
+- **Settings Checkbox Alignment**: Aligned all settings options without staircase indentation.
+- **Uniform Metric Card Spacing**: Standardized gaps between metric cards and sections.
+
 ## [1.3.0] - 2026-08-21
 
 ### Added
