@@ -117,5 +117,20 @@ namespace LazerLens
             OsuCcLocalisation.Get(getKey(nameof(SessionSummaryDetail)), "{0} plays \u2022 {1:F0}pp \u2022 {2:F1}% avg", playCount, topPP, avgAcc);
 
         public static LocalisableString DeleteSession => OsuCcLocalisation.Get(getKey(nameof(DeleteSession)), "Delete session");
+
+        public static LocalisableString ContextMenuOpenInFolder => OsuCcLocalisation.Get(getKey(nameof(ContextMenuOpenInFolder)), "Open in folder");
+        public static LocalisableString ContextMenuPinSession => OsuCcLocalisation.Get(getKey(nameof(ContextMenuPinSession)), "Pin session");
+        public static LocalisableString ContextMenuUnpinSession => OsuCcLocalisation.Get(getKey(nameof(ContextMenuUnpinSession)), "Unpin session");
+        public static LocalisableString ContextMenuSetNote => OsuCcLocalisation.Get(getKey(nameof(ContextMenuSetNote)), "Set session note...");
+        public static LocalisableString ContextMenuEditNote => OsuCcLocalisation.Get(getKey(nameof(ContextMenuEditNote)), "Edit session note...");
+        public static LocalisableString ContextMenuDeleteSession => OsuCcLocalisation.Get(getKey(nameof(ContextMenuDeleteSession)), "Delete session");
+
+        public static LocalisableString DialogDeleteConfirmTitle => OsuCcLocalisation.Get(getKey(nameof(DialogDeleteConfirmTitle)), "Delete Saved Session");
+        public static LocalisableString DialogDeleteConfirmBody => OsuCcLocalisation.Get(getKey(nameof(DialogDeleteConfirmBody)), "Are you sure you want to permanently delete this session and its play history?");
+        public static LocalisableString DialogSetNoteTitle => OsuCcLocalisation.Get(getKey(nameof(DialogSetNoteTitle)), "Session Note");
+        public static LocalisableString DialogSetNoteDescription => OsuCcLocalisation.Get(getKey(nameof(DialogSetNoteDescription)), "Enter a custom note or description for this session:");
+        public static LocalisableString DialogSetNotePlaceholder => OsuCcLocalisation.Get(getKey(nameof(DialogSetNotePlaceholder)), "e.g. My first top play");
+        public static LocalisableString DialogSave => OsuCcLocalisation.Get(getKey(nameof(DialogSave)), "Save");
+        public static LocalisableString DialogCancel => OsuCcLocalisation.Get(getKey(nameof(DialogCancel)), "Cancel");
     }
 }

@@ -72,7 +72,7 @@ namespace LazerLens.Services
                     }
                 }
 
-                _cachedSummaries = summaries.OrderByDescending(s => s.StartTime).ToList();
+                _cachedSummaries = summaries.OrderByDescending(s => s.IsPinned).ThenByDescending(s => s.StartTime).ToList();
                 return _cachedSummaries;
             }
             catch (Exception ex)
@@ -106,6 +106,97 @@ namespace LazerLens.Services
             {
                 TimingLog.Error($"Failed to load session {sessionId}: {ex.Message}");
                 return null;
+            }
+        }
+
+        public void SetSessionPinned(Guid sessionId, bool pinned)
+        {
+            if (_storage == null) return;
+
+            try
+            {
+                var files = _storage.GetFiles(sessions_directory, $"*_{sessionId}.json");
+                var file = files.FirstOrDefault();
+
+                if (file == null) return;
+
+                var path = file.StartsWith(sessions_directory, StringComparison.OrdinalIgnoreCase)
+                    ? file
+                    : $"{sessions_directory}/{file}";
+
+                var archive = _storage.ReadJson<SessionArchive>(path);
+                if (archive != null)
+                {
+                    archive.IsPinned = pinned;
+                    _storage.WriteJson(path, archive);
+                    InvalidateCache();
+                }
+            }
+            catch (Exception ex)
+            {
+                TimingLog.Error($"Failed to set pinned for session {sessionId}: {ex.Message}");
+            }
+        }
+
+        public void SetSessionNote(Guid sessionId, string? note)
+        {
+            if (_storage == null) return;
+
+            try
+            {
+                var files = _storage.GetFiles(sessions_directory, $"*_{sessionId}.json");
+                var file = files.FirstOrDefault();
+
+                if (file == null) return;
+
+                var path = file.StartsWith(sessions_directory, StringComparison.OrdinalIgnoreCase)
+                    ? file
+                    : $"{sessions_directory}/{file}";
+
+                var archive = _storage.ReadJson<SessionArchive>(path);
+                if (archive != null)
+                {
+                    archive.Note = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
+                    _storage.WriteJson(path, archive);
+                    InvalidateCache();
+                }
+            }
+            catch (Exception ex)
+            {
+                TimingLog.Error($"Failed to set note for session {sessionId}: {ex.Message}");
+            }
+        }
+
+        public void OpenSessionFile(Guid sessionId)
+        {
+            if (_storage == null) return;
+
+            try
+            {
+                var files = _storage.GetFiles(sessions_directory, $"*_{sessionId}.json");
+                var file = files.FirstOrDefault();
+
+                if (file != null)
+                {
+                    var path = file.StartsWith(sessions_directory, StringComparison.OrdinalIgnoreCase)
+                        ? file
+                        : $"{sessions_directory}/{file}";
+
+                    var fullPath = _storage.GetFullPath(path);
+                    if (!string.IsNullOrEmpty(fullPath) && File.Exists(fullPath))
+                    {
+                        var dir = Path.GetDirectoryName(fullPath);
+                        if (!string.IsNullOrEmpty(dir))
+                            new osu.Framework.Platform.NativeStorage(dir).PresentExternally();
+                        return;
+                    }
+                }
+
+                OpenSessionsDirectory();
+            }
+            catch (Exception ex)
+            {
+                TimingLog.Error($"Failed to open session file {sessionId}: {ex.Message}");
             }
         }
 

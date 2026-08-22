@@ -56,8 +56,8 @@ namespace LazerLens
             var settings = Host.GetSettings();
 
             var notifySetting = settings.Bind("notify_on_play", true);
-            var retriesSetting = settings.Bind("track_retries", true);
-            var compactSetting = settings.Bind("compact_mode", false);
+            var retriesSetting = settings.Bind("track_retries", false);
+            var compactSetting = settings.Bind("compact_mode", true);
             var showUrSetting = settings.Bind("show_ur", true);
 
             trackerService.NotifyOnPlay.BindTo(notifySetting);

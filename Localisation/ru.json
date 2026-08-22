@@ -72,5 +72,18 @@
   "lazer-lens:ArchiveBanner": "Просмотр архивной сессии от {0}",
   "lazer-lens:ReturnToLive": "[ Вернуться к текущей ]",
   "lazer-lens:SessionSummaryDetail": "{0} игр • {1:F0}pp • {2:F1}% ср.",
-  "lazer-lens:DeleteSession": "Удалить сессию"
+  "lazer-lens:DeleteSession": "Удалить сессию",
+  "lazer-lens:ContextMenuOpenInFolder": "Открыть в папке",
+  "lazer-lens:ContextMenuPinSession": "Закрепить сессию",
+  "lazer-lens:ContextMenuUnpinSession": "Открепить сессию",
+  "lazer-lens:ContextMenuSetNote": "Задать пометку...",
+  "lazer-lens:ContextMenuEditNote": "Изменить пометку...",
+  "lazer-lens:ContextMenuDeleteSession": "Удалить сессию",
+  "lazer-lens:DialogDeleteConfirmTitle": "Удаление сессии",
+  "lazer-lens:DialogDeleteConfirmBody": "Вы действительно хотите безвозвратно удалить эту сохраненную сессию?",
+  "lazer-lens:DialogSetNoteTitle": "Пометка сессии",
+  "lazer-lens:DialogSetNoteDescription": "Введите пользовательскую пометку или название для этой сессии:",
+  "lazer-lens:DialogSetNotePlaceholder": "например, Мой первый топ плей",
+  "lazer-lens:DialogSave": "Сохранить",
+  "lazer-lens:DialogCancel": "Отмена"
 }

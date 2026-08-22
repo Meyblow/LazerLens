@@ -30,9 +30,9 @@ namespace LazerLens.Services
         public event Action? OnSessionUpdated;
         public event Action<SessionPlayRecord>? OnNewPlayRecorded;
 
-        public Bindable<bool> TrackRetries { get; } = new(true);
+        public Bindable<bool> TrackRetries { get; } = new(false);
         public Bindable<bool> NotifyOnPlay { get; } = new(true);
-        public Bindable<bool> CompactMode { get; } = new(false);
+        public Bindable<bool> CompactMode { get; } = new(true);
         public Bindable<bool> ShowUR { get; } = new(true);
 
         private SessionState? viewedState;

@@ -15,6 +15,8 @@ namespace LazerLens.Models
         public double TopPP { get; set; }
         public string? TopScoreTitle { get; set; }
         public double AverageAccuracy { get; set; }
+        public bool IsPinned { get; set; }
+        public string? Note { get; set; }
     }
 
     public class PlayRecordDto
@@ -55,6 +57,8 @@ namespace LazerLens.Models
         public DateTimeOffset EndTime { get; set; }
         public double? InitialProfilePP { get; set; }
         public double? CurrentProfilePP { get; set; }
+        public bool IsPinned { get; set; }
+        public string? Note { get; set; }
         public List<PlayRecordDto> Plays { get; set; } = new();
 
         public static SessionArchive FromState(SessionState state)
@@ -170,7 +174,9 @@ namespace LazerLens.Models
                 PlayCount = archive.Plays.Count,
                 TopPP = bestScore?.PerformancePoints ?? 0.0,
                 TopScoreTitle = bestScore != null ? $"{bestScore.BeatmapArtist} - {bestScore.BeatmapTitle} [{bestScore.DifficultyName}]" : null,
-                AverageAccuracy = archive.Plays.Count == 0 ? 0.0 : archive.Plays.Average(p => p.Accuracy)
+                AverageAccuracy = archive.Plays.Count == 0 ? 0.0 : archive.Plays.Average(p => p.Accuracy),
+                IsPinned = archive.IsPinned,
+                Note = archive.Note
             };
         }
     }

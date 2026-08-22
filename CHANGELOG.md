@@ -2,6 +2,19 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [1.4.0] - 2026-08-22
+
+### Added
+- **Session Context Menu (Right Click)**: Added context menu on past session cards with options to:
+  - 📂 **Open in Folder**: Open the exact session `.json` file in system file manager.
+  - 📌 **Pin / Unpin Session**: Pin favorite sessions to the top of the archive list with a gold thumbtack icon.
+  - 🏷️ **Set / Edit Session Note**: Modal dialog to add custom notes and names to sessions (e.g. *"My first top play"*).
+  - 🗑️ **Delete Session**: Confirmation dialog to permanently delete saved session archives.
+- **Default Settings Adjusted**: Defaults updated to `Notifications after play: ON`, `Track retried plays: OFF`, `Compact history UI: ON`, `Show Unstable Rate: ON`.
+
+### Fixed
+- **Mathematical Uniform Spacing**: Grid column paddings and vertical gaps across live and archive tabs calibrated to exact 8px uniform spacing.
+
 ## [1.3.7] - 2026-08-22
 
 ### Changed

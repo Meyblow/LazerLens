@@ -17,6 +17,7 @@ using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
+using osu.Game.Graphics.Cursor;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterfaceV2;
@@ -132,6 +133,9 @@ namespace LazerLens.UI
         // Settings Tab Components
         private FillFlowContainer settingsContent = null!;
 
+        // Modal Dialog Layer
+        private Container dialogContainer = null!;
+
         private bool isDataDirty = true;
         private int lastUpdatedSecond = -1;
 
@@ -172,6 +176,12 @@ namespace LazerLens.UI
 
                     // TAB 3: Settings Content
                     settingsContent = buildSettingsContent(),
+
+                    // Modal Dialog Layer
+                    dialogContainer = new Container
+                    {
+                        RelativeSizeAxes = Axes.Both,
+                    }
                 }
             });
 
@@ -250,25 +260,25 @@ namespace LazerLens.UI
                                     new Container
                                     {
                                         RelativeSizeAxes = Axes.Both,
-                                        Padding = new MarginPadding { Right = 4.5f },
+                                        Padding = new MarginPadding { Right = 6f },
                                         Child = liveTimeCard = new MetricCard(FontAwesome.Solid.Clock, LazerLensStrings.OverlaySessionTime, "00:00:00", LazerLensStrings.TimeStartedJustNow)
                                     },
                                     new Container
                                     {
                                         RelativeSizeAxes = Axes.Both,
-                                        Padding = new MarginPadding { Left = 1.5f, Right = 3f },
+                                        Padding = new MarginPadding { Left = 2f, Right = 4f },
                                         Child = livePlaysCard = new MetricCard(FontAwesome.Solid.Play, LazerLensStrings.OverlayTotalPlays, "0", LazerLensStrings.PlaysPassFail(0, 0))
                                     },
                                     new Container
                                     {
                                         RelativeSizeAxes = Axes.Both,
-                                        Padding = new MarginPadding { Left = 3f, Right = 1.5f },
+                                        Padding = new MarginPadding { Left = 4f, Right = 2f },
                                         Child = liveAccCard = new MetricCard(FontAwesome.Solid.Percent, LazerLensStrings.OverlayAvgAccuracy, "0.00%", LazerLensStrings.PlaysRecorded(0))
                                     },
                                     new Container
                                     {
                                         RelativeSizeAxes = Axes.Both,
-                                        Padding = new MarginPadding { Left = 4.5f },
+                                        Padding = new MarginPadding { Left = 6f },
                                         Child = liveComboCard = new MetricCard(FontAwesome.Solid.Fire, LazerLensStrings.OverlayMaxCombo, "0x", LazerLensStrings.OverlaySessionPPGain("+0.0 pp"))
                                     }
                                 }
@@ -416,17 +426,21 @@ namespace LazerLens.UI
                                                             },
                                                             new Drawable[]
                                                             {
-                                                                new OsuScrollContainer
+                                                                new OsuContextMenuContainer
                                                                 {
                                                                     RelativeSizeAxes = Axes.Both,
-                                                                    Padding = new MarginPadding { Right = 14 },
-                                                                    ScrollbarVisible = true,
-                                                                    Child = archiveCardsList = new FillFlowContainer
+                                                                    Child = new OsuScrollContainer
                                                                     {
-                                                                        RelativeSizeAxes = Axes.X,
-                                                                        AutoSizeAxes = Axes.Y,
-                                                                        Direction = FillDirection.Vertical,
-                                                                        Spacing = new Vector2(0, 6),
+                                                                        RelativeSizeAxes = Axes.Both,
+                                                                        Padding = new MarginPadding { Right = 14 },
+                                                                        ScrollbarVisible = true,
+                                                                        Child = archiveCardsList = new FillFlowContainer
+                                                                        {
+                                                                            RelativeSizeAxes = Axes.X,
+                                                                            AutoSizeAxes = Axes.Y,
+                                                                            Direction = FillDirection.Vertical,
+                                                                            Spacing = new Vector2(0, 6),
+                                                                        }
                                                                     }
                                                                 }
                                                             }
@@ -527,25 +541,25 @@ namespace LazerLens.UI
                                                                 new Container
                                                                 {
                                                                     RelativeSizeAxes = Axes.Both,
-                                                                    Padding = new MarginPadding { Right = 4.5f },
+                                                                    Padding = new MarginPadding { Right = 6f },
                                                                     Child = archiveTimeCard = new MetricCard(FontAwesome.Solid.Clock, LazerLensStrings.OverlaySessionTime, "00:00:00", "")
                                                                 },
                                                                 new Container
                                                                 {
                                                                     RelativeSizeAxes = Axes.Both,
-                                                                    Padding = new MarginPadding { Left = 1.5f, Right = 3f },
+                                                                    Padding = new MarginPadding { Left = 2f, Right = 4f },
                                                                     Child = archivePlaysCard = new MetricCard(FontAwesome.Solid.Play, LazerLensStrings.OverlayTotalPlays, "0", LazerLensStrings.PlaysPassFail(0, 0))
                                                                 },
                                                                 new Container
                                                                 {
                                                                     RelativeSizeAxes = Axes.Both,
-                                                                    Padding = new MarginPadding { Left = 3f, Right = 1.5f },
+                                                                    Padding = new MarginPadding { Left = 4f, Right = 2f },
                                                                     Child = archiveAccCard = new MetricCard(FontAwesome.Solid.Percent, LazerLensStrings.OverlayAvgAccuracy, "0.00%", LazerLensStrings.PlaysRecorded(0))
                                                                 },
                                                                 new Container
                                                                 {
                                                                     RelativeSizeAxes = Axes.Both,
-                                                                    Padding = new MarginPadding { Left = 4.5f },
+                                                                    Padding = new MarginPadding { Left = 6f },
                                                                     Child = archiveComboCard = new MetricCard(FontAwesome.Solid.Fire, LazerLensStrings.OverlayMaxCombo, "0x", LazerLensStrings.OverlaySessionPPGain("+0.0 pp"))
                                                                 }
                                                             }
@@ -751,16 +765,61 @@ namespace LazerLens.UI
                 bool isSelected = summary.Id == selectedArchiveSessionId;
                 var id = summary.Id;
 
-                var card = new ArchiveSessionCard(summary, isSelected, () =>
-                {
-                    selectArchivedSession(id);
-                });
+                var card = new ArchiveSessionCard(
+                    summary,
+                    isSelected,
+                    action: () => selectArchivedSession(id),
+                    onOpenFolder: handleOpenFolder,
+                    onTogglePin: handleTogglePin,
+                    onSetNote: handleSetNote,
+                    onDelete: handleDeleteSession
+                );
 
                 archiveCards.Add(card);
                 archiveCardsList.Add(card);
             }
 
             loadArchivedSessionDetail(selectedArchiveSessionId.Value);
+        }
+
+        private void handleOpenFolder(Guid id)
+        {
+            service.StorageService?.OpenSessionFile(id);
+        }
+
+        private void handleTogglePin(Guid id, bool pinned)
+        {
+            service.StorageService?.SetSessionPinned(id, pinned);
+            refreshArchiveList();
+        }
+
+        private void handleSetNote(Guid id, string? currentNote)
+        {
+            var dialog = new SessionNoteDialog(currentNote, newNote =>
+            {
+                service.StorageService?.SetSessionNote(id, newNote);
+                refreshArchiveList();
+            });
+
+            dialogContainer.Add(dialog);
+            dialog.Show();
+        }
+
+        private void handleDeleteSession(Guid id)
+        {
+            var dialog = new OsuCcConfirmDialog(
+                LazerLensStrings.DialogDeleteConfirmTitle,
+                LazerLensStrings.DialogDeleteConfirmBody,
+                () =>
+                {
+                    service.StorageService?.DeleteSession(id);
+                    if (selectedArchiveSessionId == id)
+                        selectedArchiveSessionId = null;
+                    refreshArchiveList();
+                }
+            );
+
+            ClientDialogs.Push(dialog);
         }
 
         private void selectArchivedSession(Guid id)

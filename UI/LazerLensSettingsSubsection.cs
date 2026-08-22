@@ -21,7 +21,7 @@ namespace LazerLens.UI
             this.AddCheckbox(
                 settings,
                 "track_retries",
-                true,
+                false,
                 LazerLensStrings.SettingsTrackRetriesCaption,
                 LazerLensStrings.SettingsTrackRetriesSubtitle
             );
@@ -29,7 +29,7 @@ namespace LazerLens.UI
             this.AddCheckbox(
                 settings,
                 "compact_mode",
-                false,
+                true,
                 LazerLensStrings.SettingsCompactHistoryCaption,
                 LazerLensStrings.SettingsCompactHistorySubtitle
             );
