@@ -1,13 +1,11 @@
-name: Build Plugin
+name: Build & Release Plugin
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main ]
     tags: [ 'v*' ]
   pull_request:
-    branches: [ main, master ]
-  release:
-    types: [ created ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -22,6 +20,14 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 8.0.x
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
 
     - name: Restore dependencies
       run: dotnet restore
