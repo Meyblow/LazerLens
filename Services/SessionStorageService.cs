@@ -21,7 +21,66 @@ namespace LazerLens.Services
         public SessionStorageService(Storage? storage)
         {
             _baseStorage = storage;
-            _sessionsStorage = storage?.GetStorageForDirectory("sessions");
+
+            if (storage != null)
+            {
+                try
+                {
+                    string pluginFullPath = storage.GetFullPath(string.Empty);
+                    DirectoryInfo? pluginDir = new DirectoryInfo(pluginFullPath);
+                    DirectoryInfo? osuCcDir = pluginDir.Parent?.Parent;
+
+                    if (osuCcDir != null && osuCcDir.Exists)
+                    {
+                        string sessionsPath = Path.Combine(osuCcDir.FullName, "sessions");
+                        _sessionsStorage = new NativeStorage(sessionsPath);
+                    }
+                    else
+                    {
+                        string sessionsPath = Path.GetFullPath(Path.Combine(pluginFullPath, "..", "..", "sessions"));
+                        _sessionsStorage = new NativeStorage(sessionsPath);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    TimingLog.Error($"SessionStorageService: failed to resolve osu-cc/sessions storage: {ex}");
+                    _sessionsStorage = storage.GetStorageForDirectory("sessions");
+                }
+            }
+
+            migrateLegacySessions(storage);
+        }
+
+        private void migrateLegacySessions(Storage? storage)
+        {
+            if (storage == null || _sessionsStorage == null) return;
+
+            try
+            {
+                var legacyStorage = storage.GetStorageForDirectory("sessions");
+                var legacyFiles = legacyStorage.GetFiles(".", "*.json");
+
+                foreach (var file in legacyFiles)
+                {
+                    try
+                    {
+                        if (!_sessionsStorage.Exists(file))
+                        {
+                            using var src = legacyStorage.GetStream(file);
+                            using var dst = _sessionsStorage.GetStream(file, FileAccess.Write, FileMode.Create);
+                            src.CopyTo(dst);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        TimingLog.Error($"Failed to migrate session file {file}: {ex}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                TimingLog.Error($"Failed during legacy session migration: {ex}");
+            }
         }
 
         public void SaveSession(SessionState state)

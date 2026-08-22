@@ -2,6 +2,14 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [1.3.6] - 2026-08-22
+
+### Changed
+- **Session Storage Location**: Saved sessions are now stored directly in `osu-cc/sessions/` (on Linux `~/.local/share/osu/osu-cc/sessions/`, on Windows `%APPDATA%\osu\osu-cc\sessions\`) instead of the plugin subfolder. Existing sessions are automatically migrated seamlessly.
+
+### Fixed
+- **Uniform Spacing & Layout Alignment**: Polished all horizontal card and vertical section spacings to ensure uniform alignment across the overlay.
+
 ## [1.3.5] - 2026-08-22
 
 ### Fixed
