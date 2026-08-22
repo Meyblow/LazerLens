@@ -2,6 +2,11 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [1.3.4] - 2026-08-22
+
+### Fixed
+- **Plugin Metadata Compatibility**: Fixed `MissingMethodException` when loading `LazerLens.dll` on standard/legacy `osu!cc` hook installations by restoring backward-compatible 3-argument constructor binding for `OsuCcPluginAttribute`.
+
 ## [1.3.3] - 2026-08-22
 
 ### Added
