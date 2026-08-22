@@ -387,7 +387,7 @@ namespace LazerLens.UI
                                                         new OsuScrollContainer
                                                         {
                                                             RelativeSizeAxes = Axes.Both,
-                                                            Padding = new MarginPadding { Top = 26 },
+                                                            Padding = new MarginPadding { Top = 26, Right = 14 },
                                                             ScrollbarVisible = true,
                                                             Child = archiveCardsList = new FillFlowContainer
                                                             {
@@ -587,12 +587,14 @@ namespace LazerLens.UI
                         {
                             LabelText = LazerLensStrings.SettingsNotificationsCaption,
                             Current = service.NotifyOnPlay,
+                            ShowsDefaultIndicator = false,
                             Keywords = new[] { "notifications", "notify", "toast" },
                         },
                         new SettingsCheckbox
                         {
                             LabelText = LazerLensStrings.SettingsTrackRetriesCaption,
                             Current = service.TrackRetries,
+                            ShowsDefaultIndicator = false,
                             Keywords = new[] { "retries", "retry", "fail", "pass" },
                         },
                     }),
@@ -602,12 +604,14 @@ namespace LazerLens.UI
                         {
                             LabelText = LazerLensStrings.SettingsCompactHistoryCaption,
                             Current = service.CompactMode,
+                            ShowsDefaultIndicator = false,
                             Keywords = new[] { "compact", "history", "ui" },
                         },
                         new SettingsCheckbox
                         {
                             LabelText = LazerLensStrings.SettingsShowURCaption,
                             Current = service.ShowUR,
+                            ShowsDefaultIndicator = false,
                             Keywords = new[] { "ur", "unstable rate" },
                         },
                     }),
@@ -1264,6 +1268,7 @@ namespace LazerLens.UI
                     Text.Text = value.GetLocalisableDescription().ToLower();
                     Text.Font = OsuFont.GetFont(size: 14);
                     Text.Margin = new MarginPadding { Vertical = 16.5f };
+                    Bar.Margin = new MarginPadding { Bottom = bar_height };
                 }
             }
         }

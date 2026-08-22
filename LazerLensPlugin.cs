@@ -34,7 +34,6 @@ namespace LazerLens
         {
             new PlayerImportScorePatch(this, Host),
             new PlayerConcludeFailedScorePatch(this, Host),
-            new PlayerOnFailPatch(this, Host),
             new PlayerRestartPatch(this, Host),
             new PlayerPerformExitPatch(this, Host),
             new ResultsScreenLoadCompletePatch(this, Host),
@@ -69,7 +68,7 @@ namespace LazerLens
             trackerService.OnNewPlayRecorded += onNewPlayRecorded;
 
             int count = InstallPatches();
-            Host.Log($"LazerLens: installed {count}/6 patches.");
+            Host.Log($"LazerLens: installed {count}/5 patches.");
             Host.Log("LazerLens OnLoad() complete.");
         }
 
