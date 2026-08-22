@@ -180,6 +180,17 @@ namespace LazerLens.UI.Components
             return base.OnKeyDown(e);
         }
 
+        protected override bool OnMouseDown(MouseDownEvent e)
+        {
+            if (!dialogCard.ReceivePositionalInputAt(e.ScreenSpaceMouseDownPosition))
+            {
+                Hide();
+                return true;
+            }
+
+            return true;
+        }
+
         protected override void PopIn()
         {
             this.FadeIn(200, Easing.OutQuint);

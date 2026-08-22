@@ -9,6 +9,7 @@ using osu.Framework.Graphics.Shapes;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
+using osu.Game;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Backgrounds;
 using osu.Game.Graphics.Containers;
@@ -635,7 +636,7 @@ namespace LazerLens.UI.Components
 
         private void openBeatmapInfo()
         {
-            var overlay = beatmapSetOverlay ?? ClientApi.Game?.Dependencies?.Get(typeof(BeatmapSetOverlay)) as BeatmapSetOverlay;
+            var overlay = beatmapSetOverlay;
 
             if (currentPlay.OnlineBeatmapID > 0)
                 overlay?.FetchAndShowBeatmap(currentPlay.OnlineBeatmapID);

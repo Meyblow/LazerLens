@@ -2,6 +2,15 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [1.4.7] - 2026-08-22
+
+### Fixed
+- **Tab Header Line Alignment**: Adjusted `LazerLensTabControl` height to 47px and tab item margins/bar baseline to align the active tab accent underline with the header separator line.
+- **Initial Tab Selection & Screen Mutual Exclusion**: Added proper `BypassAutoSizeAxes` handling to hidden overlay tabs so initial opening renders the live session tab cleanly.
+- **Beatmap Overlay Navigation**: Enhanced `openBeatmap` and history item click handlers to resolve `BeatmapSetOverlay` through `OsuGame` fallbacks.
+- **Clean Empty Session UI**: Automatically hide the filter panel during live sessions with 0 plays for a clean interface.
+- **Modal Dialog Interaction**: Added backdrop-click dismissal and focus management to `SessionNoteDialog`.
+
 ## [1.4.6] - 2026-08-22
 
 ### Fixed

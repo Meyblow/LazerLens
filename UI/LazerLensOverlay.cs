@@ -15,6 +15,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
+using osu.Game;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Cursor;
@@ -104,7 +105,7 @@ namespace LazerLens.UI
         private readonly Action? exportCsvAction;
 
         private readonly Bindable<LazerLensSection> currentSection = new(LazerLensSection.Session);
-        private LazerLensTabControl tabControl = null!;
+        private TabControlOverlayHeader<LazerLensSection>.OverlayHeaderTabControl tabControl = null!;
 
         [Resolved(canBeNull: true)]
         private BeatmapSetOverlay? beatmapSetOverlay { get; set; }
@@ -124,6 +125,7 @@ namespace LazerLens.UI
 
         // Archive Tab Components
         private Container archiveContent = null!;
+        private OsuContextMenuContainer? archiveContextMenuContainer;
         private FillFlowContainer archiveCardsList = null!;
         private readonly List<ArchiveSessionCard> archiveCards = new();
         private Guid? selectedArchiveSessionId;
@@ -166,12 +168,11 @@ namespace LazerLens.UI
             Header.TitleText = LazerLensStrings.Name;
             Header.DescriptionText = string.Empty;
             Header.HeaderIcon = FontAwesome.Solid.ChartBar;
-            Header.ContentRow.Padding = new MarginPadding { Horizontal = WaveOverlayContainer.HORIZONTAL_PADDING, Vertical = 0 };
 
-            tabControl = new LazerLensTabControl
+            tabControl = new TabControlOverlayHeader<LazerLensSection>.OverlayHeaderTabControl
             {
-                Anchor = Anchor.BottomLeft,
-                Origin = Anchor.BottomLeft,
+                Anchor = Anchor.CentreLeft,
+                Origin = Anchor.CentreLeft,
             };
             tabControl.Current.BindTo(currentSection);
 
@@ -202,11 +203,20 @@ namespace LazerLens.UI
 
             currentSection.BindValueChanged(e =>
             {
-                liveContent.FadeTo(e.NewValue == LazerLensSection.Session ? 1 : 0, 200, Easing.OutQuint);
-                archiveContent.FadeTo(e.NewValue == LazerLensSection.Archive ? 1 : 0, 200, Easing.OutQuint);
-                settingsContent.FadeTo(e.NewValue == LazerLensSection.Settings ? 1 : 0, 200, Easing.OutQuint);
+                bool isSession = e.NewValue == LazerLensSection.Session;
+                bool isArchive = e.NewValue == LazerLensSection.Archive;
+                bool isSettings = e.NewValue == LazerLensSection.Settings;
 
-                if (e.NewValue == LazerLensSection.Archive)
+                liveContent.FadeTo(isSession ? 1 : 0, 200, Easing.OutQuint);
+                liveContent.BypassAutoSizeAxes = isSession ? Axes.None : Axes.Both;
+
+                archiveContent.FadeTo(isArchive ? 1 : 0, 200, Easing.OutQuint);
+                archiveContent.BypassAutoSizeAxes = isArchive ? Axes.None : Axes.Both;
+
+                settingsContent.FadeTo(isSettings ? 1 : 0, 200, Easing.OutQuint);
+                settingsContent.BypassAutoSizeAxes = isSettings ? Axes.None : Axes.Both;
+
+                if (isArchive)
                 {
                     refreshArchiveList();
                 }
@@ -361,6 +371,7 @@ namespace LazerLens.UI
                 RelativeSizeAxes = Axes.X,
                 Height = 650,
                 Alpha = 0,
+                BypassAutoSizeAxes = Axes.Both,
                 Padding = new MarginPadding { Top = 12 },
                 Child = new GridContainer
                 {
@@ -433,7 +444,7 @@ namespace LazerLens.UI
                                                     },
                                                     new Drawable[]
                                                     {
-                                                        new OsuContextMenuContainer
+                                                        (archiveContextMenuContainer = new OsuContextMenuContainer
                                                         {
                                                             RelativeSizeAxes = Axes.Both,
                                                             Margin = new MarginPadding { Top = 6 },
@@ -450,7 +461,7 @@ namespace LazerLens.UI
                                                                     Spacing = new Vector2(0, 6),
                                                                 }
                                                             }
-                                                        }
+                                                        })
                                                     }
                                                 }
                                             }
@@ -642,6 +653,7 @@ namespace LazerLens.UI
                 Spacing = new Vector2(0, 16),
                 Padding = new MarginPadding { Top = 16, Horizontal = 40 },
                 Alpha = 0,
+                BypassAutoSizeAxes = Axes.Both,
                 Children = new Drawable[]
                 {
                     createSettingsSection(LazerLensStrings.SettingsSectionGameplay, new Drawable[]
@@ -1032,6 +1044,17 @@ namespace LazerLens.UI
         {
             if (filter == null || container == null) return;
 
+            if (plays.Count == 0)
+            {
+                filter.FadeTo(0, 150);
+                filter.BypassAutoSizeAxes = Axes.Both;
+            }
+            else
+            {
+                filter.FadeTo(1, 150);
+                filter.BypassAutoSizeAxes = Axes.None;
+            }
+
             var filteredPlays = plays.Where(p =>
                 matchesRuleset(p, filter.CurrentRuleset) &&
                 matchesOutcome(p, filter.CurrentOutcome) &&
@@ -1168,7 +1191,7 @@ namespace LazerLens.UI
         {
             if (score == null) return;
 
-            var overlay = beatmapSetOverlay ?? ClientApi.Game?.Dependencies?.Get(typeof(BeatmapSetOverlay)) as BeatmapSetOverlay;
+            var overlay = beatmapSetOverlay;
 
             if (score.OnlineBeatmapID > 0)
                 overlay?.FetchAndShowBeatmap(score.OnlineBeatmapID);
@@ -1415,42 +1438,6 @@ namespace LazerLens.UI
                 background.FadeColour(colourProvider.Background4, 100);
                 hoverOverlay.FadeTo(0, 100);
                 base.OnHoverLost(e);
-            }
-        }
-
-        private sealed partial class LazerLensTabControl : OverlayTabControl<LazerLensSection>
-        {
-            private const float bar_height = 2;
-
-            public LazerLensTabControl()
-            {
-                RelativeSizeAxes = Axes.None;
-                AutoSizeAxes = Axes.X;
-                Anchor = Anchor.BottomLeft;
-                Origin = Anchor.BottomLeft;
-                Height = 40;
-                BarHeight = bar_height;
-            }
-
-            protected override TabItem<LazerLensSection> CreateTabItem(LazerLensSection value) => new LazerLensTabItem(value);
-
-            protected override TabFillFlowContainer CreateTabFlow() => new TabFillFlowContainer
-            {
-                RelativeSizeAxes = Axes.Y,
-                AutoSizeAxes = Axes.X,
-                Direction = FillDirection.Horizontal,
-            };
-
-            private sealed partial class LazerLensTabItem : OverlayTabItem
-            {
-                public LazerLensTabItem(LazerLensSection value)
-                    : base(value)
-                {
-                    Text.Text = value.GetLocalisableDescription().ToLower();
-                    Text.Font = OsuFont.GetFont(size: 14);
-                    Text.Margin = new MarginPadding { Vertical = 11.5f };
-                    Bar.Margin = new MarginPadding { Bottom = 0 };
-                }
             }
         }
     }
