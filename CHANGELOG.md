@@ -2,6 +2,11 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [1.3.5] - 2026-08-22
+
+### Fixed
+- **Plugin Metadata Binary Compatibility**: Rebuilt with updated `osucc.Api` packages guaranteeing binary compatibility across all `osu!cc` runtime versions without `MissingMethodException`.
+
 ## [1.3.4] - 2026-08-22
 
 ### Fixed
