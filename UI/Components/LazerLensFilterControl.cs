@@ -24,7 +24,10 @@ namespace LazerLens.UI.Components
         [Resolved]
         private OverlayColourProvider colourProvider { get; set; } = null!;
 
-        public SearchTextBox SearchTextBox { get; private set; } = null!;
+        public SearchTextBox SearchTextBox { get; set; } = new SearchTextBox
+        {
+            PlaceholderText = LazerLensStrings.SearchPlaceholder,
+        };
 
         public event Action<string>? SearchChanged;
         public event Action<SessionRulesetFilter>? RulesetChanged;
@@ -74,45 +77,28 @@ namespace LazerLens.UI.Components
                         AutoSizeAxes = Axes.Y,
                         Direction = FillDirection.Vertical,
                         Spacing = new Vector2(0, 6),
-                        Padding = new MarginPadding(12),
+                        Padding = new MarginPadding(10),
                         Children = new Drawable[]
                         {
-                            // 1. Search Box
-                            SearchTextBox = new SearchTextBox
-                            {
-                                RelativeSizeAxes = Axes.X,
-                                Height = 36,
-                                PlaceholderText = LazerLensStrings.SearchPlaceholder,
-                            },
-
-                            // Subtle separator
-                            new Box
-                            {
-                                RelativeSizeAxes = Axes.X,
-                                Height = 1,
-                                Colour = colourProvider.Background3.Opacity(0.6f),
-                                Margin = new MarginPadding { Vertical = 3 },
-                            },
-
-                            // 2. Ruleset Row
+                            // 1. Ruleset Row
                             createFilterRow(
                                 LazerLensStrings.FilterCategoryRuleset,
                                 createRulesetButtons()
                             ),
 
-                            // 3. Outcome Row
+                            // 2. Outcome Row
                             createFilterRow(
                                 LazerLensStrings.FilterCategoryOutcome,
                                 createOutcomeButtons()
                             ),
 
-                            // 4. Beatmap Status Row
+                            // 3. Beatmap Status Row
                             createFilterRow(
                                 LazerLensStrings.FilterCategoryStatus,
                                 createStatusButtons()
                             ),
 
-                            // 5. Sort By Row + Order Toggle
+                            // 4. Sort By Row + Order Toggle
                             new Container
                             {
                                 RelativeSizeAxes = Axes.X,

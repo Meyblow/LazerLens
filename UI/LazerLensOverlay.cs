@@ -217,13 +217,15 @@ namespace LazerLens.UI
 
         private FillFlowContainer buildLiveContent()
         {
+            liveFilterControl = new LazerLensFilterControl();
+
             return new FillFlowContainer
             {
                 RelativeSizeAxes = Axes.X,
                 AutoSizeAxes = Axes.Y,
                 Direction = FillDirection.Vertical,
-                Spacing = new Vector2(0, 10),
-                Padding = new MarginPadding { Top = 10 },
+                Spacing = new Vector2(0, 8),
+                Padding = new MarginPadding { Top = 8 },
                 Children = new Drawable[]
                 {
                     // 1. KPI Metric Cards Row
@@ -248,25 +250,25 @@ namespace LazerLens.UI
                                     new Container
                                     {
                                         RelativeSizeAxes = Axes.Both,
-                                        Padding = new MarginPadding { Right = 6 },
+                                        Padding = new MarginPadding { Right = 4.5f },
                                         Child = liveTimeCard = new MetricCard(FontAwesome.Solid.Clock, LazerLensStrings.OverlaySessionTime, "00:00:00", LazerLensStrings.TimeStartedJustNow)
                                     },
                                     new Container
                                     {
                                         RelativeSizeAxes = Axes.Both,
-                                        Padding = new MarginPadding { Horizontal = 3 },
+                                        Padding = new MarginPadding { Left = 1.5f, Right = 3f },
                                         Child = livePlaysCard = new MetricCard(FontAwesome.Solid.Play, LazerLensStrings.OverlayTotalPlays, "0", LazerLensStrings.PlaysPassFail(0, 0))
                                     },
                                     new Container
                                     {
                                         RelativeSizeAxes = Axes.Both,
-                                        Padding = new MarginPadding { Horizontal = 3 },
+                                        Padding = new MarginPadding { Left = 3f, Right = 1.5f },
                                         Child = liveAccCard = new MetricCard(FontAwesome.Solid.Percent, LazerLensStrings.OverlayAvgAccuracy, "0.00%", LazerLensStrings.PlaysRecorded(0))
                                     },
                                     new Container
                                     {
                                         RelativeSizeAxes = Axes.Both,
-                                        Padding = new MarginPadding { Left = 6 },
+                                        Padding = new MarginPadding { Left = 4.5f },
                                         Child = liveComboCard = new MetricCard(FontAwesome.Solid.Fire, LazerLensStrings.OverlayMaxCombo, "0x", LazerLensStrings.OverlaySessionPPGain("+0.0 pp"))
                                     }
                                 }
@@ -277,24 +279,40 @@ namespace LazerLens.UI
                     // 2. Best Score Banner (Clickable)
                     liveBestScoreBanner = new BestScoreBanner(() => openBeatmap(service.LiveState.BestScore)),
 
-                    // 3. Play History Header
-                    liveHistoryCountText = new OsuSpriteText
+                    // 3. Play History Header Row (Title on Left, Search on Right)
+                    new Container
                     {
-                        Text = LazerLensStrings.HistoryTitle(0),
-                        Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
-                        Colour = ColourProvider.Colour1,
-                        Margin = new MarginPadding { Top = 4 },
+                        RelativeSizeAxes = Axes.X,
+                        Height = 34,
+                        Children = new Drawable[]
+                        {
+                            liveHistoryCountText = new OsuSpriteText
+                            {
+                                Anchor = Anchor.CentreLeft,
+                                Origin = Anchor.CentreLeft,
+                                Text = LazerLensStrings.HistoryTitle(0),
+                                Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
+                                Colour = ColourProvider.Colour1,
+                            },
+                            liveFilterControl.SearchTextBox = new SearchTextBox
+                            {
+                                Anchor = Anchor.CentreRight,
+                                Origin = Anchor.CentreRight,
+                                Width = 320,
+                                Height = 34,
+                                PlaceholderText = LazerLensStrings.SearchPlaceholder,
+                            }
+                        }
                     },
 
                     // 4. Filter Control
-                    liveFilterControl = new LazerLensFilterControl(),
+                    liveFilterControl,
 
                     // 5. Play History Items Container
                     new Container
                     {
                         RelativeSizeAxes = Axes.X,
                         AutoSizeAxes = Axes.Y,
-                        Margin = new MarginPadding { Top = 4 },
                         Children = new Drawable[]
                         {
                             liveNoHistoryText = new OsuSpriteText
@@ -325,12 +343,14 @@ namespace LazerLens.UI
 
         private Container buildArchiveContent()
         {
+            archiveFilterControl = new LazerLensFilterControl();
+
             return new Container
             {
                 RelativeSizeAxes = Axes.X,
                 AutoSizeAxes = Axes.Y,
                 Alpha = 0,
-                Padding = new MarginPadding { Top = 10 },
+                Padding = new MarginPadding { Top = 8 },
                 Children = new Drawable[]
                 {
                     new GridContainer
@@ -373,28 +393,42 @@ namespace LazerLens.UI
                                                 {
                                                     RelativeSizeAxes = Axes.Both,
                                                     Padding = new MarginPadding(10),
-                                                    Children = new Drawable[]
+                                                    Child = new GridContainer
                                                     {
-                                                        // Header text
-                                                        archiveListHeader = new OsuSpriteText
+                                                        RelativeSizeAxes = Axes.Both,
+                                                        RowDimensions = new[]
                                                         {
-                                                            Text = LazerLensStrings.ArchiveSavedSessions(0),
-                                                            Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
-                                                            Colour = ColourProvider.Colour1,
-                                                            Margin = new MarginPadding { Bottom = 8 },
+                                                            new Dimension(GridSizeMode.Absolute, 28),
+                                                            new Dimension(GridSizeMode.Distributed),
                                                         },
-                                                        // Scrollable list filling remaining vertical space
-                                                        new OsuScrollContainer
+                                                        Content = new[]
                                                         {
-                                                            RelativeSizeAxes = Axes.Both,
-                                                            Padding = new MarginPadding { Top = 26, Right = 14 },
-                                                            ScrollbarVisible = true,
-                                                            Child = archiveCardsList = new FillFlowContainer
+                                                            new Drawable[]
                                                             {
-                                                                RelativeSizeAxes = Axes.X,
-                                                                AutoSizeAxes = Axes.Y,
-                                                                Direction = FillDirection.Vertical,
-                                                                Spacing = new Vector2(0, 6),
+                                                                archiveListHeader = new OsuSpriteText
+                                                                {
+                                                                    Text = LazerLensStrings.ArchiveSavedSessions(0),
+                                                                    Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
+                                                                    Colour = ColourProvider.Colour1,
+                                                                    Anchor = Anchor.CentreLeft,
+                                                                    Origin = Anchor.CentreLeft,
+                                                                }
+                                                            },
+                                                            new Drawable[]
+                                                            {
+                                                                new OsuScrollContainer
+                                                                {
+                                                                    RelativeSizeAxes = Axes.Both,
+                                                                    Padding = new MarginPadding { Right = 14 },
+                                                                    ScrollbarVisible = true,
+                                                                    Child = archiveCardsList = new FillFlowContainer
+                                                                    {
+                                                                        RelativeSizeAxes = Axes.X,
+                                                                        AutoSizeAxes = Axes.Y,
+                                                                        Direction = FillDirection.Vertical,
+                                                                        Spacing = new Vector2(0, 6),
+                                                                    }
+                                                                }
                                                             }
                                                         }
                                                     }
@@ -435,27 +469,27 @@ namespace LazerLens.UI
                                                     {
                                                         new SpriteIcon
                                                         {
-                                                            Anchor = Anchor.TopCentre,
-                                                            Origin = Anchor.TopCentre,
+                                                            Anchor = Anchor.Centre,
+                                                            Origin = Anchor.Centre,
                                                             Size = new Vector2(36),
-                                                            Icon = FontAwesome.Solid.History,
-                                                            Colour = ColourProvider.Highlight1.Opacity(0.7f),
+                                                            Icon = FontAwesome.Solid.Archive,
+                                                            Colour = ColourProvider.Content2,
                                                         },
                                                         new OsuSpriteText
                                                         {
-                                                            Anchor = Anchor.TopCentre,
-                                                            Origin = Anchor.TopCentre,
+                                                            Anchor = Anchor.Centre,
+                                                            Origin = Anchor.Centre,
                                                             Text = LazerLensStrings.ArchiveEmptyTitle,
                                                             Font = OsuFont.Torus.With(size: 16, weight: FontWeight.Bold),
-                                                            Colour = Color4.White,
+                                                            Colour = ColourProvider.Content1,
                                                         },
                                                         new OsuSpriteText
                                                         {
-                                                            Anchor = Anchor.TopCentre,
-                                                            Origin = Anchor.TopCentre,
+                                                            Anchor = Anchor.Centre,
+                                                            Origin = Anchor.Centre,
                                                             Text = LazerLensStrings.ArchiveEmptySubtitle,
                                                             Font = OsuFont.Torus.With(size: 13, weight: FontWeight.Regular),
-                                                            Colour = Color4.White.Opacity(0.6f),
+                                                            Colour = ColourProvider.Content2,
                                                         }
                                                     }
                                                 }
@@ -467,7 +501,7 @@ namespace LazerLens.UI
                                             RelativeSizeAxes = Axes.X,
                                             AutoSizeAxes = Axes.Y,
                                             Direction = FillDirection.Vertical,
-                                            Spacing = new Vector2(0, 10),
+                                            Spacing = new Vector2(0, 8),
                                             Alpha = 0,
                                             Children = new Drawable[]
                                             {
@@ -493,25 +527,25 @@ namespace LazerLens.UI
                                                                 new Container
                                                                 {
                                                                     RelativeSizeAxes = Axes.Both,
-                                                                    Padding = new MarginPadding { Right = 6 },
+                                                                    Padding = new MarginPadding { Right = 4.5f },
                                                                     Child = archiveTimeCard = new MetricCard(FontAwesome.Solid.Clock, LazerLensStrings.OverlaySessionTime, "00:00:00", "")
                                                                 },
                                                                 new Container
                                                                 {
                                                                     RelativeSizeAxes = Axes.Both,
-                                                                    Padding = new MarginPadding { Horizontal = 3 },
+                                                                    Padding = new MarginPadding { Left = 1.5f, Right = 3f },
                                                                     Child = archivePlaysCard = new MetricCard(FontAwesome.Solid.Play, LazerLensStrings.OverlayTotalPlays, "0", LazerLensStrings.PlaysPassFail(0, 0))
                                                                 },
                                                                 new Container
                                                                 {
                                                                     RelativeSizeAxes = Axes.Both,
-                                                                    Padding = new MarginPadding { Horizontal = 3 },
+                                                                    Padding = new MarginPadding { Left = 3f, Right = 1.5f },
                                                                     Child = archiveAccCard = new MetricCard(FontAwesome.Solid.Percent, LazerLensStrings.OverlayAvgAccuracy, "0.00%", LazerLensStrings.PlaysRecorded(0))
                                                                 },
                                                                 new Container
                                                                 {
                                                                     RelativeSizeAxes = Axes.Both,
-                                                                    Padding = new MarginPadding { Left = 6 },
+                                                                    Padding = new MarginPadding { Left = 4.5f },
                                                                     Child = archiveComboCard = new MetricCard(FontAwesome.Solid.Fire, LazerLensStrings.OverlayMaxCombo, "0x", LazerLensStrings.OverlaySessionPPGain("+0.0 pp"))
                                                                 }
                                                             }
@@ -522,24 +556,40 @@ namespace LazerLens.UI
                                                 // 2. Best Score Banner
                                                 archiveBestScoreBanner = new BestScoreBanner(() => openBeatmap(currentArchivedState?.BestScore)),
 
-                                                // 3. Play History Header
-                                                archiveHistoryCountText = new OsuSpriteText
+                                                // 3. Play History Header Row (Title on Left, Search on Right)
+                                                new Container
                                                 {
-                                                    Text = LazerLensStrings.HistoryTitle(0),
-                                                    Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
-                                                    Colour = ColourProvider.Colour1,
-                                                    Margin = new MarginPadding { Top = 4 },
+                                                    RelativeSizeAxes = Axes.X,
+                                                    Height = 34,
+                                                    Children = new Drawable[]
+                                                    {
+                                                        archiveHistoryCountText = new OsuSpriteText
+                                                        {
+                                                            Anchor = Anchor.CentreLeft,
+                                                            Origin = Anchor.CentreLeft,
+                                                            Text = LazerLensStrings.HistoryTitle(0),
+                                                            Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
+                                                            Colour = ColourProvider.Colour1,
+                                                        },
+                                                        archiveFilterControl.SearchTextBox = new SearchTextBox
+                                                        {
+                                                            Anchor = Anchor.CentreRight,
+                                                            Origin = Anchor.CentreRight,
+                                                            Width = 320,
+                                                            Height = 34,
+                                                            PlaceholderText = LazerLensStrings.SearchPlaceholder,
+                                                        }
+                                                    }
                                                 },
 
                                                 // 4. Filter Control
-                                                archiveFilterControl = new LazerLensFilterControl(),
+                                                archiveFilterControl,
 
                                                 // 5. Play History Items Container
                                                 new Container
                                                 {
                                                     RelativeSizeAxes = Axes.X,
                                                     AutoSizeAxes = Axes.Y,
-                                                    Margin = new MarginPadding { Top = 4 },
                                                     Children = new Drawable[]
                                                     {
                                                         archiveNoHistoryText = new OsuSpriteText
