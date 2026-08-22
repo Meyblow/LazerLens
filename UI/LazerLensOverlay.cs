@@ -317,6 +317,12 @@ namespace LazerLens.UI
             };
         }
 
+        protected override Drawable CreateBackdrop() => new Box
+        {
+            RelativeSizeAxes = Axes.Both,
+            Colour = ColourProvider.Background6,
+        };
+
         private Container buildArchiveContent()
         {
             return new Container
@@ -344,7 +350,7 @@ namespace LazerLens.UI
                         {
                             new Drawable[]
                             {
-                                // Left Column: Sessions List & Actions (Solid full-height panel)
+                                // Left Column: Sessions List (Solid full-height panel)
                                 new Container
                                 {
                                     RelativeSizeAxes = Axes.Both,
@@ -369,56 +375,19 @@ namespace LazerLens.UI
                                                     Padding = new MarginPadding(10),
                                                     Children = new Drawable[]
                                                     {
-                                                        // Header row + action buttons
-                                                        new FillFlowContainer
+                                                        // Header text
+                                                        archiveListHeader = new OsuSpriteText
                                                         {
-                                                            RelativeSizeAxes = Axes.X,
-                                                            AutoSizeAxes = Axes.Y,
-                                                            Direction = FillDirection.Vertical,
-                                                            Spacing = new Vector2(0, 8),
-                                                            Children = new Drawable[]
-                                                            {
-                                                                archiveListHeader = new OsuSpriteText
-                                                                {
-                                                                    Text = LazerLensStrings.ArchiveSavedSessions(0),
-                                                                    Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
-                                                                    Colour = ColourProvider.Colour1,
-                                                                },
-                                                                new FillFlowContainer
-                                                                {
-                                                                    RelativeSizeAxes = Axes.X,
-                                                                    AutoSizeAxes = Axes.Y,
-                                                                    Direction = FillDirection.Horizontal,
-                                                                    Spacing = new Vector2(8, 0),
-                                                                    Children = new Drawable[]
-                                                                    {
-                                                                        new Container
-                                                                        {
-                                                                            RelativeSizeAxes = Axes.X,
-                                                                            Width = 0.5f,
-                                                                            Child = new SettingsActionButton(FontAwesome.Solid.FolderOpen, LazerLensStrings.SettingsOpenDirectory, () => service.OpenSessionsDirectory())
-                                                                            {
-                                                                                Height = 32,
-                                                                            }
-                                                                        },
-                                                                        new Container
-                                                                        {
-                                                                            RelativeSizeAxes = Axes.X,
-                                                                            Width = 0.5f,
-                                                                            Child = new SettingsActionButton(FontAwesome.Solid.FileCsv, LazerLensStrings.SettingsExportCsv, () => exportCsvAction?.Invoke())
-                                                                            {
-                                                                                Height = 32,
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
+                                                            Text = LazerLensStrings.ArchiveSavedSessions(0),
+                                                            Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
+                                                            Colour = ColourProvider.Colour1,
+                                                            Margin = new MarginPadding { Bottom = 8 },
                                                         },
                                                         // Scrollable list filling remaining vertical space
                                                         new OsuScrollContainer
                                                         {
                                                             RelativeSizeAxes = Axes.Both,
-                                                            Padding = new MarginPadding { Top = 64 },
+                                                            Padding = new MarginPadding { Top = 26 },
                                                             ScrollbarVisible = true,
                                                             Child = archiveCardsList = new FillFlowContainer
                                                             {

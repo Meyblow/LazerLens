@@ -75,71 +75,67 @@ namespace LazerLens.UI.Components
                     {
                         RelativeSizeAxes = Axes.Both,
                         Direction = FillDirection.Vertical,
-                        Padding = new MarginPadding { Left = 14, Right = 10, Vertical = 8 },
-                        Spacing = new Vector2(0, 4),
+                        Padding = new MarginPadding { Left = 14, Right = 10, Vertical = 9 },
+                        Spacing = new Vector2(0, 6),
                         Children = new Drawable[]
                         {
-                            // Top row: Date/Time + Top PP badge
-                            new GridContainer
+                            // Top row: Date/Time (left) + Top PP badge (right)
+                            new Container
                             {
                                 RelativeSizeAxes = Axes.X,
                                 AutoSizeAxes = Axes.Y,
-                                ColumnDimensions = new[]
+                                Children = new Drawable[]
                                 {
-                                    new Dimension(GridSizeMode.Distributed),
-                                    new Dimension(GridSizeMode.AutoSize),
-                                },
-                                Content = new[]
-                                {
-                                    new Drawable[]
+                                    new FillFlowContainer
                                     {
-                                        new FillFlowContainer
+                                        Anchor = Anchor.CentreLeft,
+                                        Origin = Anchor.CentreLeft,
+                                        AutoSizeAxes = Axes.Both,
+                                        Direction = FillDirection.Horizontal,
+                                        Spacing = new Vector2(6, 0),
+                                        Children = new Drawable[]
                                         {
-                                            AutoSizeAxes = Axes.Both,
-                                            Direction = FillDirection.Horizontal,
-                                            Spacing = new Vector2(6, 0),
-                                            Children = new Drawable[]
+                                            new SpriteIcon
                                             {
-                                                new SpriteIcon
-                                                {
-                                                    Anchor = Anchor.CentreLeft,
-                                                    Origin = Anchor.CentreLeft,
-                                                    Size = new Vector2(12),
-                                                    Icon = FontAwesome.Solid.CalendarAlt,
-                                                    Colour = IsSelected ? colourProvider.Highlight1 : Color4.White.Opacity(0.7f),
-                                                },
-                                                new TruncatingSpriteText
-                                                {
-                                                    Anchor = Anchor.CentreLeft,
-                                                    Origin = Anchor.CentreLeft,
-                                                    Text = dateStr,
-                                                    Font = OsuFont.Torus.With(size: 13, weight: FontWeight.SemiBold),
-                                                    Colour = IsSelected ? Color4.White : Color4.White.Opacity(0.9f),
-                                                    MaxWidth = 190,
-                                                }
+                                                Anchor = Anchor.CentreLeft,
+                                                Origin = Anchor.CentreLeft,
+                                                Size = new Vector2(12),
+                                                Icon = FontAwesome.Solid.CalendarAlt,
+                                                Colour = IsSelected ? colourProvider.Highlight1 : Color4.White.Opacity(0.7f),
+                                            },
+                                            new TruncatingSpriteText
+                                            {
+                                                Anchor = Anchor.CentreLeft,
+                                                Origin = Anchor.CentreLeft,
+                                                Text = dateStr,
+                                                Font = OsuFont.Torus.With(size: 13, weight: FontWeight.SemiBold),
+                                                Colour = IsSelected ? Color4.White : Color4.White.Opacity(0.9f),
+                                                MaxWidth = 180,
                                             }
-                                        },
-                                        new Container
+                                        }
+                                    },
+                                    new Container
+                                    {
+                                        Anchor = Anchor.CentreRight,
+                                        Origin = Anchor.CentreRight,
+                                        AutoSizeAxes = Axes.Both,
+                                        Masking = true,
+                                        CornerRadius = 4,
+                                        Children = new Drawable[]
                                         {
-                                            AutoSizeAxes = Axes.Both,
-                                            Masking = true,
-                                            CornerRadius = 4,
-                                            Children = new Drawable[]
+                                            new Box
                                             {
-                                                new Box
-                                                {
-                                                    RelativeSizeAxes = Axes.Both,
-                                                    Colour = colourProvider.Background5,
-                                                },
-                                                new OsuSpriteText
-                                                {
-                                                    Anchor = Anchor.Centre,
-                                                    Origin = Anchor.Centre,
-                                                    Text = ppStr,
-                                                    Font = OsuFont.Torus.With(size: 11, weight: FontWeight.Bold),
-                                                    Colour = Color4Extensions.FromHex("ffcc00"),
-                                                    Margin = new MarginPadding { Horizontal = 6, Vertical = 2 },
-                                                }
+                                                RelativeSizeAxes = Axes.Both,
+                                                Colour = colourProvider.Background5,
+                                            },
+                                            new OsuSpriteText
+                                            {
+                                                Anchor = Anchor.Centre,
+                                                Origin = Anchor.Centre,
+                                                Text = ppStr,
+                                                Font = OsuFont.Torus.With(size: 11, weight: FontWeight.Bold),
+                                                Colour = Color4Extensions.FromHex("ffcc00"),
+                                                Margin = new MarginPadding { Horizontal = 6, Vertical = 2 },
                                             }
                                         }
                                     }
