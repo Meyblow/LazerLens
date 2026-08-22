@@ -29,7 +29,48 @@ namespace LazerLens.Services
 
         public event Action? OnSessionUpdated;
         public event Action<SessionPlayRecord>? OnNewPlayRecorded;
+        public event Action? OnSessionReset;
 
+        // 1. Metrics & Display
+        public Bindable<DefaultSortMode> DefaultSort { get; } = new(DefaultSortMode.TimeDesc);
+        public Bindable<PpDisplayMode> PpDisplay { get; } = new(PpDisplayMode.Both);
+        public Bindable<AccuracyCalculationMode> AccuracyCalculation { get; } = new(AccuracyCalculationMode.ObjectWeighted);
+        public Bindable<bool> HighlightUR { get; } = new(true);
+        public Bindable<bool> ShowModsInHistory { get; } = new(true);
+        public Bindable<bool> ShowDifficultyRating { get; } = new(true);
+
+        // 2. Session Management
+        public Bindable<SessionSplitThreshold> SessionSplit { get; } = new(SessionSplitThreshold.Midnight);
+        public Bindable<AfkPauseTimeout> AfkPause { get; } = new(AfkPauseTimeout.FiveMinutes);
+        public Bindable<bool> EnableSessionPause { get; } = new(false);
+        public Bindable<bool> IsSessionPaused { get; } = new(false);
+        public Bindable<bool> AutoExportCsv { get; } = new(false);
+        public Bindable<ArchiveRetentionLimit> ArchiveRetention { get; } = new(ArchiveRetentionLimit.Unlimited);
+
+        // 3. Recording Filters
+        public Bindable<int> MinPlayDurationSeconds { get; } = new(5);
+        public Bindable<bool> TrackStandard { get; } = new(true);
+        public Bindable<bool> TrackTaiko { get; } = new(true);
+        public Bindable<bool> TrackCatch { get; } = new(true);
+        public Bindable<bool> TrackMania { get; } = new(true);
+        public Bindable<bool> TrackCustomRulesets { get; } = new(true);
+        public Bindable<bool> IgnoreNoFailPlays { get; } = new(false);
+        public Bindable<bool> RankedLovedOnly { get; } = new(false);
+
+        // 4. Notifications
+        public Bindable<PlayNotificationFilter> PlayNotifFilter { get; } = new(PlayNotificationFilter.PassedOnly);
+        public Bindable<bool> NotifySessionBest { get; } = new(true);
+        public Bindable<MilestoneNotificationMode> Milestones { get; } = new(MilestoneNotificationMode.FiftyPlays);
+
+        // 5. Overlay & Toolbar
+        public Bindable<bool> AutoOpenOverlayOnPass { get; } = new(false);
+        public Bindable<ToolbarBadgeMode> ToolbarBadge { get; } = new(ToolbarBadgeMode.PlayCount);
+        public Bindable<string> ToolbarBadgeColor { get; } = new("#00d2ff");
+        public Bindable<SearchBarPosition> SearchPosition { get; } = new(SearchBarPosition.Right);
+        public Bindable<int> OverlayWidth { get; } = new(960);
+        public Bindable<float> OverlayBackdropOpacity { get; } = new(0.9f);
+
+        // Existing / Backward Compatibility
         public Bindable<bool> TrackRetries { get; } = new(false);
         public Bindable<bool> NotifyOnPlay { get; } = new(true);
         public Bindable<bool> CompactMode { get; } = new(true);
@@ -43,21 +84,72 @@ namespace LazerLens.Services
             StorageService?.OpenSessionsDirectory();
         }
 
+        public void OpenSessionFile(Guid sessionId)
+        {
+            StorageService?.OpenSessionFile(sessionId);
+        }
+
         public string? ExportSessionsToCsv()
         {
             return StorageService?.ExportToCsv();
         }
 
+        public void ResetLiveSession()
+        {
+            AutoSave();
+            LiveState.Reset();
+            viewedState = null;
+            OnSessionReset?.Invoke();
+            OnSessionUpdated?.Invoke();
+        }
+
         public void RecordScore(ScoreInfo score, bool passed)
         {
-            if (score.Date == default)
-                score.Date = DateTimeOffset.Now;
-            else if ((DateTimeOffset.Now - score.Date).TotalMinutes > 5)
+            if (score == null)
+                return;
+
+            if (IsSessionPaused.Value)
+                return;
+
+            checkSessionSplit();
+
+            // Play duration filter
+            double playDurationSeconds = 0;
+            if (score.HitEvents != null && score.HitEvents.Count > 1)
+            {
+                var objects = score.HitEvents.Select(e => e.HitObject).Where(o => o != null).ToList();
+                if (objects.Count > 1)
+                {
+                    double firstHit = objects.Min(o => o!.StartTime);
+                    double lastHit = objects.Max(o => o!.StartTime);
+                    playDurationSeconds = (lastHit - firstHit) / 1000.0;
+                }
+            }
+
+            if (playDurationSeconds > 0 && playDurationSeconds < MinPlayDurationSeconds.Value)
             {
                 return;
             }
 
-            // Prevent duplicate recording of the same play (e.g. from both Player.ImportScore and ResultsScreen.LoadComplete)
+            // Ruleset tracking filter
+            string rulesetName = score.Ruleset?.ShortName ?? score.Ruleset?.Name ?? "osu";
+            bool isTaiko = rulesetName.Contains("taiko", StringComparison.OrdinalIgnoreCase);
+            bool isCatch = rulesetName.Contains("catch", StringComparison.OrdinalIgnoreCase) || rulesetName.Contains("fruit", StringComparison.OrdinalIgnoreCase);
+            bool isMania = rulesetName.Contains("mania", StringComparison.OrdinalIgnoreCase);
+            bool isStandard = rulesetName.Equals("osu", StringComparison.OrdinalIgnoreCase) || (!isTaiko && !isCatch && !isMania && (rulesetName.Contains("standard", StringComparison.OrdinalIgnoreCase) || rulesetName.Equals("osu!", StringComparison.OrdinalIgnoreCase)));
+            bool isCustom = !isStandard && !isTaiko && !isCatch && !isMania;
+
+            if (isStandard && !TrackStandard.Value) return;
+            if (isTaiko && !TrackTaiko.Value) return;
+            if (isCatch && !TrackCatch.Value) return;
+            if (isMania && !TrackMania.Value) return;
+            if (isCustom && !TrackCustomRulesets.Value) return;
+
+            // Ignore NoFail plays if configured
+            if (IgnoreNoFailPlays.Value && score.Mods != null && score.Mods.Any(m => m.Acronym.Equals("NF", StringComparison.OrdinalIgnoreCase)))
+                return;
+
+            // Prevent duplicate recording of the same play
             var lastPlay = LiveState.Plays.LastOrDefault();
             if (lastPlay != null && lastPlay.Passed && passed &&
                 lastPlay.OnlineBeatmapID == (score.BeatmapInfo?.OnlineID ?? 0) &&
@@ -65,7 +157,7 @@ namespace LazerLens.Services
                 lastPlay.MaxCombo == score.MaxCombo &&
                 (DateTimeOffset.Now - lastPlay.Timestamp).TotalSeconds < 30)
             {
-                UpdateScore(score); // Just update it with any new stats (like PP)
+                UpdateScore(score);
                 return;
             }
 
@@ -83,12 +175,19 @@ namespace LazerLens.Services
                 _ => score.BeatmapInfo?.Status.ToString() ?? "Ranked"
             };
 
+            if (RankedLovedOnly.Value && statusStr is not ("Ranked" or "Approved" or "Loved"))
+                return;
+
             double? rawPp = score.PP ?? 0.0;
             double? ur = TryCalculateUR(score);
 
             var statsDict = score.Statistics != null
                 ? new Dictionary<osu.Game.Rulesets.Scoring.HitResult, int>(score.Statistics)
                 : new Dictionary<osu.Game.Rulesets.Scoring.HitResult, int>();
+
+            string[] modAcronyms = score.Mods != null
+                ? score.Mods.Select(m => m.Acronym).Where(a => !string.IsNullOrWhiteSpace(a)).ToArray()
+                : Array.Empty<string>();
 
             var record = new SessionPlayRecord(
                 BeatmapTitle: score.BeatmapInfo?.Metadata?.Title ?? "Unknown Title",
@@ -99,7 +198,7 @@ namespace LazerLens.Services
                 TotalScore: score.TotalScore,
                 MaxCombo: score.MaxCombo,
                 Grade: passed ? score.Rank.ToString() : "F",
-                Mods: score.Mods?.Select(m => m.Acronym).ToArray() ?? Array.Empty<string>(),
+                Mods: modAcronyms,
                 Passed: passed,
                 Timestamp: DateTimeOffset.Now,
                 StarRating: score.BeatmapInfo?.StarRating ?? 0.0,
@@ -130,7 +229,18 @@ namespace LazerLens.Services
 
         private void triggerNewPlayEvent(SessionPlayRecord record)
         {
-            if (!record.Passed) return;
+            if (PlayNotifFilter.Value == PlayNotificationFilter.Disabled)
+                return;
+
+            if (PlayNotifFilter.Value == PlayNotificationFilter.PassedOnly && !record.Passed)
+                return;
+
+            if (PlayNotifFilter.Value == PlayNotificationFilter.SessionBestsOnly)
+            {
+                var best = LiveState.BestScore;
+                if (best == null || best.Id != record.Id)
+                    return;
+            }
 
             OnNewPlayRecorded?.Invoke(record);
         }
@@ -235,13 +345,58 @@ namespace LazerLens.Services
                 ? new Dictionary<osu.Game.Rulesets.Scoring.HitResult, int>(score.Statistics)
                 : matching.Statistics;
 
+            string[] modAcronyms = score.Mods != null && score.Mods.Length > 0
+                ? score.Mods.Select(m => m.Acronym).Where(a => !string.IsNullOrWhiteSpace(a)).ToArray()
+                : matching.Mods;
+
             UpdatePlay(matching.Id, p => p with
             {
                 PerformancePoints = rawPp,
                 UnstableRate = ur,
                 Statistics = statsDict,
-                TotalScore = totalScore > 0 ? totalScore : p.TotalScore
+                TotalScore = totalScore > 0 ? totalScore : p.TotalScore,
+                Mods = modAcronyms
             }, save: true);
+
+            // If raw PP is still null/0 on a pass, try computing it now that full statistics are available
+            if (matching.Passed && (!rawPp.HasValue || rawPp.Value <= 0))
+            {
+                calculateAndAssignPP(score, matching);
+            }
+        }
+
+        private void checkSessionSplit()
+        {
+            if (LiveState.Plays.Count == 0) return;
+
+            var lastPlay = LiveState.Plays.LastOrDefault();
+            if (lastPlay == null) return;
+
+            bool shouldSplit = false;
+            var now = DateTimeOffset.Now;
+
+            switch (SessionSplit.Value)
+            {
+                case SessionSplitThreshold.Midnight:
+                    if (now.Date > lastPlay.Timestamp.Date)
+                        shouldSplit = true;
+                    break;
+
+                case SessionSplitThreshold.TwoHours:
+                    if ((now - lastPlay.Timestamp).TotalHours >= 2)
+                        shouldSplit = true;
+                    break;
+
+                case SessionSplitThreshold.FourHours:
+                    if ((now - lastPlay.Timestamp).TotalHours >= 4)
+                        shouldSplit = true;
+                    break;
+            }
+
+            if (shouldSplit)
+            {
+                ResetLiveSession();
+            }
         }
 
         // --- Shared play update helper ---
@@ -300,21 +455,46 @@ namespace LazerLens.Services
             if (score.BeatmapInfo == null || score.Ruleset == null)
                 return null;
 
-            var diffCache = ClientApi.Game?.Dependencies?.Get(typeof(BeatmapDifficultyCache)) as BeatmapDifficultyCache;
-            if (diffCache == null)
-                return null;
+            try
+            {
+                var ruleset = score.Ruleset.CreateInstance();
+                var perfCalc = ruleset?.CreatePerformanceCalculator();
+                if (perfCalc == null)
+                    return null;
 
-            var starDiff = await diffCache.GetDifficultyAsync(score.BeatmapInfo, score.Ruleset, score.Mods);
-            if (starDiff == null || starDiff.Value.DifficultyAttributes == null)
-                return null;
+                // 1. Try BeatmapDifficultyCache
+                var diffCache = ClientApi.Game?.Dependencies?.Get(typeof(BeatmapDifficultyCache)) as BeatmapDifficultyCache;
+                if (diffCache != null)
+                {
+                    var starDiff = await diffCache.GetDifficultyAsync(score.BeatmapInfo, score.Ruleset, score.Mods);
+                    if (starDiff?.DifficultyAttributes != null)
+                    {
+                        var perfAttributes = perfCalc.Calculate(score, starDiff.Value.DifficultyAttributes);
+                        if (perfAttributes.Total > 0)
+                            return perfAttributes.Total;
+                    }
+                }
 
-            var ruleset = score.Ruleset.CreateInstance();
-            var perfCalc = ruleset.CreatePerformanceCalculator();
-            if (perfCalc == null)
-                return null;
+                // 2. Direct fallback using BeatmapManager WorkingBeatmap
+                var beatmapMgr = ClientApi.Game?.Dependencies?.Get(typeof(osu.Game.Beatmaps.BeatmapManager)) as osu.Game.Beatmaps.BeatmapManager;
+                var working = beatmapMgr?.GetWorkingBeatmap(score.BeatmapInfo);
+                if (working != null)
+                {
+                    var diffCalc = ruleset.CreateDifficultyCalculator(working);
+                    var diffAttributes = diffCalc.Calculate(score.Mods);
+                    if (diffAttributes != null)
+                    {
+                        var perfAttributes = perfCalc.Calculate(score, diffAttributes);
+                        return perfAttributes.Total;
+                    }
+                }
+            }
+            catch
+            {
+                // Defensive fallback
+            }
 
-            var perfAttributes = perfCalc.Calculate(score, starDiff.Value.DifficultyAttributes);
-            return perfAttributes.Total;
+            return null;
         }
 
         // --- Mod ranking check ---

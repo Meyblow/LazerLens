@@ -42,11 +42,16 @@ namespace LazerLens.UI.Components
         {
             Children = new Drawable[]
             {
-                // Semi-transparent backdrop
-                new Box
+                // Semi-transparent clickable backdrop
+                new ClickableContainer
                 {
                     RelativeSizeAxes = Axes.Both,
-                    Colour = Color4.Black.Opacity(0.65f),
+                    Action = Hide,
+                    Child = new Box
+                    {
+                        RelativeSizeAxes = Axes.Both,
+                        Colour = Color4.Black.Opacity(0.65f),
+                    }
                 },
                 // Centered Dialog Card
                 dialogCard = new Container
@@ -180,22 +185,15 @@ namespace LazerLens.UI.Components
             return base.OnKeyDown(e);
         }
 
-        protected override bool OnMouseDown(MouseDownEvent e)
-        {
-            if (!dialogCard.ReceivePositionalInputAt(e.ScreenSpaceMouseDownPosition))
-            {
-                Hide();
-                return true;
-            }
-
-            return true;
-        }
-
         protected override void PopIn()
         {
             this.FadeIn(200, Easing.OutQuint);
             dialogCard.ScaleTo(0.95f).ScaleTo(1.0f, 250, Easing.OutQuint);
-            GetContainingFocusManager()?.ChangeFocus(textBox);
+            Schedule(() =>
+            {
+                if (IsDisposed) return;
+                GetContainingFocusManager()?.ChangeFocus(textBox);
+            });
         }
 
         protected override void PopOut()

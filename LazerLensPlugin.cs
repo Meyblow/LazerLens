@@ -35,7 +35,8 @@ namespace LazerLens
         public override IReadOnlyList<OsuCcPatch> Patches => new OsuCcPatch[]
         {
             new PlayerImportScorePatch(this, Host),
-            new PlayerConcludeFailedScorePatch(this, Host),
+            new PlayerPerformFailPatch(this, Host),
+            new SubmittingPlayerConcludeFailedScorePatch(this, Host),
             new PlayerRestartPatch(this, Host),
             new PlayerPerformExitPatch(this, Host),
             new ResultsScreenLoadCompletePatch(this, Host),
@@ -57,15 +58,46 @@ namespace LazerLens
 
             var settings = Host.GetSettings();
 
-            var notifySetting = settings.Bind("notify_on_play", true);
-            var retriesSetting = settings.Bind("track_retries", false);
-            var compactSetting = settings.Bind("compact_mode", true);
-            var showUrSetting = settings.Bind("show_ur", true);
+            // 1. Metrics & Display
+            trackerService.DefaultSort.BindTo(settings.Bind("default_sort", DefaultSortMode.TimeDesc));
+            trackerService.PpDisplay.BindTo(settings.Bind("pp_display", PpDisplayMode.Both));
+            trackerService.AccuracyCalculation.BindTo(settings.Bind("accuracy_calc", AccuracyCalculationMode.ObjectWeighted));
+            trackerService.HighlightUR.BindTo(settings.Bind("highlight_ur", true));
+            trackerService.ShowModsInHistory.BindTo(settings.Bind("show_mods_history", true));
+            trackerService.ShowDifficultyRating.BindTo(settings.Bind("show_difficulty_rating", true));
+            trackerService.CompactMode.BindTo(settings.Bind("compact_mode", true));
+            trackerService.ShowUR.BindTo(settings.Bind("show_ur", true));
 
-            trackerService.NotifyOnPlay.BindTo(notifySetting);
-            trackerService.TrackRetries.BindTo(retriesSetting);
-            trackerService.CompactMode.BindTo(compactSetting);
-            trackerService.ShowUR.BindTo(showUrSetting);
+            // 2. Session Management
+            trackerService.SessionSplit.BindTo(settings.Bind("session_split", SessionSplitThreshold.Midnight));
+            trackerService.AfkPause.BindTo(settings.Bind("afk_pause", AfkPauseTimeout.FiveMinutes));
+            trackerService.EnableSessionPause.BindTo(settings.Bind("enable_session_pause", false));
+            trackerService.AutoExportCsv.BindTo(settings.Bind("auto_export_csv", false));
+            trackerService.ArchiveRetention.BindTo(settings.Bind("archive_retention", ArchiveRetentionLimit.Unlimited));
+
+            // 3. Recording Filters
+            trackerService.MinPlayDurationSeconds.BindTo(settings.Bind("min_play_duration", 5));
+            trackerService.TrackStandard.BindTo(settings.Bind("track_standard", true));
+            trackerService.TrackTaiko.BindTo(settings.Bind("track_taiko", true));
+            trackerService.TrackCatch.BindTo(settings.Bind("track_catch", true));
+            trackerService.TrackMania.BindTo(settings.Bind("track_mania", true));
+            trackerService.TrackCustomRulesets.BindTo(settings.Bind("track_custom_rulesets", true));
+            trackerService.TrackRetries.BindTo(settings.Bind("track_retries", false));
+            trackerService.IgnoreNoFailPlays.BindTo(settings.Bind("ignore_nofail", false));
+            trackerService.RankedLovedOnly.BindTo(settings.Bind("ranked_loved_only", false));
+
+            // 4. Notifications & Milestones
+            trackerService.PlayNotifFilter.BindTo(settings.Bind("notif_filter", PlayNotificationFilter.PassedOnly));
+            trackerService.NotifySessionBest.BindTo(settings.Bind("notify_session_best", true));
+            trackerService.Milestones.BindTo(settings.Bind("milestones", MilestoneNotificationMode.FiftyPlays));
+
+            // 5. Overlay & Toolbar
+            trackerService.AutoOpenOverlayOnPass.BindTo(settings.Bind("auto_open_overlay_on_pass", false));
+            trackerService.ToolbarBadge.BindTo(settings.Bind("toolbar_badge", ToolbarBadgeMode.PlayCount));
+            trackerService.ToolbarBadgeColor.BindTo(settings.Bind("toolbar_badge_color", "#00d2ff"));
+            trackerService.SearchPosition.BindTo(settings.Bind("search_position", SearchBarPosition.Right));
+            trackerService.OverlayWidth.BindTo(settings.Bind("overlay_width", 960));
+            trackerService.OverlayBackdropOpacity.BindTo(settings.Bind("overlay_opacity", 0.9f));
 
             trackerService.OnNewPlayRecorded += onNewPlayRecorded;
 
@@ -74,12 +106,12 @@ namespace LazerLens
 
             // Register toolbar button and settings in OnLoad() before toolbar initialization
             Host.AddToolbarButton(
-                () => new LazerLensToolbarButton(ToggleOverlay, overlay),
+                () => new LazerLensToolbarButton(ToggleOverlay, trackerService, overlay),
                 ToolbarButtonPlacement.Right,
                 -2f
             );
 
-            Host.AddSettingsSubsection(() => new LazerLensSettingsSubsection(Host.GetSettings(), ExportSessionsToCsv, trackerService.OpenSessionsDirectory));
+            Host.AddSettingsSubsection(() => new LazerLensSettingsSubsection(Host.GetSettings(), trackerService, ExportSessionsToCsv, trackerService.OpenSessionsDirectory));
 
             int count = InstallPatches();
             Host.Log($"LazerLens: installed {count}/5 patches.");
@@ -298,8 +330,63 @@ namespace LazerLens
 
         private void onNewPlayRecorded(SessionPlayRecord play)
         {
-            if (trackerService.NotifyOnPlay.Value && play.Passed)
+            if (trackerService.AutoOpenOverlayOnPass.Value && play.Passed)
             {
+                Host.Scheduler?.Add(() =>
+                {
+                    if (overlay != null)
+                    {
+                        overlay.Show();
+                        overlay.HighlightPlay(play.Id);
+                    }
+                });
+            }
+
+            if (play.Passed)
+            {
+                var best = trackerService.LiveState.BestScore;
+                bool isNewBest = best != null && best.Id == play.Id && trackerService.LiveState.TotalPlays > 1;
+
+                if (isNewBest && trackerService.NotifySessionBest.Value)
+                {
+                    string metric = play.PerformancePoints.HasValue && play.PerformancePoints.Value > 0
+                        ? $"{play.PerformancePoints.Value:F0} PP \u2022 {play.Accuracy:F2}%"
+                        : $"{play.TotalScore:N0} Score \u2022 {play.Accuracy:F2}%";
+
+                    Host.Notify(
+                        LazerLensStrings.ToastSessionBestBody(play.BeatmapTitle, metric),
+                        NotificationKind.Success
+                    );
+                    return;
+                }
+
+                // Check milestones
+                var milestone = trackerService.Milestones.Value;
+                int totalPlays = trackerService.LiveState.TotalPlays;
+                double ppGain = trackerService.LiveState.SessionPPGain;
+
+                if (milestone == MilestoneNotificationMode.FiftyPlays && totalPlays > 0 && totalPlays % 50 == 0)
+                {
+                    Host.Notify(
+                        LazerLensStrings.ToastMilestoneBody("50 beatmaps completed this session!"),
+                        NotificationKind.Success
+                    );
+                }
+                else if (milestone == MilestoneNotificationMode.HundredPlays && totalPlays > 0 && totalPlays % 100 == 0)
+                {
+                    Host.Notify(
+                        LazerLensStrings.ToastMilestoneBody("100 beatmaps completed this session! Keep it up!"),
+                        NotificationKind.Success
+                    );
+                }
+                else if (milestone == MilestoneNotificationMode.FiftyPpGain && ppGain >= 50 && ppGain - (play.ProfilePerformancePoints ?? 0) < 50)
+                {
+                    Host.Notify(
+                        LazerLensStrings.ToastMilestoneBody("+50 PP milestone reached today!"),
+                        NotificationKind.Success
+                    );
+                }
+
                 string ppStr = play.PerformancePoints.HasValue ? $" \u2022 {play.PerformancePoints.Value:F0}pp" : "";
 
                 Host.Notify(
@@ -312,6 +399,15 @@ namespace LazerLens
         public override void Dispose()
         {
             Host.Log("Disposing LazerLens plugin and unhooking events...");
+
+            // Auto-export CSV if enabled
+            if (trackerService.AutoExportCsv.Value)
+            {
+                trackerService.ExportSessionsToCsv();
+            }
+
+            // Prune old sessions based on retention limit
+            trackerService.StorageService?.PruneOldSessions(trackerService.ArchiveRetention.Value);
 
             // Save current session before disposing
             trackerService.AutoSave();

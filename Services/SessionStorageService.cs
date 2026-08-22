@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -185,9 +186,7 @@ namespace LazerLens.Services
                     var fullPath = _storage.GetFullPath(path);
                     if (!string.IsNullOrEmpty(fullPath) && File.Exists(fullPath))
                     {
-                        var dir = Path.GetDirectoryName(fullPath);
-                        if (!string.IsNullOrEmpty(dir))
-                            new osu.Framework.Platform.NativeStorage(dir).PresentExternally();
+                        Process.Start("explorer.exe", $"/select,\"{fullPath}\"");
                         return;
                     }
                 }
@@ -197,6 +196,7 @@ namespace LazerLens.Services
             catch (Exception ex)
             {
                 TimingLog.Error($"Failed to open session file {sessionId}: {ex.Message}");
+                OpenSessionsDirectory();
             }
         }
 
@@ -207,9 +207,7 @@ namespace LazerLens.Services
             try
             {
                 var files = _storage.GetFiles(sessions_directory, $"*_{sessionId}.json");
-                var file = files.FirstOrDefault();
-
-                if (file != null)
+                foreach (var file in files)
                 {
                     var path = file.StartsWith(sessions_directory, StringComparison.OrdinalIgnoreCase)
                         ? file
@@ -236,13 +234,25 @@ namespace LazerLens.Services
 
         public void OpenSessionsDirectory()
         {
-            var fullPath = _storage?.GetFullPath(sessions_directory);
-            if (!string.IsNullOrEmpty(fullPath))
+            try
             {
-                if (!Directory.Exists(fullPath))
-                    Directory.CreateDirectory(fullPath);
+                var fullPath = _storage?.GetFullPath(sessions_directory);
+                if (!string.IsNullOrEmpty(fullPath))
+                {
+                    if (!Directory.Exists(fullPath))
+                        Directory.CreateDirectory(fullPath);
 
-                new osu.Framework.Platform.NativeStorage(fullPath).PresentExternally();
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = fullPath,
+                        UseShellExecute = true,
+                        Verb = "open"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                TimingLog.Error($"Failed to open sessions directory: {ex.Message}");
             }
         }
 
@@ -326,6 +336,43 @@ namespace LazerLens.Services
             catch (Exception ex)
             {
                 TimingLog.Error($"Failed during legacy session migration: {ex}");
+            }
+        }
+
+        public void PruneOldSessions(ArchiveRetentionLimit limit)
+        {
+            if (_storage == null || limit == ArchiveRetentionLimit.Unlimited) return;
+
+            try
+            {
+                var summaries = GetAllSessions().Where(s => !s.IsPinned).ToList();
+                var now = DateTimeOffset.Now;
+                var toDelete = new List<SessionSummary>();
+
+                switch (limit)
+                {
+                    case ArchiveRetentionLimit.ThirtyDays:
+                        toDelete = summaries.Where(s => (now - s.StartTime).TotalDays > 30).ToList();
+                        break;
+
+                    case ArchiveRetentionLimit.NinetyDays:
+                        toDelete = summaries.Where(s => (now - s.StartTime).TotalDays > 90).ToList();
+                        break;
+
+                    case ArchiveRetentionLimit.OneHundredSessions:
+                        if (summaries.Count > 100)
+                            toDelete = summaries.OrderByDescending(s => s.StartTime).Skip(100).ToList();
+                        break;
+                }
+
+                foreach (var s in toDelete)
+                {
+                    DeleteSession(s.Id);
+                }
+            }
+            catch (Exception ex)
+            {
+                TimingLog.Error($"Failed to prune old sessions: {ex.Message}");
             }
         }
     }

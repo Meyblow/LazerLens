@@ -28,10 +28,99 @@ namespace LazerLens
         public static LocalisableString TooltipViewBeatmap => OsuCcLocalisation.Get(getKey(nameof(TooltipViewBeatmap)), "Click to view beatmap info in overlay");
         public static LocalisableString TooltipLocalBeatmap => OsuCcLocalisation.Get(getKey(nameof(TooltipLocalBeatmap)), "Local beatmap (no online ID)");
         public static LocalisableString HeaderSettingsTooltip => OsuCcLocalisation.Get(getKey(nameof(HeaderSettingsTooltip)), "Lazer Lens Settings");
-        public static LocalisableString SettingsSectionGameplay => OsuCcLocalisation.Get(getKey(nameof(SettingsSectionGameplay)), "GAMEPLAY & TRACKING");
-        public static LocalisableString SettingsSectionVisuals => OsuCcLocalisation.Get(getKey(nameof(SettingsSectionVisuals)), "INTERFACE");
-        public static LocalisableString SettingsSectionData => OsuCcLocalisation.Get(getKey(nameof(SettingsSectionData)), "DATA & STORAGE");
+        public static LocalisableString SettingsSectionGameplay => OsuCcLocalisation.Get(getKey(nameof(SettingsSectionGameplay)), "GAMEPLAY & METRICS");
+        public static LocalisableString SettingsSectionVisuals => OsuCcLocalisation.Get(getKey(nameof(SettingsSectionVisuals)), "INTERFACE & DISPLAY");
+        public static LocalisableString SettingsSectionFilters => OsuCcLocalisation.Get(getKey(nameof(SettingsSectionFilters)), "RECORDING FILTERS");
+        public static LocalisableString SettingsSectionNotifications => OsuCcLocalisation.Get(getKey(nameof(SettingsSectionNotifications)), "NOTIFICATIONS & MILESTONES");
+        public static LocalisableString SettingsSectionOverlay => OsuCcLocalisation.Get(getKey(nameof(SettingsSectionOverlay)), "OVERLAY & TOOLBAR");
+        public static LocalisableString SettingsSectionData => OsuCcLocalisation.Get(getKey(nameof(SettingsSectionData)), "DATA & SESSIONS");
 
+        // 1. Metrics & Display
+        public static LocalisableString SettingsDefaultSortCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsDefaultSortCaption)), "Default history sorting");
+        public static LocalisableString SettingsDefaultSortSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsDefaultSortSubtitle)), "Initial sorting order for the play history list");
+
+        public static LocalisableString SettingsPpDisplayCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsPpDisplayCaption)), "PP display mode");
+        public static LocalisableString SettingsPpDisplaySubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsPpDisplaySubtitle)), "Whether to show profile gain (+PP), beatmap PP, or both");
+
+        public static LocalisableString SettingsAccCalcCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsAccCalcCaption)), "Average accuracy calculation");
+        public static LocalisableString SettingsAccCalcSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsAccCalcSubtitle)), "Object-weighted prevents short retry fails from distorting session average");
+
+        public static LocalisableString SettingsHighlightURCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsHighlightURCaption)), "Highlight Unstable Rate (UR)");
+        public static LocalisableString SettingsHighlightURSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsHighlightURSubtitle)), "Colours UR values green (<80), yellow (80-110), or grey (>110)");
+
+        public static LocalisableString SettingsShowModsCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsShowModsCaption)), "Show mods in history");
+        public static LocalisableString SettingsShowModsSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsShowModsSubtitle)), "Displays graphical mod badges in play history items");
+
+        public static LocalisableString SettingsShowDiffCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsShowDiffCaption)), "Show star difficulty badge");
+        public static LocalisableString SettingsShowDiffSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsShowDiffSubtitle)), "Displays star rating pill on each play card");
+
+        // 2. Session Management
+        public static LocalisableString SettingsSessionSplitCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsSessionSplitCaption)), "Session split threshold");
+        public static LocalisableString SettingsSessionSplitSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsSessionSplitSubtitle)), "Automatically starts a new session after inactivity or daily reset");
+
+        public static LocalisableString SettingsAfkPauseCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsAfkPauseCaption)), "AFK timer pause");
+        public static LocalisableString SettingsAfkPauseSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsAfkPauseSubtitle)), "Pauses session time when idle in song select or menus");
+
+        public static LocalisableString SettingsEnablePauseCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsEnablePauseCaption)), "Enable manual pause/resume");
+        public static LocalisableString SettingsEnablePauseSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsEnablePauseSubtitle)), "Adds a pause button in the overlay to temporarily freeze tracking");
+
+        public static LocalisableString SettingsAutoExportCsvCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsAutoExportCsvCaption)), "Auto-export CSV on exit");
+        public static LocalisableString SettingsAutoExportCsvSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsAutoExportCsvSubtitle)), "Automatically writes a CSV session backup upon game exit");
+
+        public static LocalisableString SettingsRetentionLimitCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsRetentionLimitCaption)), "Archive retention limit");
+        public static LocalisableString SettingsRetentionLimitSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsRetentionLimitSubtitle)), "Automatically cleans up old unpinned sessions to save disk space");
+
+        public static LocalisableString SettingsResetSession => OsuCcLocalisation.Get(getKey(nameof(SettingsResetSession)), "Start new session now");
+        public static LocalisableString SettingsResetSessionSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsResetSessionSubtitle)), "Archives current session and starts a fresh live session");
+
+        public static LocalisableString DialogResetSessionTitle => OsuCcLocalisation.Get(getKey(nameof(DialogResetSessionTitle)), "Start New Session?");
+        public static LocalisableString DialogResetSessionBody => OsuCcLocalisation.Get(getKey(nameof(DialogResetSessionBody)), "Your current session will be saved to the archive and all live counters will reset.");
+
+        public static LocalisableString SessionResetSuccess => OsuCcLocalisation.Get(getKey(nameof(SessionResetSuccess)), "Current session archived. Fresh session started!");
+        public static LocalisableString SessionPaused => OsuCcLocalisation.Get(getKey(nameof(SessionPaused)), "Session tracking paused");
+        public static LocalisableString SessionResumed => OsuCcLocalisation.Get(getKey(nameof(SessionResumed)), "Session tracking resumed");
+        public static LocalisableString ButtonPauseSession => OsuCcLocalisation.Get(getKey(nameof(ButtonPauseSession)), "Pause Session");
+        public static LocalisableString ButtonResumeSession => OsuCcLocalisation.Get(getKey(nameof(ButtonResumeSession)), "Resume Session");
+
+        // 3. Recording Filters
+        public static LocalisableString SettingsMinDurationCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsMinDurationCaption)), "Minimum play duration (seconds)");
+        public static LocalisableString SettingsMinDurationSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsMinDurationSubtitle)), "Discards immediate misclick retries shorter than this threshold");
+
+        public static LocalisableString SettingsIgnoreNoFailCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsIgnoreNoFailCaption)), "Ignore NoFail / Practice plays");
+        public static LocalisableString SettingsIgnoreNoFailSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsIgnoreNoFailSubtitle)), "Prevents practice runs with NF mod from affecting pass rate and stats");
+
+        public static LocalisableString SettingsRankedLovedOnlyCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsRankedLovedOnlyCaption)), "Ranked & Loved maps only");
+        public static LocalisableString SettingsRankedLovedOnlySubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsRankedLovedOnlySubtitle)), "Ignores Graveyard, WIP and Unranked beatmaps");
+
+        // 4. Notifications
+        public static LocalisableString SettingsNotifFilterCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsNotifFilterCaption)), "Play summary notifications");
+        public static LocalisableString SettingsNotifFilterSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsNotifFilterSubtitle)), "Controls when in-game corner toast notifications appear after a play");
+
+        public static LocalisableString SettingsNotifySessionBestCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsNotifySessionBestCaption)), "Celebrate session bests");
+        public static LocalisableString SettingsNotifySessionBestSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsNotifySessionBestSubtitle)), "Plays an alert and notification when achieving a new best score/PP today");
+
+        public static LocalisableString SettingsMilestonesCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsMilestonesCaption)), "Milestone notifications");
+        public static LocalisableString SettingsMilestonesSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsMilestonesSubtitle)), "Congratulates on reaching round play counts or PP thresholds");
+
+        public static LocalisableString ToastSessionBestTitle => OsuCcLocalisation.Get(getKey(nameof(ToastSessionBestTitle)), "🎉 New Session Best!");
+        public static LocalisableString ToastSessionBestBody(string title, string metric) => OsuCcLocalisation.Get(getKey(nameof(ToastSessionBestBody)), "{0}\n{1}", title, metric);
+        public static LocalisableString ToastMilestoneTitle => OsuCcLocalisation.Get(getKey(nameof(ToastMilestoneTitle)), "⭐ Milestone Reached!");
+        public static LocalisableString ToastMilestoneBody(string message) => OsuCcLocalisation.Get(getKey(nameof(ToastMilestoneBody)), "{0}", message);
+
+        // 5. Overlay & Toolbar
+        public static LocalisableString SettingsToolbarBadgeCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsToolbarBadgeCaption)), "Toolbar button badge");
+        public static LocalisableString SettingsToolbarBadgeSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsToolbarBadgeSubtitle)), "Displays current playcount, PP gain, or accuracy on the top bar");
+
+        public static LocalisableString SettingsOverlayWidthCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsOverlayWidthCaption)), "Overlay width");
+        public static LocalisableString SettingsOverlayWidthSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsOverlayWidthSubtitle)), "Adjusts the width of the Lazer Lens wave overlay");
+
+        public static LocalisableString SettingsOverlayOpacityCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsOverlayOpacityCaption)), "Backdrop dim / opacity");
+        public static LocalisableString SettingsOverlayOpacitySubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsOverlayOpacitySubtitle)), "Controls how dark the game background becomes when overlay is open");
+
+        public static LocalisableString SettingsAutoOpenOverlayCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsAutoOpenOverlayCaption)), "Auto-open overlay on pass");
+        public static LocalisableString SettingsAutoOpenOverlaySubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsAutoOpenOverlaySubtitle)), "Automatically opens Lazer Lens with score highlight after completing a beatmap");
+
+        // Existing
         public static LocalisableString SettingsNotificationsCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsNotificationsCaption)), "Notifications after play");
         public static LocalisableString SettingsNotificationsSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsNotificationsSubtitle)), "Shows a summary notification in the corner after every completed beatmap");
 
@@ -88,6 +177,17 @@ namespace LazerLens
         public static LocalisableString FilterFail => OsuCcLocalisation.Get(getKey(nameof(FilterFail)), "Failed");
 
         public static LocalisableString FilterCategoryRuleset => OsuCcLocalisation.Get(getKey(nameof(FilterCategoryRuleset)), "Ruleset:");
+        public static LocalisableString FilterRulesetCustom => OsuCcLocalisation.Get(getKey(nameof(FilterRulesetCustom)), "Custom");
+
+        public static LocalisableString SettingsSearchBarPositionCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsSearchBarPositionCaption)), "Search bar position");
+        public static LocalisableString SettingsSearchBarPositionSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsSearchBarPositionSubtitle)), "Controls alignment of the search bar in history views (Right or Centre)");
+
+        public static LocalisableString SettingsToolbarBadgeColorCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsToolbarBadgeColorCaption)), "Toolbar badge fill colour");
+        public static LocalisableString SettingsToolbarBadgeColorSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsToolbarBadgeColorSubtitle)), "Customise the background colour of the toolbar indicator");
+
+        public static LocalisableString SettingsTrackCustomCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsTrackCustomCaption)), "Track custom rulesets plays");
+        public static LocalisableString SettingsTrackCustomSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsTrackCustomSubtitle)), "Records plays for Sentakki, Tau, Soyokaze and other custom rulesets");
+
         public static LocalisableString FilterCategoryOutcome => OsuCcLocalisation.Get(getKey(nameof(FilterCategoryOutcome)), "Outcome:");
         public static LocalisableString FilterCategoryStatus => OsuCcLocalisation.Get(getKey(nameof(FilterCategoryStatus)), "Status:");
         public static LocalisableString FilterCategorySort => OsuCcLocalisation.Get(getKey(nameof(FilterCategorySort)), "Sort by:");

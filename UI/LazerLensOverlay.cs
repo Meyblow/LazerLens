@@ -65,7 +65,8 @@ namespace LazerLens.UI
         Osu,
         Mania,
         Taiko,
-        Catch
+        Catch,
+        Custom
     }
 
     public enum SessionOutcomeFilter
@@ -236,6 +237,25 @@ namespace LazerLens.UI
                 RefreshData();
             });
 
+            service.SearchPosition.BindValueChanged(e =>
+            {
+                if (IsDisposed) return;
+                var anchor = e.NewValue == SearchBarPosition.Centre ? Anchor.Centre : Anchor.CentreRight;
+                var origin = e.NewValue == SearchBarPosition.Centre ? Anchor.Centre : Anchor.CentreRight;
+
+                if (liveFilterControl?.SearchTextBox != null)
+                {
+                    liveFilterControl.SearchTextBox.Anchor = anchor;
+                    liveFilterControl.SearchTextBox.Origin = origin;
+                }
+
+                if (archiveFilterControl?.SearchTextBox != null)
+                {
+                    archiveFilterControl.SearchTextBox.Anchor = anchor;
+                    archiveFilterControl.SearchTextBox.Origin = origin;
+                }
+            }, true);
+
             archiveSortDropdown.Current.BindValueChanged(_ =>
             {
                 if (IsDisposed) return;
@@ -249,9 +269,9 @@ namespace LazerLens.UI
         private void bindFilter(LazerLensFilterControl filter)
         {
             filter.SearchChanged += _ => { if (!IsDisposed) RefreshData(); };
-            filter.RulesetChanged += _ => { if (!IsDisposed) RefreshData(); };
-            filter.OutcomeChanged += _ => { if (!IsDisposed) RefreshData(); };
-            filter.StatusChanged += _ => { if (!IsDisposed) RefreshData(); };
+            filter.RulesetsChanged += _ => { if (!IsDisposed) RefreshData(); };
+            filter.OutcomesChanged += _ => { if (!IsDisposed) RefreshData(); };
+            filter.StatusesChanged += _ => { if (!IsDisposed) RefreshData(); };
             filter.SortChanged += _ => { if (!IsDisposed) RefreshData(); };
             filter.SortDirectionToggled += _ => { if (!IsDisposed) RefreshData(); };
         }
@@ -325,7 +345,7 @@ namespace LazerLens.UI
                             {
                                 Anchor = Anchor.CentreRight,
                                 Origin = Anchor.CentreRight,
-                                Width = 320,
+                                Width = 420,
                                 Height = 34,
                                 PlaceholderText = LazerLensStrings.SearchPlaceholder,
                             }
@@ -378,7 +398,7 @@ namespace LazerLens.UI
                     RelativeSizeAxes = Axes.Both,
                     ColumnDimensions = new[]
                     {
-                        new Dimension(GridSizeMode.Absolute, 330),
+                        new Dimension(GridSizeMode.Absolute, 340),
                         new Dimension(GridSizeMode.Distributed),
                     },
                     Content = new[]
@@ -423,6 +443,7 @@ namespace LazerLens.UI
                                                         new Container
                                                         {
                                                             RelativeSizeAxes = Axes.Both,
+                                                            Depth = -10, // Renders dropdown menu over the scroll list
                                                             Children = new Drawable[]
                                                             {
                                                                 archiveListHeader = new OsuSpriteText
@@ -451,7 +472,7 @@ namespace LazerLens.UI
                                                             Child = new OsuScrollContainer
                                                             {
                                                                 RelativeSizeAxes = Axes.Both,
-                                                                Padding = new MarginPadding { Right = 10 },
+                                                                Padding = new MarginPadding { Right = 14 },
                                                                 ScrollbarVisible = true,
                                                                 Child = archiveCardsList = new FillFlowContainer
                                                                 {
@@ -599,7 +620,7 @@ namespace LazerLens.UI
                                                         {
                                                             Anchor = Anchor.CentreRight,
                                                             Origin = Anchor.CentreRight,
-                                                            Width = 320,
+                                                            Width = 420,
                                                             Height = 34,
                                                             PlaceholderText = LazerLensStrings.SearchPlaceholder,
                                                         }
@@ -656,14 +677,130 @@ namespace LazerLens.UI
                 BypassAutoSizeAxes = Axes.Both,
                 Children = new Drawable[]
                 {
+                    // 1. Metrics & Display
                     createSettingsSection(LazerLensStrings.SettingsSectionGameplay, new Drawable[]
+                    {
+                        new SettingsEnumDropdown<DefaultSortMode>
+                        {
+                            LabelText = LazerLensStrings.SettingsDefaultSortCaption,
+                            Current = service.DefaultSort,
+                            ShowsDefaultIndicator = false,
+                        },
+                        new SettingsEnumDropdown<PpDisplayMode>
+                        {
+                            LabelText = LazerLensStrings.SettingsPpDisplayCaption,
+                            Current = service.PpDisplay,
+                            ShowsDefaultIndicator = false,
+                        },
+                        new SettingsEnumDropdown<AccuracyCalculationMode>
+                        {
+                            LabelText = LazerLensStrings.SettingsAccCalcCaption,
+                            Current = service.AccuracyCalculation,
+                            ShowsDefaultIndicator = false,
+                        },
+                        new SettingsCheckbox
+                        {
+                            LabelText = LazerLensStrings.SettingsHighlightURCaption,
+                            Current = service.HighlightUR,
+                            ShowsDefaultIndicator = false,
+                            Keywords = new[] { "ur", "unstable rate", "color" },
+                        },
+                        new SettingsCheckbox
+                        {
+                            LabelText = LazerLensStrings.SettingsShowModsCaption,
+                            Current = service.ShowModsInHistory,
+                            ShowsDefaultIndicator = false,
+                            Keywords = new[] { "mods", "badges", "history" },
+                        },
+                        new SettingsCheckbox
+                        {
+                            LabelText = LazerLensStrings.SettingsShowDiffCaption,
+                            Current = service.ShowDifficultyRating,
+                            ShowsDefaultIndicator = false,
+                            Keywords = new[] { "stars", "difficulty", "rating" },
+                        },
+                        new SettingsCheckbox
+                        {
+                            LabelText = LazerLensStrings.SettingsCompactHistoryCaption,
+                            Current = service.CompactMode,
+                            ShowsDefaultIndicator = false,
+                            Keywords = new[] { "compact", "history", "ui" },
+                        },
+                    }),
+
+                    // 2. Session Management
+                    createSettingsSection(LazerLensStrings.SettingsSectionData, new Drawable[]
+                    {
+                        new SettingsEnumDropdown<SessionSplitThreshold>
+                        {
+                            LabelText = LazerLensStrings.SettingsSessionSplitCaption,
+                            Current = service.SessionSplit,
+                            ShowsDefaultIndicator = false,
+                        },
+                        new SettingsEnumDropdown<AfkPauseTimeout>
+                        {
+                            LabelText = LazerLensStrings.SettingsAfkPauseCaption,
+                            Current = service.AfkPause,
+                            ShowsDefaultIndicator = false,
+                        },
+                        new SettingsCheckbox
+                        {
+                            LabelText = LazerLensStrings.SettingsEnablePauseCaption,
+                            Current = service.EnableSessionPause,
+                            ShowsDefaultIndicator = false,
+                            Keywords = new[] { "pause", "resume", "session" },
+                        },
+                        new SettingsCheckbox
+                        {
+                            LabelText = LazerLensStrings.SettingsAutoExportCsvCaption,
+                            Current = service.AutoExportCsv,
+                            ShowsDefaultIndicator = false,
+                            Keywords = new[] { "export", "csv", "backup" },
+                        },
+                        new SettingsEnumDropdown<ArchiveRetentionLimit>
+                        {
+                            LabelText = LazerLensStrings.SettingsRetentionLimitCaption,
+                            Current = service.ArchiveRetention,
+                            ShowsDefaultIndicator = false,
+                        },
+                        new SettingsActionButton(FontAwesome.Solid.SyncAlt, LazerLensStrings.SettingsResetSession, handleResetLiveSession),
+                        new SettingsActionButton(FontAwesome.Solid.FolderOpen, LazerLensStrings.SettingsOpenDirectory, () => service.OpenSessionsDirectory()),
+                        new SettingsActionButton(FontAwesome.Solid.FileCsv, LazerLensStrings.SettingsExportCsv, () => exportCsvAction?.Invoke()),
+                    }),
+
+                    // 3. Recording Filters
+                    createSettingsSection(LazerLensStrings.SettingsSectionFilters, new Drawable[]
                     {
                         new SettingsCheckbox
                         {
-                            LabelText = LazerLensStrings.SettingsNotificationsCaption,
-                            Current = service.NotifyOnPlay,
+                            LabelText = "Track osu! (Standard) plays",
+                            Current = service.TrackStandard,
                             ShowsDefaultIndicator = false,
-                            Keywords = new[] { "notifications", "notify", "toast" },
+                        },
+                        new SettingsCheckbox
+                        {
+                            LabelText = "Track osu!taiko plays",
+                            Current = service.TrackTaiko,
+                            ShowsDefaultIndicator = false,
+                        },
+                        new SettingsCheckbox
+                        {
+                            LabelText = "Track osu!catch plays",
+                            Current = service.TrackCatch,
+                            ShowsDefaultIndicator = false,
+                        },
+                        new SettingsCheckbox
+                        {
+                            LabelText = "Track osu!mania plays",
+                            Current = service.TrackMania,
+                            ShowsDefaultIndicator = false,
+                        },
+                        new SettingsCheckbox
+                        {
+                            LabelText = LazerLensStrings.SettingsTrackCustomCaption,
+                            Current = service.TrackCustomRulesets,
+                            ShowsDefaultIndicator = false,
+                            Keywords = new[] { "custom", "rulesets", "sentakki", "tau" },
                         },
                         new SettingsCheckbox
                         {
@@ -672,31 +809,93 @@ namespace LazerLens.UI
                             ShowsDefaultIndicator = false,
                             Keywords = new[] { "retries", "retry", "fail", "pass" },
                         },
-                    }),
-                    createSettingsSection(LazerLensStrings.SettingsSectionVisuals, new Drawable[]
-                    {
                         new SettingsCheckbox
                         {
-                            LabelText = LazerLensStrings.SettingsCompactHistoryCaption,
-                            Current = service.CompactMode,
+                            LabelText = LazerLensStrings.SettingsIgnoreNoFailCaption,
+                            Current = service.IgnoreNoFailPlays,
                             ShowsDefaultIndicator = false,
-                            Keywords = new[] { "compact", "history", "ui" },
+                            Keywords = new[] { "nofail", "nf", "practice" },
                         },
                         new SettingsCheckbox
                         {
-                            LabelText = LazerLensStrings.SettingsShowURCaption,
-                            Current = service.ShowUR,
+                            LabelText = LazerLensStrings.SettingsRankedLovedOnlyCaption,
+                            Current = service.RankedLovedOnly,
                             ShowsDefaultIndicator = false,
-                            Keywords = new[] { "ur", "unstable rate" },
+                            Keywords = new[] { "ranked", "loved", "graveyard", "unranked" },
                         },
                     }),
-                    createSettingsSection(LazerLensStrings.SettingsSectionData, new Drawable[]
+
+                    // 4. Notifications & Milestones
+                    createSettingsSection(LazerLensStrings.SettingsSectionNotifications, new Drawable[]
                     {
-                        new SettingsActionButton(FontAwesome.Solid.FolderOpen, LazerLensStrings.SettingsOpenDirectory, () => service.OpenSessionsDirectory()),
-                        new SettingsActionButton(FontAwesome.Solid.FileCsv, LazerLensStrings.SettingsExportCsv, () => exportCsvAction?.Invoke()),
+                        new SettingsEnumDropdown<PlayNotificationFilter>
+                        {
+                            LabelText = LazerLensStrings.SettingsNotifFilterCaption,
+                            Current = service.PlayNotifFilter,
+                            ShowsDefaultIndicator = false,
+                        },
+                        new SettingsCheckbox
+                        {
+                            LabelText = LazerLensStrings.SettingsNotifySessionBestCaption,
+                            Current = service.NotifySessionBest,
+                            ShowsDefaultIndicator = false,
+                            Keywords = new[] { "best", "record", "celebrate" },
+                        },
+                        new SettingsEnumDropdown<MilestoneNotificationMode>
+                        {
+                            LabelText = LazerLensStrings.SettingsMilestonesCaption,
+                            Current = service.Milestones,
+                            ShowsDefaultIndicator = false,
+                        },
+                    }),
+
+                    // 5. Overlay & Toolbar
+                    createSettingsSection(LazerLensStrings.SettingsSectionOverlay, new Drawable[]
+                    {
+                        new SettingsCheckbox
+                        {
+                            LabelText = LazerLensStrings.SettingsAutoOpenOverlayCaption,
+                            Current = service.AutoOpenOverlayOnPass,
+                            ShowsDefaultIndicator = false,
+                            Keywords = new[] { "auto", "open", "pass", "overlay" },
+                        },
+                        new SettingsEnumDropdown<ToolbarBadgeMode>
+                        {
+                            LabelText = LazerLensStrings.SettingsToolbarBadgeCaption,
+                            Current = service.ToolbarBadge,
+                            ShowsDefaultIndicator = false,
+                        },
+                        new SettingsEnumDropdown<SearchBarPosition>
+                        {
+                            LabelText = LazerLensStrings.SettingsSearchBarPositionCaption,
+                            Current = service.SearchPosition,
+                            ShowsDefaultIndicator = false,
+                        },
+                        new SettingsTextBox
+                        {
+                            LabelText = LazerLensStrings.SettingsToolbarBadgeColorCaption,
+                            Current = service.ToolbarBadgeColor,
+                            ShowsDefaultIndicator = false,
+                        },
                     }),
                 }
             };
+        }
+
+        private void handleResetLiveSession()
+        {
+            var dialog = new OsuCcConfirmDialog(
+                LazerLensStrings.DialogResetSessionTitle,
+                LazerLensStrings.DialogResetSessionBody,
+                () =>
+                {
+                    service.ResetLiveSession();
+                    currentSection.Value = LazerLensSection.Session;
+                    RefreshData();
+                }
+            );
+
+            ClientDialogs.Push(dialog);
         }
 
         private Container createSettingsSection(LocalisableString header, Drawable[] items)
@@ -1056,9 +1255,9 @@ namespace LazerLens.UI
             }
 
             var filteredPlays = plays.Where(p =>
-                matchesRuleset(p, filter.CurrentRuleset) &&
-                matchesOutcome(p, filter.CurrentOutcome) &&
-                matchesStatus(p, filter.CurrentStatus) &&
+                matchesRuleset(p, filter.SelectedRulesets) &&
+                matchesOutcome(p, filter.SelectedOutcomes) &&
+                matchesStatus(p, filter.SelectedStatuses) &&
                 matchesSearch(p, filter.SearchTextBox?.Current.Value ?? "")
             );
 
@@ -1121,62 +1320,65 @@ namespace LazerLens.UI
                 item.MoveToY(targetY, 200, Easing.OutQuint);
                 item.FadeIn(150);
 
-                currentY += SlotHeight;
+                currentY += (service.CompactMode.Value ? 40 : 58) + 6;
             }
 
             container.Height = currentY;
 
-            var toRemove = new List<Guid>();
-            foreach (var (id, item) in map)
+            // Remove items no longer in filter
+            foreach (var kvp in map.ToList())
             {
-                if (!currentVisibleIds.Contains(id))
+                if (!currentVisibleIds.Contains(kvp.Key))
                 {
-                    item.FadeOut(150).Expire();
-                    toRemove.Add(id);
+                    container.Remove(kvp.Value, true);
+                    map.Remove(kvp.Key);
                 }
             }
-
-            foreach (var id in toRemove)
-                map.Remove(id);
 
             if (emptyText != null)
                 emptyText.Alpha = finalPlaysList.Count == 0 ? 1 : 0;
         }
 
-        private static bool matchesRuleset(SessionPlayRecord play, SessionRulesetFilter filter)
+        private static bool matchesRuleset(SessionPlayRecord play, HashSet<string> filters)
         {
-            return filter switch
+            if (filters.Contains("all")) return true;
+
+            string name = (play.RulesetName ?? "").ToLowerInvariant();
+            bool isTaiko = name.Contains("taiko");
+            bool isCatch = name.Contains("catch") || name.Contains("fruit");
+            bool isMania = name.Contains("mania");
+            bool isOsu = name.Equals("osu") || name.Contains("standard") || name.Equals("osu!");
+            bool isCustom = !isTaiko && !isCatch && !isMania && !isOsu;
+
+            foreach (var f in filters)
             {
-                SessionRulesetFilter.All => true,
-                SessionRulesetFilter.Osu => play.RulesetName.Contains("osu", StringComparison.OrdinalIgnoreCase) && !play.RulesetName.Contains("taiko", StringComparison.OrdinalIgnoreCase) && !play.RulesetName.Contains("mania", StringComparison.OrdinalIgnoreCase) && !play.RulesetName.Contains("catch", StringComparison.OrdinalIgnoreCase) && !play.RulesetName.Contains("fruit", StringComparison.OrdinalIgnoreCase),
-                SessionRulesetFilter.Mania => play.RulesetName.Contains("mania", StringComparison.OrdinalIgnoreCase),
-                SessionRulesetFilter.Taiko => play.RulesetName.Contains("taiko", StringComparison.OrdinalIgnoreCase),
-                SessionRulesetFilter.Catch => play.RulesetName.Contains("catch", StringComparison.OrdinalIgnoreCase) || play.RulesetName.Contains("fruit", StringComparison.OrdinalIgnoreCase),
-                _ => true
-            };
+                if (string.Equals(f, name, StringComparison.OrdinalIgnoreCase)) return true;
+                if ((f == "fruits" || f == "catch") && isCatch) return true;
+                if (f == "taiko" && isTaiko) return true;
+                if (f == "mania" && isMania) return true;
+                if (f == "osu" && isOsu) return true;
+                if (f == "custom" && isCustom) return true;
+                if (name.Contains(f, StringComparison.OrdinalIgnoreCase)) return true;
+            }
+
+            return false;
         }
 
-        private static bool matchesOutcome(SessionPlayRecord play, SessionOutcomeFilter filter)
+        private static bool matchesOutcome(SessionPlayRecord play, HashSet<SessionOutcomeFilter> filters)
         {
-            return filter switch
-            {
-                SessionOutcomeFilter.All => true,
-                SessionOutcomeFilter.Pass => play.Passed,
-                SessionOutcomeFilter.Fail => !play.Passed,
-                _ => true
-            };
+            if (filters.Contains(SessionOutcomeFilter.All)) return true;
+            if (filters.Contains(SessionOutcomeFilter.Pass) && play.Passed) return true;
+            if (filters.Contains(SessionOutcomeFilter.Fail) && !play.Passed) return true;
+            return false;
         }
 
-        private static bool matchesStatus(SessionPlayRecord play, SessionStatusFilter filter)
+        private static bool matchesStatus(SessionPlayRecord play, HashSet<SessionStatusFilter> filters)
         {
-            return filter switch
-            {
-                SessionStatusFilter.All => true,
-                SessionStatusFilter.Ranked => play.Status is "Ranked" or "Approved",
-                SessionStatusFilter.Loved => play.Status == "Loved",
-                SessionStatusFilter.Graveyard => play.Status is "Graveyard" or "Pending" or "WIP" or "Unranked",
-                _ => true
-            };
+            if (filters.Contains(SessionStatusFilter.All)) return true;
+            if (filters.Contains(SessionStatusFilter.Ranked) && play.Status is "Ranked" or "Approved") return true;
+            if (filters.Contains(SessionStatusFilter.Loved) && play.Status == "Loved") return true;
+            if (filters.Contains(SessionStatusFilter.Graveyard) && play.Status is "Graveyard" or "Pending" or "WIP" or "Unranked") return true;
+            return false;
         }
 
         private static bool matchesSearch(SessionPlayRecord play, string query)
@@ -1197,6 +1399,19 @@ namespace LazerLens.UI
                 overlay?.FetchAndShowBeatmap(score.OnlineBeatmapID);
             else if (score.OnlineBeatmapSetID > 0)
                 overlay?.FetchAndShowBeatmapSet(score.OnlineBeatmapSetID);
+        }
+
+        public void HighlightPlay(Guid id)
+        {
+            if (IsDisposed) return;
+
+            Schedule(() =>
+            {
+                if (liveItemMap.TryGetValue(id, out var item))
+                {
+                    item.FlashHighlight();
+                }
+            });
         }
 
         protected override void Dispose(bool isDisposing)

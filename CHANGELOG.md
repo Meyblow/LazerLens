@@ -2,6 +2,24 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [1.5.0] - 2026-08-23
+
+### Added
+- **Custom Rulesets Support**: Full tracking and display support for Sentakki, Tau, Soyokaze, Swing, and all custom rulesets with dynamic hit results breakdown, ruleset icon display, dedicated "Custom" multi-select filter tab, performance points calculation, and a tracking filter toggle in settings.
+- **Extended Search Bar & Alignment Setting**: Extended search bar width (420px) in both Live and Past Sessions views with a new `SearchBarPosition` setting (`Right` [default], `Centre`).
+- **Toolbar Badge Fill Colour Customization**: Added customizable badge fill color setting (`ToolbarBadgeColor`) with instant live preview on the toolbar button.
+- **5 Comprehensive Settings Subsections**: Extended settings for Metrics & Display, Session Management, Recording Filters, Notifications, and Overlay/Toolbar customization.
+
+### Fixed
+- **Performance Points Display**: Robust multi-tier PP calculation and main-thread asynchronous update ensuring played scores reliably display calculated PP without remaining `-`.
+- **Accurate Hits Per Ruleset**: Tailored hit count columns and compact typography for osu! (4 hits), osu!taiko (3 hits), osu!catch (4 hits), osu!mania (6 hits: MAX/300/200/100/50/X in 96px column), and dynamic custom ruleset hit statistics.
+- **Past Sessions Scrollbar Overlap**: Added generous padding and column separation so the scrollbar track does not overlap session cards.
+- **Past Sessions Sort Dropdown Layering**: Corrected Z-index / depth layering so the archive sort dropdown menu always opens on top of session cards.
+- **Session Note Dialog Dismissal**: Fixed mouse and focus event handling so the note dialog remains open until explicitly saved or cancelled.
+- **Fail Play Capture**: Added hooks for `SubmittingPlayer.ConcludeFailedScore` and `Player.PerformFail` ensuring failed plays are reliably captured with `F` grade.
+- **Open in Folder**: Implemented `OpenSessionFile` to open and highlight the specific session `.json` file in Windows Explorer (`explorer.exe /select,...`).
+- **Live Reactive Settings**: Bound all history visual settings (`PP display mode`, `Highlight UR`, `Show mods in history`, `Show difficulty rating`, `Show UR`, `Compact mode`) to re-render history cards instantly upon setting changes without reopening the overlay.
+
 ## [1.4.7] - 2026-08-22
 
 ### Fixed
