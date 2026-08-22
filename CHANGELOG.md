@@ -2,6 +2,11 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [1.3.7] - 2026-08-22
+
+### Changed
+- **Migrated to osucc.Data.IOsuCcStorage (VFS)**: Session storage now uses the native `Host.Data` Virtual File System (`osu-cc/data/lazer-lens/sessions/`). Automatic migration seamlessly moves any existing sessions from legacy locations into the new VFS structure.
+
 ## [1.3.6] - 2026-08-22
 
 ### Changed

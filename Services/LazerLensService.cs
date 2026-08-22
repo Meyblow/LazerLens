@@ -342,7 +342,7 @@ namespace LazerLens.Services
 
         // --- Storage & Session Selection ---
 
-        public void AttachStorage(osu.Framework.Platform.Storage? storage)
+        public void AttachStorage(osucc.Data.IOsuCcStorage? storage)
         {
             StorageService = new SessionStorageService(storage);
         }

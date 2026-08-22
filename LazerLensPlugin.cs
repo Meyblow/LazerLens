@@ -77,8 +77,8 @@ namespace LazerLens
             Host.Log("LazerLens AttachToGame() called. Hooking into OsuGame and registering UI overlays...");
             EnsureHooked();
 
-            // Attach VFS storage for session persistence
-            trackerService.AttachStorage(Host.GetStorage());
+            // Attach VFS storage for session persistence (osu-cc/data/lazer-lens/sessions)
+            trackerService.AttachStorage(Host.Data);
 
             // 1. Instantiate the session overlay and register it with the game's overlay manager
             overlay = new LazerLensOverlay(trackerService, ExportSessionsToCsv);

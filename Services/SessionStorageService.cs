@@ -3,89 +3,28 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
-using osu.Framework.Platform;
 using osucc.Core;
+using osucc.Data;
 using LazerLens.Models;
 
 namespace LazerLens.Services
 {
     public class SessionStorageService
     {
-        private static readonly JsonSerializerOptions s_jsonOptions = new() { WriteIndented = false };
+        private const string sessions_directory = "sessions";
 
-        private readonly Storage? _baseStorage;
-        private readonly Storage? _sessionsStorage;
+        private readonly IOsuCcStorage? _storage;
         private List<SessionSummary>? _cachedSummaries;
 
-        public SessionStorageService(Storage? storage)
+        public SessionStorageService(IOsuCcStorage? storage)
         {
-            _baseStorage = storage;
-
-            if (storage != null)
-            {
-                try
-                {
-                    string pluginFullPath = storage.GetFullPath(string.Empty);
-                    DirectoryInfo? pluginDir = new DirectoryInfo(pluginFullPath);
-                    DirectoryInfo? osuCcDir = pluginDir.Parent?.Parent;
-
-                    if (osuCcDir != null && osuCcDir.Exists)
-                    {
-                        string sessionsPath = Path.Combine(osuCcDir.FullName, "sessions");
-                        _sessionsStorage = new NativeStorage(sessionsPath);
-                    }
-                    else
-                    {
-                        string sessionsPath = Path.GetFullPath(Path.Combine(pluginFullPath, "..", "..", "sessions"));
-                        _sessionsStorage = new NativeStorage(sessionsPath);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    TimingLog.Error($"SessionStorageService: failed to resolve osu-cc/sessions storage: {ex}");
-                    _sessionsStorage = storage.GetStorageForDirectory("sessions");
-                }
-            }
-
-            migrateLegacySessions(storage);
-        }
-
-        private void migrateLegacySessions(Storage? storage)
-        {
-            if (storage == null || _sessionsStorage == null) return;
-
-            try
-            {
-                var legacyStorage = storage.GetStorageForDirectory("sessions");
-                var legacyFiles = legacyStorage.GetFiles(".", "*.json");
-
-                foreach (var file in legacyFiles)
-                {
-                    try
-                    {
-                        if (!_sessionsStorage.Exists(file))
-                        {
-                            using var src = legacyStorage.GetStream(file);
-                            using var dst = _sessionsStorage.GetStream(file, FileAccess.Write, FileMode.Create);
-                            src.CopyTo(dst);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        TimingLog.Error($"Failed to migrate session file {file}: {ex}");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                TimingLog.Error($"Failed during legacy session migration: {ex}");
-            }
+            _storage = storage;
+            migrateLegacySessions();
         }
 
         public void SaveSession(SessionState state)
         {
-            if (_sessionsStorage == null) return;
+            if (_storage == null) return;
 
             try
             {
@@ -93,9 +32,7 @@ namespace LazerLens.Services
                 var timestamp = archive.StartTime.ToUnixTimeSeconds();
                 var fileName = $"{timestamp}_{archive.Id}.json";
 
-                using var stream = _sessionsStorage.GetStream(fileName, FileAccess.Write, FileMode.Create);
-                JsonSerializer.Serialize(stream, archive, s_jsonOptions);
-
+                _storage.WriteJson($"{sessions_directory}/{fileName}", archive);
                 InvalidateCache();
             }
             catch (Exception ex)
@@ -110,17 +47,20 @@ namespace LazerLens.Services
                 return _cachedSummaries;
 
             var summaries = new List<SessionSummary>();
-            if (_sessionsStorage == null) return summaries;
+            if (_storage == null) return summaries;
 
             try
             {
-                var files = _sessionsStorage.GetFiles(".", "*.json");
+                var files = _storage.GetFiles(sessions_directory, "*.json");
                 foreach (var file in files)
                 {
                     try
                     {
-                        using var stream = _sessionsStorage.GetStream(file);
-                        var archive = JsonSerializer.Deserialize<SessionArchive>(stream);
+                        var path = file.StartsWith(sessions_directory, StringComparison.OrdinalIgnoreCase)
+                            ? file
+                            : $"{sessions_directory}/{file}";
+
+                        var archive = _storage.ReadJson<SessionArchive>(path);
                         if (archive != null)
                         {
                             summaries.Add(SessionArchive.ToSummary(archive));
@@ -144,18 +84,20 @@ namespace LazerLens.Services
 
         public SessionState? LoadSession(Guid sessionId)
         {
-            if (_sessionsStorage == null) return null;
+            if (_storage == null) return null;
 
             try
             {
-                var files = _sessionsStorage.GetFiles(".", $"*_{sessionId}.json");
+                var files = _storage.GetFiles(sessions_directory, $"*_{sessionId}.json");
                 var file = files.FirstOrDefault();
 
                 if (file == null) return null;
 
-                using var stream = _sessionsStorage.GetStream(file);
-                var archive = JsonSerializer.Deserialize<SessionArchive>(stream);
+                var path = file.StartsWith(sessions_directory, StringComparison.OrdinalIgnoreCase)
+                    ? file
+                    : $"{sessions_directory}/{file}";
 
+                var archive = _storage.ReadJson<SessionArchive>(path);
                 if (archive == null) return null;
 
                 return SessionArchive.ToState(archive);
@@ -169,17 +111,25 @@ namespace LazerLens.Services
 
         public void DeleteSession(Guid sessionId)
         {
-            if (_sessionsStorage == null) return;
+            if (_storage == null) return;
 
             try
             {
-                var files = _sessionsStorage.GetFiles(".", $"*_{sessionId}.json");
+                var files = _storage.GetFiles(sessions_directory, $"*_{sessionId}.json");
                 var file = files.FirstOrDefault();
 
                 if (file != null)
                 {
-                    _sessionsStorage.Delete(file);
-                    InvalidateCache();
+                    var path = file.StartsWith(sessions_directory, StringComparison.OrdinalIgnoreCase)
+                        ? file
+                        : $"{sessions_directory}/{file}";
+
+                    var fullPath = _storage.GetFullPath(path);
+                    if (!string.IsNullOrEmpty(fullPath) && File.Exists(fullPath))
+                    {
+                        File.Delete(fullPath);
+                        InvalidateCache();
+                    }
                 }
             }
             catch (Exception ex)
@@ -195,18 +145,25 @@ namespace LazerLens.Services
 
         public void OpenSessionsDirectory()
         {
-            _sessionsStorage?.PresentExternally();
+            var fullPath = _storage?.GetFullPath(sessions_directory);
+            if (!string.IsNullOrEmpty(fullPath))
+            {
+                if (!Directory.Exists(fullPath))
+                    Directory.CreateDirectory(fullPath);
+
+                new osu.Framework.Platform.NativeStorage(fullPath).PresentExternally();
+            }
         }
 
         public string? ExportToCsv()
         {
             try
             {
-                var desktopPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
-                if (string.IsNullOrEmpty(desktopPath))
+                var downloadsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+                if (string.IsNullOrEmpty(downloadsPath))
                     return null;
 
-                var exportFolder = Path.Combine(desktopPath, "osu_session_exports");
+                var exportFolder = Path.Combine(downloadsPath, "osu_session_exports");
                 if (!Directory.Exists(exportFolder))
                     Directory.CreateDirectory(exportFolder);
 
@@ -229,6 +186,55 @@ namespace LazerLens.Services
             {
                 TimingLog.Error($"Failed to export sessions to CSV: {ex.Message}");
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// Automatically migrates sessions from legacy directories into the VFS directory osu-cc/data/lazer-lens/sessions/.
+        /// </summary>
+        private void migrateLegacySessions()
+        {
+            if (_storage == null) return;
+
+            try
+            {
+                string? targetDir = _storage.GetFullPath(sessions_directory);
+                if (string.IsNullOrEmpty(targetDir)) return;
+
+                if (!Directory.Exists(targetDir))
+                    Directory.CreateDirectory(targetDir);
+
+                var targetDirInfo = new DirectoryInfo(targetDir);
+                var osuCcDir = targetDirInfo.Parent?.Parent?.Parent; // <root>/osu-cc
+
+                if (osuCcDir != null && osuCcDir.Exists)
+                {
+                    var legacyCandidates = new[]
+                    {
+                        Path.Combine(osuCcDir.FullName, "plugins", "lazer-lens", "sessions"),
+                        Path.Combine(osuCcDir.FullName, "plugins", "LazerLens", "sessions"),
+                        Path.Combine(osuCcDir.FullName, "sessions"),
+                    };
+
+                    foreach (var legacyDir in legacyCandidates)
+                    {
+                        if (Directory.Exists(legacyDir) && !string.Equals(legacyDir, targetDir, StringComparison.OrdinalIgnoreCase))
+                        {
+                            foreach (var file in Directory.GetFiles(legacyDir, "*.json"))
+                            {
+                                var destFile = Path.Combine(targetDir, Path.GetFileName(file));
+                                if (!File.Exists(destFile))
+                                {
+                                    File.Copy(file, destFile);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                TimingLog.Error($"Failed during legacy session migration: {ex}");
             }
         }
     }
