@@ -98,11 +98,9 @@ namespace LazerLens
 
         public void ToggleOverlay()
         {
+            Host.Log($"LazerLens: ToggleOverlay called! overlay state = {(overlay == null ? "null" : overlay.State.Value.ToString())}");
             if (overlay == null)
-            {
-                Host.Log("LazerLens: overlay is null during ToggleOverlay!");
                 return;
-            }
 
             if (overlay.State.Value == osu.Framework.Graphics.Containers.Visibility.Hidden)
                 overlay.Show();

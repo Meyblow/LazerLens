@@ -191,13 +191,13 @@ namespace LazerLens.UI
 
                     // TAB 3: Settings Content
                     settingsContent = buildSettingsContent(),
-
-                    // Modal Dialog Layer
-                    dialogContainer = new Container
-                    {
-                        RelativeSizeAxes = Axes.Both,
-                    }
                 }
+            });
+
+            AddInternal(dialogContainer = new Container
+            {
+                RelativeSizeAxes = Axes.Both,
+                Depth = float.MinValue,
             });
 
             currentSection.BindValueChanged(e =>
@@ -351,12 +351,6 @@ namespace LazerLens.UI
                 }
             };
         }
-
-        protected override Drawable CreateBackdrop() => new Box
-        {
-            RelativeSizeAxes = Axes.Both,
-            Colour = ColourProvider.Background6,
-        };
 
         private Container buildArchiveContent()
         {

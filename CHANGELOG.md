@@ -2,6 +2,11 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [1.4.3] - 2026-08-22
+
+### Fixed
+- **Overlay Invocation & Layout Exception**: Fixed layout issue where `dialogContainer` with `RelativeSizeAxes = Axes.Both` was nested within an `AutoSizeAxes.Y` parent container causing overlay loading failure, and removed redundant `CreateBackdrop` override.
+
 ## [1.4.2] - 2026-08-22
 
 ### Fixed
