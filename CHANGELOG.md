@@ -2,6 +2,11 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [1.4.5] - 2026-08-22
+
+### Fixed
+- **Toolbar Button Tooltip Text**: Explicitly overrode `TooltipText` to return `LazerLensStrings.TooltipMain` ("Lazer Lens") so the button tooltip displays the localized name instead of the C# class name.
+
 ## [1.4.4] - 2026-08-22
 
 ### Added
