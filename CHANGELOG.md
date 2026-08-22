@@ -2,6 +2,19 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [1.4.1] - 2026-08-22
+
+### Added
+- **Session Sorting Dropdown**: Quick sort saved sessions by Date, Top PP, or Play Count in the top-right of the sessions panel (pinned sessions remain pinned at top).
+- **Dual Independent Scrolling**: Archive tab split into two independent parallel scrollable panes — scroll through saved sessions and song history side-by-side without page jumping.
+- **Smooth Session Animations**: Animated collapse (`ResizeHeightTo(0)` + `FadeOut`) upon session deletion, scale pulse upon pinning/unpinning, and instant in-place note updates without scroll resets.
+
+### Fixed
+- **Pixel-Perfect Header & Tabs**: Aligned overlay header, tab control (40px height, flush underline), font sizes, and casing to strictly follow `AGENTS.md` and standard osu! dashboard overlay.
+- **Top Baseline Alignment**: Aligned the top edge of the `SAVED SESSIONS` panel horizontally with the KPI metric cards.
+- **Visual Breathing Room & Depth**: Added subtle 1px border outlines to metric cards and a golden trophy border to the Best Score banner to prevent visual clumping.
+- **Clean Typography**: Refined all dropdowns, sort labels, and filter controls to use clean typography without emojis.
+
 ## [1.4.0] - 2026-08-22
 
 ### Added

@@ -1,4 +1,4 @@
-﻿using osu.Framework.Localisation;
+using osu.Framework.Localisation;
 using osu.Framework.Allocation;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
@@ -24,6 +24,7 @@ namespace LazerLens.UI.Components
         private readonly OsuSpriteText subtitleText;
 
         private Box background = null!;
+        private Container cardContainer = null!;
         private Container iconContainer = null!;
         private SpriteIcon spriteIcon = null!;
 
@@ -37,11 +38,12 @@ namespace LazerLens.UI.Components
 
             InternalChildren = new Drawable[]
             {
-                new Container
+                cardContainer = new Container
                 {
                     RelativeSizeAxes = Axes.Both,
                     Masking = true,
                     CornerRadius = 8,
+                    BorderThickness = 1,
                     Children = new Drawable[]
                     {
                         background = new Box
@@ -126,6 +128,7 @@ namespace LazerLens.UI.Components
         private void load()
         {
             background.Colour = colourProvider.Background4;
+            cardContainer.BorderColour = colourProvider.Background1;
             spriteIcon.Colour = colourProvider.Colour1;
         }
 

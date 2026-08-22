@@ -37,6 +37,10 @@ namespace LazerLens.UI.Components
         private Box background = null!;
         private Box selectionIndicator = null!;
         private Container mainContainer = null!;
+        private TruncatingSpriteText titleTextSprite = null!;
+        private SpriteIcon titleIconSprite = null!;
+        private SpriteIcon pinIcon = null!;
+        private TruncatingSpriteText dateSubtitleSprite = null!;
 
         public MenuItem[]? ContextMenuItems => new MenuItem[]
         {
@@ -125,7 +129,7 @@ namespace LazerLens.UI.Components
                                         Spacing = new Vector2(6, 0),
                                         Children = new Drawable[]
                                         {
-                                            new SpriteIcon
+                                            titleIconSprite = new SpriteIcon
                                             {
                                                 Anchor = Anchor.CentreLeft,
                                                 Origin = Anchor.CentreLeft,
@@ -133,7 +137,7 @@ namespace LazerLens.UI.Components
                                                 Icon = titleIcon,
                                                 Colour = IsSelected ? colourProvider.Highlight1 : Color4.White.Opacity(0.7f),
                                             },
-                                            new TruncatingSpriteText
+                                            titleTextSprite = new TruncatingSpriteText
                                             {
                                                 Anchor = Anchor.CentreLeft,
                                                 Origin = Anchor.CentreLeft,
@@ -142,7 +146,7 @@ namespace LazerLens.UI.Components
                                                 Colour = IsSelected ? Color4.White : Color4.White.Opacity(0.9f),
                                                 MaxWidth = Summary.IsPinned ? 160 : 180,
                                             },
-                                            new SpriteIcon
+                                            pinIcon = new SpriteIcon
                                             {
                                                 Anchor = Anchor.CentreLeft,
                                                 Origin = Anchor.CentreLeft,
@@ -202,7 +206,7 @@ namespace LazerLens.UI.Components
                                         Font = OsuFont.Torus.With(size: 11, weight: FontWeight.Regular),
                                         Colour = Color4.White.Opacity(0.6f),
                                     },
-                                    new TruncatingSpriteText
+                                    dateSubtitleSprite = new TruncatingSpriteText
                                     {
                                         Text = !string.IsNullOrWhiteSpace(Summary.Note) ? $"\u2022 {dateStr}" : "",
                                         Font = OsuFont.Torus.With(size: 11, weight: FontWeight.Regular),
@@ -216,6 +220,47 @@ namespace LazerLens.UI.Components
                     }
                 }
             };
+        }
+
+        public void UpdatePinned(bool isPinned)
+        {
+            if (IsDisposed) return;
+            Summary.IsPinned = isPinned;
+            pinIcon.FadeTo(isPinned ? 1 : 0, 150, Easing.OutQuint);
+            titleTextSprite.MaxWidth = isPinned ? 160 : 180;
+            this.ScaleTo(1.03f, 80, Easing.OutQuint).Then().ScaleTo(1f, 150, Easing.OutQuint);
+        }
+
+        public void UpdateNote(string? note)
+        {
+            if (IsDisposed) return;
+            Summary.Note = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
+            string dateStr = Summary.StartTime.ToLocalTime().ToString("dd MMM yyyy, HH:mm", CultureInfo.InvariantCulture);
+
+            if (!string.IsNullOrWhiteSpace(Summary.Note))
+            {
+                titleTextSprite.Text = Summary.Note;
+                titleIconSprite.Icon = FontAwesome.Solid.Tag;
+                dateSubtitleSprite.Text = $"\u2022 {dateStr}";
+                dateSubtitleSprite.FadeIn(150);
+            }
+            else
+            {
+                titleTextSprite.Text = dateStr;
+                titleIconSprite.Icon = FontAwesome.Solid.CalendarAlt;
+                dateSubtitleSprite.FadeOut(150);
+            }
+        }
+
+        public void AnimateRemoval(Action onComplete)
+        {
+            if (IsDisposed) return;
+            this.FadeOut(200, Easing.OutQuint);
+            this.ResizeHeightTo(0, 220, Easing.OutQuint).OnComplete(_ =>
+            {
+                Expire();
+                onComplete();
+            });
         }
 
         public void SetSelected(bool selected)

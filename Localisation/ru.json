@@ -85,5 +85,8 @@
   "lazer-lens:DialogSetNoteDescription": "Введите пользовательскую пометку или название для этой сессии:",
   "lazer-lens:DialogSetNotePlaceholder": "например, Мой первый топ плей",
   "lazer-lens:DialogSave": "Сохранить",
-  "lazer-lens:DialogCancel": "Отмена"
+  "lazer-lens:DialogCancel": "Отмена",
+  "lazer-lens:SortSessionDate": "По дате",
+  "lazer-lens:SortSessionPP": "По PP",
+  "lazer-lens:SortSessionPlays": "По играм"
 }

@@ -132,5 +132,9 @@ namespace LazerLens
         public static LocalisableString DialogSetNotePlaceholder => OsuCcLocalisation.Get(getKey(nameof(DialogSetNotePlaceholder)), "e.g. My first top play");
         public static LocalisableString DialogSave => OsuCcLocalisation.Get(getKey(nameof(DialogSave)), "Save");
         public static LocalisableString DialogCancel => OsuCcLocalisation.Get(getKey(nameof(DialogCancel)), "Cancel");
+
+        public static LocalisableString SortSessionDate => OsuCcLocalisation.Get(getKey(nameof(SortSessionDate)), "Date");
+        public static LocalisableString SortSessionPP => OsuCcLocalisation.Get(getKey(nameof(SortSessionPP)), "Top PP");
+        public static LocalisableString SortSessionPlays => OsuCcLocalisation.Get(getKey(nameof(SortSessionPlays)), "Play Count");
     }
 }
