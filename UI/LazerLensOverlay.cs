@@ -331,6 +331,10 @@ namespace LazerLens.UI
                     {
                         RelativeSizeAxes = Axes.X,
                         AutoSizeAxes = Axes.Y,
+                        RowDimensions = new[]
+                        {
+                            new Dimension(GridSizeMode.AutoSize, minSize: 580)
+                        },
                         ColumnDimensions = new[]
                         {
                             new Dimension(GridSizeMode.Absolute, 320),
@@ -340,61 +344,92 @@ namespace LazerLens.UI
                         {
                             new Drawable[]
                             {
-                                // Left Column: Sessions List & Actions
-                                new FillFlowContainer
+                                // Left Column: Sessions List & Actions (Solid full-height panel)
+                                new Container
                                 {
-                                    RelativeSizeAxes = Axes.X,
-                                    AutoSizeAxes = Axes.Y,
-                                    Direction = FillDirection.Vertical,
-                                    Spacing = new Vector2(0, 10),
+                                    RelativeSizeAxes = Axes.Both,
                                     Padding = new MarginPadding { Right = 14 },
                                     Children = new Drawable[]
                                     {
-                                        archiveListHeader = new OsuSpriteText
+                                        new Container
                                         {
-                                            Text = LazerLensStrings.ArchiveSavedSessions(0),
-                                            Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
-                                            Colour = ColourProvider.Colour1,
-                                        },
-                                        new FillFlowContainer
-                                        {
-                                            RelativeSizeAxes = Axes.X,
-                                            AutoSizeAxes = Axes.Y,
-                                            Direction = FillDirection.Horizontal,
-                                            Spacing = new Vector2(8, 0),
+                                            RelativeSizeAxes = Axes.Both,
+                                            Masking = true,
+                                            CornerRadius = 8,
                                             Children = new Drawable[]
                                             {
-                                                new Container
+                                                new Box
                                                 {
-                                                    RelativeSizeAxes = Axes.X,
-                                                    Width = 0.5f,
-                                                    Child = new SettingsActionButton(FontAwesome.Solid.FolderOpen, LazerLensStrings.SettingsOpenDirectory, () => service.OpenSessionsDirectory())
-                                                    {
-                                                        Height = 32,
-                                                    }
+                                                    RelativeSizeAxes = Axes.Both,
+                                                    Colour = ColourProvider.Background5,
                                                 },
                                                 new Container
                                                 {
-                                                    RelativeSizeAxes = Axes.X,
-                                                    Width = 0.5f,
-                                                    Child = new SettingsActionButton(FontAwesome.Solid.FileCsv, LazerLensStrings.SettingsExportCsv, () => exportCsvAction?.Invoke())
+                                                    RelativeSizeAxes = Axes.Both,
+                                                    Padding = new MarginPadding(10),
+                                                    Children = new Drawable[]
                                                     {
-                                                        Height = 32,
+                                                        // Header row + action buttons
+                                                        new FillFlowContainer
+                                                        {
+                                                            RelativeSizeAxes = Axes.X,
+                                                            AutoSizeAxes = Axes.Y,
+                                                            Direction = FillDirection.Vertical,
+                                                            Spacing = new Vector2(0, 8),
+                                                            Children = new Drawable[]
+                                                            {
+                                                                archiveListHeader = new OsuSpriteText
+                                                                {
+                                                                    Text = LazerLensStrings.ArchiveSavedSessions(0),
+                                                                    Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
+                                                                    Colour = ColourProvider.Colour1,
+                                                                },
+                                                                new FillFlowContainer
+                                                                {
+                                                                    RelativeSizeAxes = Axes.X,
+                                                                    AutoSizeAxes = Axes.Y,
+                                                                    Direction = FillDirection.Horizontal,
+                                                                    Spacing = new Vector2(8, 0),
+                                                                    Children = new Drawable[]
+                                                                    {
+                                                                        new Container
+                                                                        {
+                                                                            RelativeSizeAxes = Axes.X,
+                                                                            Width = 0.5f,
+                                                                            Child = new SettingsActionButton(FontAwesome.Solid.FolderOpen, LazerLensStrings.SettingsOpenDirectory, () => service.OpenSessionsDirectory())
+                                                                            {
+                                                                                Height = 32,
+                                                                            }
+                                                                        },
+                                                                        new Container
+                                                                        {
+                                                                            RelativeSizeAxes = Axes.X,
+                                                                            Width = 0.5f,
+                                                                            Child = new SettingsActionButton(FontAwesome.Solid.FileCsv, LazerLensStrings.SettingsExportCsv, () => exportCsvAction?.Invoke())
+                                                                            {
+                                                                                Height = 32,
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        // Scrollable list filling remaining vertical space
+                                                        new OsuScrollContainer
+                                                        {
+                                                            RelativeSizeAxes = Axes.Both,
+                                                            Padding = new MarginPadding { Top = 64 },
+                                                            ScrollbarVisible = true,
+                                                            Child = archiveCardsList = new FillFlowContainer
+                                                            {
+                                                                RelativeSizeAxes = Axes.X,
+                                                                AutoSizeAxes = Axes.Y,
+                                                                Direction = FillDirection.Vertical,
+                                                                Spacing = new Vector2(0, 6),
+                                                            }
+                                                        }
                                                     }
                                                 }
-                                            }
-                                        },
-                                        new OsuScrollContainer
-                                        {
-                                            RelativeSizeAxes = Axes.X,
-                                            Height = 520,
-                                            ScrollbarVisible = true,
-                                            Child = archiveCardsList = new FillFlowContainer
-                                            {
-                                                RelativeSizeAxes = Axes.X,
-                                                AutoSizeAxes = Axes.Y,
-                                                Direction = FillDirection.Vertical,
-                                                Spacing = new Vector2(0, 6),
                                             }
                                         }
                                     }

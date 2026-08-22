@@ -108,13 +108,14 @@ namespace LazerLens.UI.Components
                                                     Icon = FontAwesome.Solid.CalendarAlt,
                                                     Colour = IsSelected ? colourProvider.Highlight1 : Color4.White.Opacity(0.7f),
                                                 },
-                                                new OsuSpriteText
+                                                new TruncatingSpriteText
                                                 {
                                                     Anchor = Anchor.CentreLeft,
                                                     Origin = Anchor.CentreLeft,
                                                     Text = dateStr,
                                                     Font = OsuFont.Torus.With(size: 13, weight: FontWeight.SemiBold),
                                                     Colour = IsSelected ? Color4.White : Color4.White.Opacity(0.9f),
+                                                    MaxWidth = 190,
                                                 }
                                             }
                                         },

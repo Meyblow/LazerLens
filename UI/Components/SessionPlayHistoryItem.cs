@@ -347,6 +347,7 @@ namespace LazerLens.UI.Components
                                 new Container
                                 {
                                     RelativeSizeAxes = Axes.Both,
+                                    Masking = true,
                                     Padding = new MarginPadding { Left = 6, Right = 6 },
                                     Child = new FillFlowContainer
                                     {
@@ -360,30 +361,16 @@ namespace LazerLens.UI.Components
                                         Children = new Drawable[]
                                         {
                                             // Top Line: Title - Artist [Difficulty]
-                                            new FillFlowContainer
+                                            new Container
                                             {
                                                 RelativeSizeAxes = Axes.X,
                                                 AutoSizeAxes = Axes.Y,
-                                                Direction = FillDirection.Horizontal,
-                                                Spacing = new Vector2(5, 0),
-                                                Children = new Drawable[]
+                                                Child = new TruncatingSpriteText
                                                 {
-                                                    new TruncatingSpriteText
-                                                    {
-                                                        Text = $"{currentPlay.BeatmapArtist} - {currentPlay.BeatmapTitle}",
-                                                        Font = OsuFont.Torus.With(size: 13, weight: FontWeight.Bold),
-                                                        Colour = Color4.White,
-                                                        MaxWidth = 320,
-                                                    },
-                                                    new TruncatingSpriteText
-                                                    {
-                                                        Text = $"[{currentPlay.DifficultyName}]",
-                                                        Font = OsuFont.Torus.With(size: 12, weight: FontWeight.SemiBold),
-                                                        Colour = colourProvider.Content2,
-                                                        Anchor = Anchor.CentreLeft,
-                                                        Origin = Anchor.CentreLeft,
-                                                        MaxWidth = 180,
-                                                    }
+                                                    RelativeSizeAxes = Axes.X,
+                                                    Text = $"{currentPlay.BeatmapArtist} - {currentPlay.BeatmapTitle} [{currentPlay.DifficultyName}]",
+                                                    Font = OsuFont.Torus.With(size: 13, weight: FontWeight.Bold),
+                                                    Colour = Color4.White,
                                                 }
                                             },
                                             // Bottom Line: StarRatingDisplay + OnlineStatus
