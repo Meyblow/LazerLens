@@ -2,7 +2,7 @@
 
 All notable changes to Lazer Lens are documented here.
 
-## [1.3.2] - 2026-08-22
+## [1.3.3] - 2026-08-22
 
 ### Added
 - **Dedicated Archive Tab**: Full past sessions viewer with search, filtering, and detailed statistics.
