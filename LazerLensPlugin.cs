@@ -1,7 +1,9 @@
 using System;
 using System.Globalization;
 using System.Reflection;
+using osu.Framework.Bindables;
 using osu.Framework.Extensions.Color4Extensions;
+using osu.Framework.Graphics.Containers;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Localisation;
 using osu.Game.Online;
@@ -67,9 +69,12 @@ namespace LazerLens
 
             trackerService.OnNewPlayRecorded += onNewPlayRecorded;
 
+            // Instantiate overlay early so the toolbar toggle button can track its visibility state
+            overlay = new LazerLensOverlay(trackerService, ExportSessionsToCsv);
+
             // Register toolbar button and settings in OnLoad() before toolbar initialization
             Host.AddToolbarButton(
-                () => new LazerLensToolbarButton(ToggleOverlay),
+                () => new LazerLensToolbarButton(ToggleOverlay, overlay),
                 ToolbarButtonPlacement.Right,
                 -2f
             );
@@ -89,9 +94,8 @@ namespace LazerLens
             // Attach VFS storage for session persistence (osu-cc/data/lazer-lens/sessions)
             trackerService.AttachStorage(Host.Data);
 
-            // Instantiate the session overlay and register it with the game's overlay manager
-            overlay = new LazerLensOverlay(trackerService, ExportSessionsToCsv);
-            overlayRegistration = Host.RegisterBlockingOverlay(overlay);
+            if (overlay != null)
+                overlayRegistration = Host.RegisterBlockingOverlay(overlay);
 
             Host.Log("LazerLens AttachToGame() complete.");
         }

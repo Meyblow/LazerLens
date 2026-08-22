@@ -2,6 +2,11 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [1.4.4] - 2026-08-22
+
+### Added
+- **Active Toolbar Button Highlight**: Inherited `ToolbarOverlayToggleButton` for `LazerLensToolbarButton` and bound overlay visibility state so the toolbar button automatically lights up with the active accent background when the overlay is open, matching standard osu! toolbar overlays.
+
 ## [1.4.3] - 2026-08-22
 
 ### Fixed
