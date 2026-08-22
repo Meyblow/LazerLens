@@ -2,6 +2,11 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [1.4.2] - 2026-08-22
+
+### Fixed
+- **Metric Card Width & Spacing**: Replaced padding-based grid columns with a 7-column `GridContainer` (4 distributed columns + 3 exact 12px gaps) on both Live and Past Sessions tabs. Cards now stretch seamlessly across full width with uniform 12px spacing and generous space for all text metrics.
+
 ## [1.4.1] - 2026-08-22
 
 ### Added

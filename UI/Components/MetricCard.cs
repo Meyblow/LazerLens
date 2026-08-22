@@ -69,7 +69,7 @@ namespace LazerLens.UI.Components
                                         Masking = true,
                                         Anchor = Anchor.CentreLeft,
                                         Origin = Anchor.CentreLeft,
-                                        Margin = new MarginPadding { Right = 14 },
+                                        Margin = new MarginPadding { Right = 10 },
                                         Children = new Drawable[]
                                         {
                                             new Box

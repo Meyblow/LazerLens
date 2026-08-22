@@ -269,39 +269,25 @@ namespace LazerLens.UI
                             RelativeSizeAxes = Axes.Both,
                             ColumnDimensions = new[]
                             {
-                                new Dimension(GridSizeMode.Relative, 0.25f),
-                                new Dimension(GridSizeMode.Relative, 0.25f),
-                                new Dimension(GridSizeMode.Relative, 0.25f),
-                                new Dimension(GridSizeMode.Relative, 0.25f),
+                                new Dimension(GridSizeMode.Distributed),
+                                new Dimension(GridSizeMode.Absolute, 12),
+                                new Dimension(GridSizeMode.Distributed),
+                                new Dimension(GridSizeMode.Absolute, 12),
+                                new Dimension(GridSizeMode.Distributed),
+                                new Dimension(GridSizeMode.Absolute, 12),
+                                new Dimension(GridSizeMode.Distributed),
                             },
                             Content = new[]
                             {
                                 new Drawable[]
                                 {
-                                    new Container
-                                    {
-                                        RelativeSizeAxes = Axes.Both,
-                                        Padding = new MarginPadding { Right = 6f },
-                                        Child = liveTimeCard = new MetricCard(FontAwesome.Solid.Clock, LazerLensStrings.OverlaySessionTime, "00:00:00", LazerLensStrings.TimeStartedJustNow)
-                                    },
-                                    new Container
-                                    {
-                                        RelativeSizeAxes = Axes.Both,
-                                        Padding = new MarginPadding { Left = 2f, Right = 4f },
-                                        Child = livePlaysCard = new MetricCard(FontAwesome.Solid.Play, LazerLensStrings.OverlayTotalPlays, "0", LazerLensStrings.PlaysPassFail(0, 0))
-                                    },
-                                    new Container
-                                    {
-                                        RelativeSizeAxes = Axes.Both,
-                                        Padding = new MarginPadding { Left = 4f, Right = 2f },
-                                        Child = liveAccCard = new MetricCard(FontAwesome.Solid.Percent, LazerLensStrings.OverlayAvgAccuracy, "0.00%", LazerLensStrings.PlaysRecorded(0))
-                                    },
-                                    new Container
-                                    {
-                                        RelativeSizeAxes = Axes.Both,
-                                        Padding = new MarginPadding { Left = 6f },
-                                        Child = liveComboCard = new MetricCard(FontAwesome.Solid.Fire, LazerLensStrings.OverlayMaxCombo, "0x", LazerLensStrings.OverlaySessionPPGain("+0.0 pp"))
-                                    }
+                                    liveTimeCard = new MetricCard(FontAwesome.Solid.Clock, LazerLensStrings.OverlaySessionTime, "00:00:00", LazerLensStrings.TimeStartedJustNow),
+                                    Empty(),
+                                    livePlaysCard = new MetricCard(FontAwesome.Solid.Play, LazerLensStrings.OverlayTotalPlays, "0", LazerLensStrings.PlaysPassFail(0, 0)),
+                                    Empty(),
+                                    liveAccCard = new MetricCard(FontAwesome.Solid.Percent, LazerLensStrings.OverlayAvgAccuracy, "0.00%", LazerLensStrings.PlaysRecorded(0)),
+                                    Empty(),
+                                    liveComboCard = new MetricCard(FontAwesome.Solid.Fire, LazerLensStrings.OverlayMaxCombo, "0x", LazerLensStrings.OverlaySessionPPGain("+0.0 pp")),
                                 }
                             }
                         }
@@ -563,39 +549,25 @@ namespace LazerLens.UI
                                                         RelativeSizeAxes = Axes.Both,
                                                         ColumnDimensions = new[]
                                                         {
-                                                            new Dimension(GridSizeMode.Relative, 0.25f),
-                                                            new Dimension(GridSizeMode.Relative, 0.25f),
-                                                            new Dimension(GridSizeMode.Relative, 0.25f),
-                                                            new Dimension(GridSizeMode.Relative, 0.25f),
+                                                            new Dimension(GridSizeMode.Distributed),
+                                                            new Dimension(GridSizeMode.Absolute, 12),
+                                                            new Dimension(GridSizeMode.Distributed),
+                                                            new Dimension(GridSizeMode.Absolute, 12),
+                                                            new Dimension(GridSizeMode.Distributed),
+                                                            new Dimension(GridSizeMode.Absolute, 12),
+                                                            new Dimension(GridSizeMode.Distributed),
                                                         },
                                                         Content = new[]
                                                         {
                                                             new Drawable[]
                                                             {
-                                                                new Container
-                                                                {
-                                                                    RelativeSizeAxes = Axes.Both,
-                                                                    Padding = new MarginPadding { Right = 6f },
-                                                                    Child = archiveTimeCard = new MetricCard(FontAwesome.Solid.Clock, LazerLensStrings.OverlaySessionTime, "00:00:00", "")
-                                                                },
-                                                                new Container
-                                                                {
-                                                                    RelativeSizeAxes = Axes.Both,
-                                                                    Padding = new MarginPadding { Left = 2f, Right = 4f },
-                                                                    Child = archivePlaysCard = new MetricCard(FontAwesome.Solid.Play, LazerLensStrings.OverlayTotalPlays, "0", LazerLensStrings.PlaysPassFail(0, 0))
-                                                                },
-                                                                new Container
-                                                                {
-                                                                    RelativeSizeAxes = Axes.Both,
-                                                                    Padding = new MarginPadding { Left = 4f, Right = 2f },
-                                                                    Child = archiveAccCard = new MetricCard(FontAwesome.Solid.Percent, LazerLensStrings.OverlayAvgAccuracy, "0.00%", LazerLensStrings.PlaysRecorded(0))
-                                                                },
-                                                                new Container
-                                                                {
-                                                                    RelativeSizeAxes = Axes.Both,
-                                                                    Padding = new MarginPadding { Left = 6f },
-                                                                    Child = archiveComboCard = new MetricCard(FontAwesome.Solid.Fire, LazerLensStrings.OverlayMaxCombo, "0x", LazerLensStrings.OverlaySessionPPGain("+0.0 pp"))
-                                                                }
+                                                                archiveTimeCard = new MetricCard(FontAwesome.Solid.Clock, LazerLensStrings.OverlaySessionTime, "00:00:00", ""),
+                                                                Empty(),
+                                                                archivePlaysCard = new MetricCard(FontAwesome.Solid.Play, LazerLensStrings.OverlayTotalPlays, "0", LazerLensStrings.PlaysPassFail(0, 0)),
+                                                                Empty(),
+                                                                archiveAccCard = new MetricCard(FontAwesome.Solid.Percent, LazerLensStrings.OverlayAvgAccuracy, "0.00%", LazerLensStrings.PlaysRecorded(0)),
+                                                                Empty(),
+                                                                archiveComboCard = new MetricCard(FontAwesome.Solid.Fire, LazerLensStrings.OverlayMaxCombo, "0x", LazerLensStrings.OverlaySessionPPGain("+0.0 pp")),
                                                             }
                                                         }
                                                     }

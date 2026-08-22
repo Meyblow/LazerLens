@@ -67,6 +67,15 @@ namespace LazerLens
 
             trackerService.OnNewPlayRecorded += onNewPlayRecorded;
 
+            // Register toolbar button and settings in OnLoad() before toolbar initialization
+            Host.AddToolbarButton(
+                () => new LazerLensToolbarButton(ToggleOverlay),
+                ToolbarButtonPlacement.Right,
+                -2f
+            );
+
+            Host.AddSettingsSubsection(() => new LazerLensSettingsSubsection(Host.GetSettings(), ExportSessionsToCsv, trackerService.OpenSessionsDirectory));
+
             int count = InstallPatches();
             Host.Log($"LazerLens: installed {count}/5 patches.");
             Host.Log("LazerLens OnLoad() complete.");
@@ -80,20 +89,25 @@ namespace LazerLens
             // Attach VFS storage for session persistence (osu-cc/data/lazer-lens/sessions)
             trackerService.AttachStorage(Host.Data);
 
-            // 1. Instantiate the session overlay and register it with the game's overlay manager
+            // Instantiate the session overlay and register it with the game's overlay manager
             overlay = new LazerLensOverlay(trackerService, ExportSessionsToCsv);
             overlayRegistration = Host.RegisterBlockingOverlay(overlay);
 
-            // 2. Add toolbar button
-            Host.AddToolbarButton(
-                () => new LazerLensToolbarButton(() => overlay.ToggleVisibility()),
-                ToolbarButtonPlacement.Right,
-                -2f
-            );
-
-            // 3. Register settings subsection
-            Host.AddSettingsSubsection(() => new LazerLensSettingsSubsection(Host.GetSettings(), ExportSessionsToCsv, trackerService.OpenSessionsDirectory));
             Host.Log("LazerLens AttachToGame() complete.");
+        }
+
+        public void ToggleOverlay()
+        {
+            if (overlay == null)
+            {
+                Host.Log("LazerLens: overlay is null during ToggleOverlay!");
+                return;
+            }
+
+            if (overlay.State.Value == osu.Framework.Graphics.Containers.Visibility.Hidden)
+                overlay.Show();
+            else
+                overlay.Hide();
         }
 
         public void ExportSessionsToCsv()
