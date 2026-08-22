@@ -427,7 +427,6 @@ namespace LazerLens.UI
                                                                     Anchor = Anchor.CentreRight,
                                                                     Origin = Anchor.CentreRight,
                                                                     Width = 110,
-                                                                    Height = 28,
                                                                 }
                                                             }
                                                         }

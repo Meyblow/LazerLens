@@ -2,6 +2,11 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [1.4.6] - 2026-08-22
+
+### Fixed
+- **Overlay Registration & Layout Exception**: Removed manual `Height` assignment on `archiveSortDropdown` (`OsuEnumDropdown` inherits `AutoSizeAxes.Y`), fixing `InvalidOperationException: The height of a CompositeDrawable with AutoSizeAxes can not be set manually` during overlay initialization so the overlay successfully registers and opens.
+
 ## [1.4.5] - 2026-08-22
 
 ### Fixed
