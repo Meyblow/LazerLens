@@ -2,7 +2,22 @@
 
 All notable changes to Lazer Lens are documented here.
 
-## [1.6.0] - 2026-08-23
+## [2.1.0] - 2026-08-23
+
+### Added
+- **Global Profile Analytics Tab («📊 Аналитика»)**: Comprehensive profile-wide analytics with annual 52-week activity heatmap, cumulative PP & accuracy timeline, mod usage breakdown, star rating distribution, most played beatmaps, and top beatmap creators leaderboards.
+- **Social Share Formatting Options**: Added settings toggle for session export format (`Markdown`, `Plain Text`, `HTML`) and automatic ruleset indicator badges (🔴 osu!, 🥁 taiko, 🍎 catch, 🎹 mania) for top scores.
+- **Detailed Session Progression Tooltips**: Hovering over graph points now displays individual map PP gain alongside cumulative session PP gain.
+
+### Fixed & Improved
+- **Archive Sort Dropdown Direction**: Restructured archive left pane hierarchy so the sort dropdown menu (`Date`, `Top PP`, `Play Count`) opens downwards reliably.
+- **Top Beatmap Creators (BeatmapMapper) Tracking**: Recorded mapper usernames in play records and persisted them in session JSON archives.
+- **Responsive 52-Week Activity Heatmap**: Centered 52-week heatmap grid cleanly across card width without horizontal scrolling.
+- **Compact Cumulative PP Chart**: Reduced chart height to 120px with padded boundaries to prevent line clipping.
+- **Overlay Spacing Polish**: Refined vertical content spacing and metric card gaps for a sleek and compact layout.
+- **Scrollbar Margins**: Increased archive list padding to prevent scrollbar overlap with session cards.
+
+## [2.0.0] - 2026-08-23
 
 ### Added
 - **Live Session Progress Graph & Trends**: Dynamic vector progress chart (`SessionProgressGraph`) visualizing PP progression, accuracy %, and star rating curve across the session with interactive metric switching and point hover tooltips.
