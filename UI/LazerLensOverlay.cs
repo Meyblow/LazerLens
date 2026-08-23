@@ -35,6 +35,7 @@ using osuTK.Graphics;
 using LazerLens.Models;
 using LazerLens.Services;
 using LazerLens.UI.Components;
+using LazerLens.UI.Components.Analytics;
 
 namespace LazerLens.UI
 {
@@ -45,6 +46,9 @@ namespace LazerLens.UI
 
         [LocalisableDescription(typeof(LazerLensStrings), nameof(LazerLensStrings.TabArchive))]
         Archive,
+
+        [LocalisableDescription(typeof(LazerLensStrings), nameof(LazerLensStrings.TabAnalytics))]
+        Analytics,
 
         [LocalisableDescription(typeof(LazerLensStrings), nameof(LazerLensStrings.TabSettings))]
         Settings,
@@ -143,6 +147,7 @@ namespace LazerLens.UI
         private SessionState? currentArchivedState;
         private OsuSpriteText archiveListHeader = null!;
         private OsuEnumDropdown<SessionArchiveSortMode> archiveSortDropdown = null!;
+        private ShareSessionButton? archiveShareButton;
         private Container archiveEmptyContainer = null!;
         private FillFlowContainer archiveDetailContent = null!;
         private OsuScrollContainer archiveDetailScroll = null!;
@@ -156,7 +161,13 @@ namespace LazerLens.UI
         private OsuSpriteText archiveNoHistoryText = null!;
         private OsuSpriteText archiveHistoryCountText = null!;
         private LazerLensFilterControl archiveFilterControl = null!;
-        private Container archiveCalendarContainer = null!;
+
+        // Analytics Tab Components
+        private Container analyticsContent = null!;
+        private FillFlowContainer analyticsContentFlow = null!;
+
+        // Header Actions Container
+        private FillFlowContainer headerActionsContainer = null!;
 
         // Settings Tab Components
         private FillFlowContainer settingsContent = null!;
@@ -190,7 +201,7 @@ namespace LazerLens.UI
 
             Header.ContentRow.Add(tabControl);
 
-            Header.ContentRow.Add(new FillFlowContainer
+            Header.ContentRow.Add(headerActionsContainer = new FillFlowContainer
             {
                 Anchor = Anchor.CentreRight,
                 Origin = Anchor.CentreRight,
@@ -200,102 +211,8 @@ namespace LazerLens.UI
                 Margin = new MarginPadding { Right = 14 },
                 Children = new Drawable[]
                 {
-                    // Warmup Toggle Button
-                    new OsuClickableContainer
-                    {
-                        Anchor = Anchor.CentreRight,
-                        Origin = Anchor.CentreRight,
-                        AutoSizeAxes = Axes.Both,
-                        Action = () => service.IsWarmupMode.Value = !service.IsWarmupMode.Value,
-                        Child = new Container
-                        {
-                            AutoSizeAxes = Axes.Both,
-                            Masking = true,
-                            CornerRadius = 6,
-                            Children = new Drawable[]
-                            {
-                                new Box
-                                {
-                                    RelativeSizeAxes = Axes.Both,
-                                    Colour = ColourProvider.Background5,
-                                },
-                                new FillFlowContainer
-                                {
-                                    AutoSizeAxes = Axes.Both,
-                                    Direction = FillDirection.Horizontal,
-                                    Spacing = new Vector2(6, 0),
-                                    Padding = new MarginPadding { Horizontal = 10, Vertical = 6 },
-                                    Children = new Drawable[]
-                                    {
-                                        new SpriteIcon
-                                        {
-                                            Anchor = Anchor.CentreLeft,
-                                            Origin = Anchor.CentreLeft,
-                                            Size = new Vector2(13),
-                                            Icon = FontAwesome.Solid.Coffee,
-                                            Colour = Color4Extensions.FromHex("#ff9800"),
-                                        },
-                                        new OsuSpriteText
-                                        {
-                                            Anchor = Anchor.CentreLeft,
-                                            Origin = Anchor.CentreLeft,
-                                            Text = LazerLensStrings.WarmupToggle,
-                                            Font = OsuFont.Torus.With(size: 12, weight: FontWeight.SemiBold),
-                                            Colour = Color4.White,
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    // Share Session Button
-                    new OsuClickableContainer
-                    {
-                        Anchor = Anchor.CentreRight,
-                        Origin = Anchor.CentreRight,
-                        AutoSizeAxes = Axes.Both,
-                        Action = () => SessionShareCardExporter.ExportAndShare(service.LiveState, clipboard, notifications),
-                        Child = new Container
-                        {
-                            AutoSizeAxes = Axes.Both,
-                            Masking = true,
-                            CornerRadius = 6,
-                            Children = new Drawable[]
-                            {
-                                new Box
-                                {
-                                    RelativeSizeAxes = Axes.Both,
-                                    Colour = ColourProvider.Highlight1,
-                                },
-                                new FillFlowContainer
-                                {
-                                    AutoSizeAxes = Axes.Both,
-                                    Direction = FillDirection.Horizontal,
-                                    Spacing = new Vector2(6, 0),
-                                    Padding = new MarginPadding { Horizontal = 10, Vertical = 6 },
-                                    Children = new Drawable[]
-                                    {
-                                        new SpriteIcon
-                                        {
-                                            Anchor = Anchor.CentreLeft,
-                                            Origin = Anchor.CentreLeft,
-                                            Size = new Vector2(13),
-                                            Icon = FontAwesome.Solid.ShareAlt,
-                                            Colour = Color4.Black,
-                                        },
-                                        new OsuSpriteText
-                                        {
-                                            Anchor = Anchor.CentreLeft,
-                                            Origin = Anchor.CentreLeft,
-                                            Text = LazerLensStrings.ShareSessionButton,
-                                            Font = OsuFont.Torus.With(size: 12, weight: FontWeight.Bold),
-                                            Colour = Color4.Black,
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    new WarmupToggleButton(service),
+                    new ShareSessionButton(() => service.LiveState),
                 }
             });
 
@@ -303,6 +220,7 @@ namespace LazerLens.UI
             {
                 RelativeSizeAxes = Axes.X,
                 AutoSizeAxes = Axes.Y,
+                Padding = new MarginPadding { Right = 52 },
                 Children = new Drawable[]
                 {
                     // TAB 1: Live Session Content
@@ -311,7 +229,10 @@ namespace LazerLens.UI
                     // TAB 2: Archive Sessions Content
                     archiveContent = buildArchiveContent(),
 
-                    // TAB 3: Settings Content
+                    // TAB 3: Analytics Content
+                    analyticsContent = buildAnalyticsContent(),
+
+                    // TAB 4: Settings Content
                     settingsContent = buildSettingsContent(),
                 }
             });
@@ -326,29 +247,44 @@ namespace LazerLens.UI
             {
                 bool isSession = e.NewValue == LazerLensSection.Session;
                 bool isArchive = e.NewValue == LazerLensSection.Archive;
+                bool isAnalytics = e.NewValue == LazerLensSection.Analytics;
                 bool isSettings = e.NewValue == LazerLensSection.Settings;
 
                 liveContent.BypassAutoSizeAxes = isSession ? Axes.None : Axes.Both;
                 archiveContent.BypassAutoSizeAxes = isArchive ? Axes.None : Axes.Both;
+                analyticsContent.BypassAutoSizeAxes = isAnalytics ? Axes.None : Axes.Both;
                 settingsContent.BypassAutoSizeAxes = isSettings ? Axes.None : Axes.Both;
+
+                headerActionsContainer.FadeTo(isSession ? 1 : 0, 180, Easing.OutQuint);
 
                 if (isSession)
                 {
                     archiveContent.Hide();
+                    analyticsContent.Hide();
                     settingsContent.Hide();
                     liveContent.FadeIn(180, Easing.OutQuint);
                 }
                 else if (isArchive)
                 {
                     liveContent.Hide();
+                    analyticsContent.Hide();
                     settingsContent.Hide();
                     archiveContent.FadeIn(180, Easing.OutQuint);
                     refreshArchiveList();
+                }
+                else if (isAnalytics)
+                {
+                    liveContent.Hide();
+                    archiveContent.Hide();
+                    settingsContent.Hide();
+                    analyticsContent.FadeIn(180, Easing.OutQuint);
+                    refreshAnalyticsView();
                 }
                 else if (isSettings)
                 {
                     liveContent.Hide();
                     archiveContent.Hide();
+                    analyticsContent.Hide();
                     settingsContent.FadeIn(180, Easing.OutQuint);
                 }
             }, true);
@@ -370,8 +306,9 @@ namespace LazerLens.UI
             service.SearchPosition.BindValueChanged(e =>
             {
                 if (IsDisposed) return;
-                var anchor = e.NewValue == SearchBarPosition.Centre ? Anchor.Centre : Anchor.CentreRight;
-                var origin = e.NewValue == SearchBarPosition.Centre ? Anchor.Centre : Anchor.CentreRight;
+                bool isRight = e.NewValue == SearchBarPosition.Right;
+                var anchor = isRight ? Anchor.CentreRight : Anchor.Centre;
+                var origin = isRight ? Anchor.CentreRight : Anchor.Centre;
 
                 if (liveFilterControl?.SearchTextBox != null)
                 {
@@ -383,6 +320,12 @@ namespace LazerLens.UI
                 {
                     archiveFilterControl.SearchTextBox.Anchor = anchor;
                     archiveFilterControl.SearchTextBox.Origin = origin;
+                }
+
+                if (archiveShareButton != null)
+                {
+                    archiveShareButton.Anchor = isRight ? Anchor.Centre : Anchor.CentreRight;
+                    archiveShareButton.Origin = isRight ? Anchor.Centre : Anchor.CentreRight;
                 }
             }, true);
 
@@ -533,120 +476,108 @@ namespace LazerLens.UI
                 Alpha = 0,
                 BypassAutoSizeAxes = Axes.Both,
                 Padding = new MarginPadding { Top = 12 },
-                Child = new FillFlowContainer
+                Child = new Container
                 {
                     RelativeSizeAxes = Axes.X,
-                    AutoSizeAxes = Axes.Y,
-                    Direction = FillDirection.Vertical,
-                    Spacing = new Vector2(0, 12),
-                    Children = new Drawable[]
+                    Height = 680,
+                    Child = new GridContainer
                     {
-                        archiveCalendarContainer = new Container
+                        RelativeSizeAxes = Axes.Both,
+                        ColumnDimensions = new[]
                         {
-                            RelativeSizeAxes = Axes.X,
-                            AutoSizeAxes = Axes.Y,
+                            new Dimension(GridSizeMode.Absolute, 340),
+                            new Dimension(GridSizeMode.Distributed),
                         },
-                        new Container
+                        Content = new[]
                         {
-                            RelativeSizeAxes = Axes.X,
-                            Height = 650,
-                            Child = new GridContainer
+                            new Drawable[]
                             {
-                                RelativeSizeAxes = Axes.Both,
-                                ColumnDimensions = new[]
-                                {
-                                    new Dimension(GridSizeMode.Absolute, 340),
-                                    new Dimension(GridSizeMode.Distributed),
-                                },
-                                Content = new[]
-                                {
-                                    new Drawable[]
-                                    {
-                                        // Left Column: Sessions List (Solid panel with integrated header and sorting)
-                                        new Container
-                                        {
-                                            RelativeSizeAxes = Axes.Both,
-                                            Padding = new MarginPadding { Right = 14 },
-                                Child = new Container
+                                // Left Column: Sessions List (Solid panel with integrated header and sorting)
+                                new Container
                                 {
                                     RelativeSizeAxes = Axes.Both,
-                                    Masking = true,
-                                    CornerRadius = 8,
-                                    BorderThickness = 1,
-                                    BorderColour = ColourProvider.Background1,
-                                    Children = new Drawable[]
+                                    Padding = new MarginPadding { Right = 14 },
+                                    Child = new Container
                                     {
-                                        new Box
+                                        RelativeSizeAxes = Axes.Both,
+                                        Masking = true,
+                                        CornerRadius = 8,
+                                        BorderThickness = 1,
+                                        BorderColour = ColourProvider.Background1,
+                                        Children = new Drawable[]
                                         {
-                                            RelativeSizeAxes = Axes.Both,
-                                            Colour = ColourProvider.Background5,
-                                        },
-                                        new Container
-                                        {
-                                            RelativeSizeAxes = Axes.Both,
-                                            Padding = new MarginPadding(10),
-                                            Child = new GridContainer
+                                            new Box
                                             {
                                                 RelativeSizeAxes = Axes.Both,
-                                                RowDimensions = new[]
+                                                Colour = ColourProvider.Background5,
+                                            },
+                                            new Container
+                                            {
+                                                RelativeSizeAxes = Axes.Both,
+                                                Padding = new MarginPadding(10),
+                                                Child = new GridContainer
                                                 {
-                                                    new Dimension(GridSizeMode.Absolute, 32),
-                                                    new Dimension(GridSizeMode.Distributed),
-                                                },
-                                                Content = new[]
-                                                {
-                                                    new Drawable[]
+                                                    RelativeSizeAxes = Axes.Both,
+                                                    RowDimensions = new[]
                                                     {
-                                                        new Container
-                                                        {
-                                                            RelativeSizeAxes = Axes.Both,
-                                                            Depth = -10, // Renders dropdown menu over the scroll list
-                                                            Children = new Drawable[]
-                                                            {
-                                                                archiveListHeader = new OsuSpriteText
-                                                                {
-                                                                    Text = LazerLensStrings.ArchiveSavedSessions(0),
-                                                                    Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
-                                                                    Colour = ColourProvider.Colour1,
-                                                                    Anchor = Anchor.CentreLeft,
-                                                                    Origin = Anchor.CentreLeft,
-                                                                },
-                                                                archiveSortDropdown = new OsuEnumDropdown<SessionArchiveSortMode>
-                                                                {
-                                                                    Anchor = Anchor.CentreRight,
-                                                                    Origin = Anchor.CentreRight,
-                                                                    Width = 110,
-                                                                }
-                                                            }
-                                                        }
+                                                        new Dimension(GridSizeMode.Absolute, 32),
+                                                        new Dimension(GridSizeMode.Distributed),
                                                     },
-                                                    new Drawable[]
+                                                    Content = new[]
                                                     {
-                                                        (archiveContextMenuContainer = new OsuContextMenuContainer
+                                                        new Drawable[]
                                                         {
-                                                            RelativeSizeAxes = Axes.Both,
-                                                            Margin = new MarginPadding { Top = 6 },
-                                                            Child = new OsuScrollContainer
+                                                            new Container
                                                             {
                                                                 RelativeSizeAxes = Axes.Both,
-                                                                Padding = new MarginPadding { Right = 18 },
-                                                                ScrollbarVisible = true,
-                                                                Child = archiveCardsList = new FillFlowContainer
+                                                                Depth = -10, // Renders dropdown menu over the scroll list
+                                                                Children = new Drawable[]
                                                                 {
-                                                                    RelativeSizeAxes = Axes.X,
-                                                                    AutoSizeAxes = Axes.Y,
-                                                                    Direction = FillDirection.Vertical,
-                                                                    Spacing = new Vector2(0, 6),
+                                                                    archiveListHeader = new OsuSpriteText
+                                                                    {
+                                                                        Text = LazerLensStrings.ArchiveSavedSessions(0),
+                                                                        Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
+                                                                        Colour = ColourProvider.Colour1,
+                                                                        Anchor = Anchor.CentreLeft,
+                                                                        Origin = Anchor.CentreLeft,
+                                                                    },
+                                                                    archiveSortDropdown = new OsuEnumDropdown<SessionArchiveSortMode>
+                                                                    {
+                                                                        Anchor = Anchor.CentreRight,
+                                                                        Origin = Anchor.CentreRight,
+                                                                        Width = 110,
+                                                                    }
                                                                 }
                                                             }
-                                                        })
+                                                        },
+                                                        new Drawable[]
+                                                        {
+                                                            (archiveContextMenuContainer = new OsuContextMenuContainer
+                                                            {
+                                                                RelativeSizeAxes = Axes.Both,
+                                                                Margin = new MarginPadding { Top = 6 },
+                                                                Child = new OsuScrollContainer
+                                                                {
+                                                                    RelativeSizeAxes = Axes.Both,
+                                                                    Padding = new MarginPadding { Right = 14 },
+                                                                    ScrollbarVisible = true,
+                                                                    Child = archiveCardsList = new FillFlowContainer
+                                                                    {
+                                                                        RelativeSizeAxes = Axes.X,
+                                                                        AutoSizeAxes = Axes.Y,
+                                                                        Direction = FillDirection.Vertical,
+                                                                        Spacing = new Vector2(0, 6),
+                                                                        Padding = new MarginPadding { Right = 12 },
+                                                                    }
+                                                                }
+                                                            })
+                                                        }
                                                     }
                                                 }
                                             }
                                         }
                                     }
-                                }
-                            },
+                                },
 
                             // Right Column: Selected Session Details (Parallel independent scroll pane)
                             new Container
@@ -758,7 +689,7 @@ namespace LazerLens.UI
                                                 // 2. Best Score Banner
                                                 archiveBestScoreBanner = new BestScoreBanner(() => openBeatmap(currentArchivedState?.BestScore)),
 
-                                                // 3. Play History Header Row (Title on Left, Search on Right)
+                                                // 3. Play History Header Row (Title on Left, Search & Share Button)
                                                 new Container
                                                 {
                                                     RelativeSizeAxes = Axes.X,
@@ -773,11 +704,16 @@ namespace LazerLens.UI
                                                             Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
                                                             Colour = ColourProvider.Colour1,
                                                         },
+                                                        archiveShareButton = new ShareSessionButton(() => currentArchivedState ?? new SessionState())
+                                                        {
+                                                            Anchor = service.SearchPosition.Value == SearchBarPosition.Right ? Anchor.Centre : Anchor.CentreRight,
+                                                            Origin = service.SearchPosition.Value == SearchBarPosition.Right ? Anchor.Centre : Anchor.CentreRight,
+                                                        },
                                                         archiveFilterControl.SearchTextBox = new SearchTextBox
                                                         {
-                                                            Anchor = Anchor.CentreRight,
-                                                            Origin = Anchor.CentreRight,
-                                                            Width = 420,
+                                                            Anchor = service.SearchPosition.Value == SearchBarPosition.Right ? Anchor.CentreRight : Anchor.Centre,
+                                                            Origin = service.SearchPosition.Value == SearchBarPosition.Right ? Anchor.CentreRight : Anchor.Centre,
+                                                            Width = 340,
                                                             Height = 34,
                                                             PlaceholderText = LazerLensStrings.SearchPlaceholder,
                                                         }
@@ -819,10 +755,51 @@ namespace LazerLens.UI
                     }
                 }
             }
-        }
+        };
     }
-};
-}
+
+        private Container buildAnalyticsContent()
+        {
+            return new Container
+            {
+                RelativeSizeAxes = Axes.X,
+                AutoSizeAxes = Axes.Y,
+                Alpha = 0,
+                BypassAutoSizeAxes = Axes.Both,
+                Padding = new MarginPadding { Top = 12 },
+                Child = analyticsContentFlow = new FillFlowContainer
+                {
+                    RelativeSizeAxes = Axes.X,
+                    AutoSizeAxes = Axes.Y,
+                    Direction = FillDirection.Vertical,
+                    Spacing = new Vector2(0, 16),
+                }
+            };
+        }
+
+        private void refreshAnalyticsView()
+        {
+            if (analyticsContentFlow == null || IsDisposed) return;
+
+            analyticsContentFlow.Clear();
+
+            var summaries = service.GetAllSessionSummaries();
+            var data = LazerLensAnalyticsEngine.BuildAnalytics(summaries, service.StorageService, service.LiveState);
+
+            analyticsContentFlow.Children = new Drawable[]
+            {
+                new GlobalActivityHeatmap(data),
+                new PpGrowthTimelineChart(data.PpTimeline),
+                new DistributionBarChart(data),
+                new TopFavoritesLeaderboard(data, id =>
+                {
+                    if (id > 0)
+                    {
+                        openBeatmap(id);
+                    }
+                })
+            };
+        }
 
         private FillFlowContainer buildSettingsContent()
         {
@@ -1148,11 +1125,6 @@ namespace LazerLens.UI
             var summaries = service.GetAllSessionSummaries();
             archiveListHeader.Text = LazerLensStrings.ArchiveSavedSessions(summaries.Count);
 
-            if (archiveCalendarContainer != null)
-            {
-                archiveCalendarContainer.Child = new SessionActivityCalendar(summaries);
-            }
-
             archiveCardsList.Clear();
             archiveCards.Clear();
 
@@ -1219,10 +1191,8 @@ namespace LazerLens.UI
                 service.ActiveGoal.Value = newGoal;
             });
 
-            if (ClientApi.Game != null)
-                ClientApi.Game.Add(dialog);
-            else
-                dialogContainer.Add(dialog);
+            dialogContainer.Clear();
+            dialogContainer.Add(dialog);
         }
 
         private void handleSetNote(Guid id, string? currentNote)
@@ -1238,15 +1208,8 @@ namespace LazerLens.UI
                 }
             });
 
-            if (ClientApi.Game != null)
-            {
-                ClientApi.Game.Add(dialog);
-            }
-            else
-            {
-                dialogContainer.Clear();
-                dialogContainer.Add(dialog);
-            }
+            dialogContainer.Clear();
+            dialogContainer.Add(dialog);
         }
 
         private void handleDeleteSession(Guid id)
@@ -1380,6 +1343,8 @@ namespace LazerLens.UI
 
             if (currentSection.Value == LazerLensSection.Archive)
                 refreshArchiveList();
+            else if (currentSection.Value == LazerLensSection.Analytics)
+                refreshAnalyticsView();
         }
 
         public void RefreshData()
@@ -1429,6 +1394,10 @@ namespace LazerLens.UI
             if (currentSection.Value == LazerLensSection.Archive && currentArchivedState != null)
             {
                 refreshArchiveDetail();
+            }
+            else if (currentSection.Value == LazerLensSection.Analytics)
+            {
+                refreshAnalyticsView();
             }
         }
 
@@ -1598,6 +1567,12 @@ namespace LazerLens.UI
                 overlay?.FetchAndShowBeatmap(score.OnlineBeatmapID);
             else if (score.OnlineBeatmapSetID > 0)
                 overlay?.FetchAndShowBeatmapSet(score.OnlineBeatmapSetID);
+        }
+
+        private void openBeatmap(int beatmapId)
+        {
+            if (beatmapId > 0)
+                beatmapSetOverlay?.FetchAndShowBeatmap(beatmapId);
         }
 
         public void HighlightPlay(Guid id)

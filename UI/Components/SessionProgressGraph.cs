@@ -159,7 +159,6 @@ namespace LazerLens.UI.Components
                                     },
                                     linePath = new osu.Framework.Graphics.Lines.Path
                                     {
-                                        RelativeSizeAxes = Axes.Both,
                                         PathRadius = 2.0f,
                                     },
                                     dataPointsContainer = new Container

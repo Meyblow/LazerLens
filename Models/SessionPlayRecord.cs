@@ -33,7 +33,8 @@ namespace LazerLens.Models
         double? IfFcPerformancePoints = null,
         bool IsChoke = false,
         bool IsWarmup = false,
-        Guid Id = default
+        Guid Id = default,
+        string BeatmapMapper = ""
     )
     {
         public Guid Id { get; init; } = Id == default ? Guid.NewGuid() : Id;

@@ -247,6 +247,10 @@ namespace LazerLens
         public static LocalisableString GoalTypeLabel => OsuCcLocalisation.Get(getKey(nameof(GoalTypeLabel)), "Goal Type");
         public static LocalisableString GoalTargetValueLabel => OsuCcLocalisation.Get(getKey(nameof(GoalTargetValueLabel)), "Target Value (e.g. 20 plays, 50 pp, 97.5%)");
         public static LocalisableString WarmupToggle => OsuCcLocalisation.Get(getKey(nameof(WarmupToggle)), "Warmup Mode");
+        public static LocalisableString WarmupModeOn => OsuCcLocalisation.Get(getKey(nameof(WarmupModeOn)), "Warmup: ON");
+        public static LocalisableString WarmupModeOff => OsuCcLocalisation.Get(getKey(nameof(WarmupModeOff)), "Warmup: OFF");
+        public static LocalisableString WarmupModeEnabled => OsuCcLocalisation.Get(getKey(nameof(WarmupModeEnabled)), "Warmup mode enabled (plays marked with badge)");
+        public static LocalisableString WarmupModeDisabled => OsuCcLocalisation.Get(getKey(nameof(WarmupModeDisabled)), "Warmup mode disabled");
         public static LocalisableString WarmupBadge => OsuCcLocalisation.Get(getKey(nameof(WarmupBadge)), "WARMUP");
 
         // --- Choke & If FC ---
@@ -260,9 +264,23 @@ namespace LazerLens
         public static LocalisableString GraphMetricAcc => OsuCcLocalisation.Get(getKey(nameof(GraphMetricAcc)), "Accuracy %");
         public static LocalisableString GraphMetricSR => OsuCcLocalisation.Get(getKey(nameof(GraphMetricSR)), "Star Rating ★");
 
-        // --- Activity Calendar ---
+        // --- Activity Calendar & Analytics ---
+        public static LocalisableString TabAnalytics => OsuCcLocalisation.Get(getKey(nameof(TabAnalytics)), "Analytics");
         public static LocalisableString ActivityCalendarTitle => OsuCcLocalisation.Get(getKey(nameof(ActivityCalendarTitle)), "PLAY ACTIVITY CALENDAR");
         public static LocalisableString ActivityPlaysCount(int count, string date) => OsuCcLocalisation.Get(getKey(nameof(ActivityPlaysCount)), "{0} plays on {1}", count, date);
+        public static LocalisableString AnalyticsTitle => OsuCcLocalisation.Get(getKey(nameof(AnalyticsTitle)), "OVERALL PROFILE ANALYTICS");
+        public static LocalisableString AnalyticsActivityHeatmapTitle => OsuCcLocalisation.Get(getKey(nameof(AnalyticsActivityHeatmapTitle)), "ANNUAL ACTIVITY HEATMAP (52 WEEKS)");
+        public static LocalisableString AnalyticsCurrentStreak => OsuCcLocalisation.Get(getKey(nameof(AnalyticsCurrentStreak)), "current streak");
+        public static LocalisableString AnalyticsMaxStreak => OsuCcLocalisation.Get(getKey(nameof(AnalyticsMaxStreak)), "best streak");
+        public static LocalisableString AnalyticsActiveDays => OsuCcLocalisation.Get(getKey(nameof(AnalyticsActiveDays)), "active days");
+        public static LocalisableString AnalyticsLess => OsuCcLocalisation.Get(getKey(nameof(AnalyticsLess)), "Less");
+        public static LocalisableString AnalyticsMore => OsuCcLocalisation.Get(getKey(nameof(AnalyticsMore)), "More");
+        public static LocalisableString AnalyticsPpGrowthTitle => OsuCcLocalisation.Get(getKey(nameof(AnalyticsPpGrowthTitle)), "CUMULATIVE PP & ACCURACY TIMELINE");
+        public static LocalisableString AnalyticsModDistributionTitle => OsuCcLocalisation.Get(getKey(nameof(AnalyticsModDistributionTitle)), "MOD USAGE BREAKDOWN");
+        public static LocalisableString AnalyticsStarDistributionTitle => OsuCcLocalisation.Get(getKey(nameof(AnalyticsStarDistributionTitle)), "STAR RATING SPREAD");
+        public static LocalisableString AnalyticsTopBeatmapsTitle => OsuCcLocalisation.Get(getKey(nameof(AnalyticsTopBeatmapsTitle)), "MOST PLAYED BEATMAPS");
+        public static LocalisableString AnalyticsTopMappersTitle => OsuCcLocalisation.Get(getKey(nameof(AnalyticsTopMappersTitle)), "TOP BEATMAP CREATORS");
+        public static LocalisableString AnalyticsNoData => OsuCcLocalisation.Get(getKey(nameof(AnalyticsNoData)), "No gameplay data recorded yet");
 
         // --- Share Poster Card ---
         public static LocalisableString ShareSessionButton => OsuCcLocalisation.Get(getKey(nameof(ShareSessionButton)), "Share Session");

@@ -63,16 +63,20 @@ namespace LazerLens.UI.Components
                     Origin = Anchor.Centre,
                     Width = 460,
                     AutoSizeAxes = Axes.Y,
-                    Masking = true,
-                    CornerRadius = 10,
-                    BorderThickness = 2,
-                    BorderColour = colourProvider.Highlight1,
                     Children = new Drawable[]
                     {
-                        new Box
+                        new Container
                         {
                             RelativeSizeAxes = Axes.Both,
-                            Colour = colourProvider.Background4,
+                            Masking = true,
+                            CornerRadius = 10,
+                            BorderThickness = 2,
+                            BorderColour = colourProvider.Highlight1,
+                            Child = new Box
+                            {
+                                RelativeSizeAxes = Axes.Both,
+                                Colour = colourProvider.Background4,
+                            }
                         },
                         new FillFlowContainer
                         {
