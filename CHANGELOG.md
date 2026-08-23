@@ -2,6 +2,12 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [2.2.5] - 2026-08-23
+
+### Fixed
+- **Session Goal Spacing**: Dynamically bypass layout autosizing on `liveGraphContainer` when empty, eliminating the unwanted double vertical gap below `SessionGoalWidget` and ensuring uniform 8px spacing directly to `BestScoreBanner`.
+- **Analytics Timeline Chart Layout**: Rebuilt `PpGrowthTimelineChart` using proper `MarginPadding` and a 12% vertical margin buffer, preventing chart vertices from clipping against the bottom edge and aligning date labels cleanly below the canvas.
+
 ## [2.2.4] - 2026-08-23
 
 ### UI & Styling Refinements

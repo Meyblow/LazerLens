@@ -404,6 +404,8 @@ namespace LazerLens.UI
                     {
                         RelativeSizeAxes = Axes.X,
                         AutoSizeAxes = Axes.Y,
+                        BypassAutoSizeAxes = Axes.Both,
+                        Alpha = 0,
                     },
 
                     // 2. Best Score Banner (Clickable)
@@ -1390,10 +1392,14 @@ namespace LazerLens.UI
             {
                 if (service.ShowSessionGraph.Value && state.TotalPlays > 0)
                 {
+                    liveGraphContainer.BypassAutoSizeAxes = Axes.None;
+                    liveGraphContainer.Show();
                     liveGraphContainer.Child = new SessionProgressGraph(state.Plays);
                 }
                 else
                 {
+                    liveGraphContainer.BypassAutoSizeAxes = Axes.Both;
+                    liveGraphContainer.Hide();
                     liveGraphContainer.Clear();
                 }
             }
