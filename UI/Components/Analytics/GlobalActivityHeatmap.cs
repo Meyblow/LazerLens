@@ -31,7 +31,7 @@ namespace LazerLens.UI.Components.Analytics
         {
             this.analytics = analytics;
             RelativeSizeAxes = Axes.X;
-            Height = 160;
+            Height = 168;
         }
 
         [BackgroundDependencyLoader]
@@ -42,13 +42,95 @@ namespace LazerLens.UI.Components.Analytics
             const int days_count = weeks_count * 7;
             DateTime startDate = today.AddDays(-days_count + 1);
 
-            FillFlowContainer weeksFlow;
+            // Construct 53 columns (1 label column + 52 weeks)
+            var colDims = new Dimension[53];
+            colDims[0] = new Dimension(GridSizeMode.Absolute, 28);
+            for (int i = 1; i <= 52; i++)
+                colDims[i] = new Dimension(GridSizeMode.Distributed);
+
+            // 8 rows (Row 0: Month labels, Rows 1-7: Day cells for Mon-Sun)
+            var rowDims = new Dimension[8];
+            rowDims[0] = new Dimension(GridSizeMode.Absolute, 14);
+            for (int i = 1; i <= 7; i++)
+                rowDims[i] = new Dimension(GridSizeMode.Distributed);
+
+            var gridContent = new Drawable[8][];
+            for (int r = 0; r < 8; r++)
+                gridContent[r] = new Drawable[53];
+
+            // Row 0, Col 0: empty
+            gridContent[0][0] = Empty();
+
+            // Col 0 Day Labels: Mon, Wed, Fri
+            for (int d = 1; d <= 7; d++)
+            {
+                string dayLabel = d switch
+                {
+                    1 => "Mon",
+                    3 => "Wed",
+                    5 => "Fri",
+                    _ => ""
+                };
+
+                gridContent[d][0] = new Container
+                {
+                    RelativeSizeAxes = Axes.Both,
+                    Child = new OsuSpriteText
+                    {
+                        Anchor = Anchor.CentreLeft,
+                        Origin = Anchor.CentreLeft,
+                        Text = dayLabel,
+                        Font = OsuFont.Torus.With(size: 9, weight: FontWeight.SemiBold),
+                        Colour = colourProvider.Content2,
+                    }
+                };
+            }
+
+            int lastLabeledMonth = -1;
+
+            // Fill 52 weeks
+            for (int w = 0; w < 52; w++)
+            {
+                int colIndex = w + 1;
+                DateTime weekStartDate = startDate.AddDays(w * 7);
+
+                // Month header label on first week of each month
+                if (weekStartDate.Month != lastLabeledMonth && w < 50)
+                {
+                    lastLabeledMonth = weekStartDate.Month;
+                    gridContent[0][colIndex] = new Container
+                    {
+                        RelativeSizeAxes = Axes.Both,
+                        Child = new OsuSpriteText
+                        {
+                            Anchor = Anchor.BottomLeft,
+                            Origin = Anchor.BottomLeft,
+                            Text = weekStartDate.ToString("MMM", CultureInfo.InvariantCulture),
+                            Font = OsuFont.Torus.With(size: 9, weight: FontWeight.SemiBold),
+                            Colour = colourProvider.Content1,
+                        }
+                    };
+                }
+                else
+                {
+                    gridContent[0][colIndex] = Empty();
+                }
+
+                // 7 days of the week
+                for (int d = 0; d < 7; d++)
+                {
+                    DateTime cellDate = startDate.AddDays(w * 7 + d);
+                    int count = analytics.DayPlayCounts.TryGetValue(cellDate, out int cnt) ? cnt : 0;
+
+                    gridContent[d + 1][colIndex] = new HeatmapCell(cellDate, count);
+                }
+            }
 
             InternalChild = new Container
             {
                 RelativeSizeAxes = Axes.Both,
                 Masking = true,
-                CornerRadius = 10,
+                CornerRadius = 8,
                 BorderThickness = 1,
                 BorderColour = colourProvider.Background1,
                 Children = new Drawable[]
@@ -58,19 +140,17 @@ namespace LazerLens.UI.Components.Analytics
                         RelativeSizeAxes = Axes.Both,
                         Colour = colourProvider.Background4,
                     },
-                    new FillFlowContainer
+                    new Container
                     {
                         RelativeSizeAxes = Axes.Both,
-                        Direction = FillDirection.Vertical,
-                        Padding = new MarginPadding(14),
-                        Spacing = new Vector2(0, 10),
+                        Padding = new MarginPadding(12),
                         Children = new Drawable[]
                         {
-                            // Header Row: Title & Streaks Summary
+                            // 1. Header Row: Title & Streaks Summary
                             new Container
                             {
                                 RelativeSizeAxes = Axes.X,
-                                AutoSizeAxes = Axes.Y,
+                                Height = 24,
                                 Children = new Drawable[]
                                 {
                                     new FillFlowContainer
@@ -86,7 +166,7 @@ namespace LazerLens.UI.Components.Analytics
                                             {
                                                 Anchor = Anchor.CentreLeft,
                                                 Origin = Anchor.CentreLeft,
-                                                Size = new Vector2(16),
+                                                Size = new Vector2(15),
                                                 Icon = FontAwesome.Solid.CalendarCheck,
                                                 Colour = colourProvider.Highlight1,
                                             },
@@ -95,7 +175,7 @@ namespace LazerLens.UI.Components.Analytics
                                                 Anchor = Anchor.CentreLeft,
                                                 Origin = Anchor.CentreLeft,
                                                 Text = LazerLensStrings.AnalyticsActivityHeatmapTitle,
-                                                Font = OsuFont.Torus.With(size: 15, weight: FontWeight.Bold),
+                                                Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
                                                 Colour = Color4.White,
                                             }
                                         }
@@ -106,7 +186,7 @@ namespace LazerLens.UI.Components.Analytics
                                         Origin = Anchor.CentreRight,
                                         AutoSizeAxes = Axes.Both,
                                         Direction = FillDirection.Horizontal,
-                                        Spacing = new Vector2(16, 0),
+                                        Spacing = new Vector2(14, 0),
                                         Children = new Drawable[]
                                         {
                                             createStatPill(FontAwesome.Solid.Fire, $"{analytics.CurrentStreakDays} d", LazerLensStrings.AnalyticsCurrentStreak, Color4Extensions.FromHex("#ff9800")),
@@ -117,59 +197,55 @@ namespace LazerLens.UI.Components.Analytics
                                 }
                             },
 
-                            // 52 Weeks Grid (Fit all 52 weeks cleanly across width)
+                            // 2. Full-Width 52-Weeks Grid
                             new Container
                             {
+                                Position = new Vector2(0, 28),
                                 RelativeSizeAxes = Axes.X,
-                                Height = 84,
-                                Child = weeksFlow = new FillFlowContainer
+                                Height = 94,
+                                Child = new GridContainer
                                 {
-                                    Anchor = Anchor.Centre,
-                                    Origin = Anchor.Centre,
-                                    AutoSizeAxes = Axes.Both,
-                                    Direction = FillDirection.Horizontal,
-                                    Spacing = new Vector2(3f, 0),
+                                    RelativeSizeAxes = Axes.Both,
+                                    ColumnDimensions = colDims,
+                                    RowDimensions = rowDims,
+                                    Content = gridContent
                                 }
                             },
 
-                            // Footer Row: Legend
+                            // 3. Footer Row: Legend
                             new Container
                             {
-                                RelativeSizeAxes = Axes.X,
-                                AutoSizeAxes = Axes.Y,
-                                Children = new Drawable[]
+                                Anchor = Anchor.BottomRight,
+                                Origin = Anchor.BottomRight,
+                                AutoSizeAxes = Axes.Both,
+                                Child = new FillFlowContainer
                                 {
-                                    new FillFlowContainer
+                                    AutoSizeAxes = Axes.Both,
+                                    Direction = FillDirection.Horizontal,
+                                    Spacing = new Vector2(4, 0),
+                                    Children = new Drawable[]
                                     {
-                                        Anchor = Anchor.CentreRight,
-                                        Origin = Anchor.CentreRight,
-                                        AutoSizeAxes = Axes.Both,
-                                        Direction = FillDirection.Horizontal,
-                                        Spacing = new Vector2(5, 0),
-                                        Children = new Drawable[]
+                                        new OsuSpriteText
                                         {
-                                            new OsuSpriteText
-                                            {
-                                                Anchor = Anchor.CentreLeft,
-                                                Origin = Anchor.CentreLeft,
-                                                Text = LazerLensStrings.AnalyticsLess,
-                                                Font = OsuFont.Torus.With(size: 11, weight: FontWeight.Regular),
-                                                Colour = colourProvider.Content2,
-                                            },
-                                            createLegendBox(Color4.White.Opacity(0.06f)),
-                                            createLegendBox(Color4Extensions.FromHex("#216e39")),
-                                            createLegendBox(Color4Extensions.FromHex("#30a14e")),
-                                            createLegendBox(Color4Extensions.FromHex("#40c463")),
-                                            createLegendBox(Color4Extensions.FromHex("#9be9a8")),
-                                            new OsuSpriteText
-                                            {
-                                                Anchor = Anchor.CentreLeft,
-                                                Origin = Anchor.CentreLeft,
-                                                Text = LazerLensStrings.AnalyticsMore,
-                                                Font = OsuFont.Torus.With(size: 11, weight: FontWeight.Regular),
-                                                Colour = colourProvider.Content2,
-                                            },
-                                        }
+                                            Anchor = Anchor.CentreLeft,
+                                            Origin = Anchor.CentreLeft,
+                                            Text = LazerLensStrings.AnalyticsLess,
+                                            Font = OsuFont.Torus.With(size: 10, weight: FontWeight.Regular),
+                                            Colour = colourProvider.Content2,
+                                        },
+                                        createLegendBox(Color4.White.Opacity(0.06f)),
+                                        createLegendBox(Color4Extensions.FromHex("#216e39")),
+                                        createLegendBox(Color4Extensions.FromHex("#30a14e")),
+                                        createLegendBox(Color4Extensions.FromHex("#40c463")),
+                                        createLegendBox(Color4Extensions.FromHex("#9be9a8")),
+                                        new OsuSpriteText
+                                        {
+                                            Anchor = Anchor.CentreLeft,
+                                            Origin = Anchor.CentreLeft,
+                                            Text = LazerLensStrings.AnalyticsMore,
+                                            Font = OsuFont.Torus.With(size: 10, weight: FontWeight.Regular),
+                                            Colour = colourProvider.Content2,
+                                        },
                                     }
                                 }
                             }
@@ -177,26 +253,6 @@ namespace LazerLens.UI.Components.Analytics
                     }
                 }
             };
-
-            for (int w = 0; w < weeks_count; w++)
-            {
-                var column = new FillFlowContainer
-                {
-                    Width = 11,
-                    RelativeSizeAxes = Axes.Y,
-                    Direction = FillDirection.Vertical,
-                    Spacing = new Vector2(0, 3),
-                };
-
-                for (int d = 0; d < 7; d++)
-                {
-                    DateTime date = startDate.AddDays(w * 7 + d);
-                    int count = analytics.DayPlayCounts.TryGetValue(date, out int cnt) ? cnt : 0;
-                    column.Add(new HeatmapCell(date, count));
-                }
-
-                weeksFlow.Add(column);
-            }
         }
 
         private FillFlowContainer createStatPill(IconUsage icon, string value, LocalisableString label, Color4 accent)
@@ -221,7 +277,7 @@ namespace LazerLens.UI.Components.Analytics
                         Anchor = Anchor.CentreLeft,
                         Origin = Anchor.CentreLeft,
                         Text = value,
-                        Font = OsuFont.Torus.With(size: 13, weight: FontWeight.Bold),
+                        Font = OsuFont.Torus.With(size: 12, weight: FontWeight.Bold),
                         Colour = Color4.White,
                     },
                     new OsuSpriteText
@@ -252,6 +308,7 @@ namespace LazerLens.UI.Components.Analytics
         {
             private readonly DateTime date;
             private readonly int count;
+            private Container cellBox = null!;
 
             public LocalisableString TooltipText => LazerLensStrings.ActivityPlaysCount(count, date.ToString("dd MMM yyyy", CultureInfo.InvariantCulture));
 
@@ -260,9 +317,8 @@ namespace LazerLens.UI.Components.Analytics
                 this.date = date;
                 this.count = count;
 
-                Size = new Vector2(9.5f);
-                Masking = true;
-                CornerRadius = 2;
+                RelativeSizeAxes = Axes.Both;
+                Padding = new MarginPadding(1.5f);
 
                 Color4 cellColor = count switch
                 {
@@ -273,22 +329,28 @@ namespace LazerLens.UI.Components.Analytics
                     _ => Color4Extensions.FromHex("#9be9a8")
                 };
 
-                InternalChild = new Box
+                InternalChild = cellBox = new Container
                 {
                     RelativeSizeAxes = Axes.Both,
-                    Colour = cellColor,
+                    Masking = true,
+                    CornerRadius = 2,
+                    Child = new Box
+                    {
+                        RelativeSizeAxes = Axes.Both,
+                        Colour = cellColor,
+                    }
                 };
             }
 
             protected override bool OnHover(HoverEvent e)
             {
-                this.ScaleTo(1.4f, 100, Easing.OutQuint);
+                cellBox.ScaleTo(1.35f, 100, Easing.OutQuint);
                 return base.OnHover(e);
             }
 
             protected override void OnHoverLost(HoverLostEvent e)
             {
-                this.ScaleTo(1.0f, 100, Easing.OutQuint);
+                cellBox.ScaleTo(1.0f, 100, Easing.OutQuint);
                 base.OnHoverLost(e);
             }
         }

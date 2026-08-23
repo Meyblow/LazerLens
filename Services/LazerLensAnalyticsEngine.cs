@@ -218,19 +218,70 @@ namespace LazerLens.Services
 
             data.TopMappers = mapperGroups;
 
-            // 8. PP Growth Timeline
-            var datePpList = new List<(DateTime Date, double CumulativePp, double DayAccuracy)>();
-            var dayPlays = allPlays.GroupBy(p => p.Timestamp.ToLocalTime().Date).OrderBy(g => g.Key);
-            double runningPp = 0;
+            // 8. PP Growth Timeline (Per session / per play chronological progression)
+            var timelineList = new List<SessionTimelineEntry>();
+            var sessionItems = new List<(DateTime Time, double PpGain, double Accuracy, int Plays, string Title)>();
 
-            foreach (var group in dayPlays)
+            if (summaries != null && summaries.Count > 0)
             {
-                double dayPp = group.Where(p => p.PerformancePoints.HasValue).Sum(p => p.PerformancePoints!.Value);
-                runningPp += dayPp;
-                datePpList.Add((group.Key, runningPp, group.Average(p => p.Accuracy)));
+                foreach (var summary in summaries)
+                {
+                    var sState = storageService?.LoadSession(summary.Id);
+                    double ppGain = sState != null ? sState.SessionPPGain : summary.TopPP;
+                    double acc = sState != null ? sState.AverageAccuracy : summary.AverageAccuracy;
+                    int plays = sState != null ? sState.TotalPlays : summary.PlayCount;
+                    string title = summary.Note ?? summary.StartTime.LocalDateTime.ToString("dd MMM yyyy, HH:mm");
+
+                    sessionItems.Add((summary.StartTime.LocalDateTime, ppGain, acc, plays, title));
+                }
             }
 
-            data.PpTimeline = datePpList;
+            if (liveState != null && liveState.TotalPlays > 0)
+            {
+                sessionItems.Add((liveState.SessionStart.LocalDateTime, liveState.SessionPPGain, liveState.AverageAccuracy, liveState.TotalPlays, "Текущая сессия"));
+            }
+
+            sessionItems = sessionItems.OrderBy(s => s.Time).ToList();
+
+            double runningPp = 0;
+            foreach (var item in sessionItems)
+            {
+                runningPp += Math.Max(0, item.PpGain);
+                timelineList.Add(new SessionTimelineEntry
+                {
+                    Date = item.Time,
+                    CumulativePp = runningPp,
+                    SessionAccuracy = item.Accuracy,
+                    SessionPpGain = item.PpGain,
+                    PlayCount = item.Plays,
+                    SessionTitle = item.Title
+                });
+            }
+
+            // Fallback: If <= 1 session but multiple plays exist, populate from individual plays
+            if (timelineList.Count <= 1 && allPlays.Count > 1)
+            {
+                timelineList.Clear();
+                runningPp = 0;
+                var orderedPlays = allPlays.OrderBy(p => p.Timestamp).ToList();
+                for (int i = 0; i < orderedPlays.Count; i++)
+                {
+                    var p = orderedPlays[i];
+                    double pPp = p.PerformancePoints ?? 0;
+                    runningPp += pPp;
+                    timelineList.Add(new SessionTimelineEntry
+                    {
+                        Date = p.Timestamp.LocalDateTime,
+                        CumulativePp = runningPp,
+                        SessionAccuracy = p.Accuracy,
+                        SessionPpGain = pPp,
+                        PlayCount = i + 1,
+                        SessionTitle = $"{p.BeatmapArtist} - {p.BeatmapTitle}"
+                    });
+                }
+            }
+
+            data.PpTimeline = timelineList;
 
             return data;
         }

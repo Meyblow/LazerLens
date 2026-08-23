@@ -12,6 +12,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
 using osu.Game.Graphics;
+using osu.Game.Graphics.Containers;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Overlays;
 using osuTK;
@@ -25,19 +26,23 @@ namespace LazerLens.UI.Components.Analytics
         [Resolved]
         private OverlayColourProvider colourProvider { get; set; } = null!;
 
-        private readonly IReadOnlyList<(DateTime Date, double CumulativePp, double DayAccuracy)> timeline;
+        private readonly IReadOnlyList<SessionTimelineEntry> timeline;
 
         private Container chartArea = null!;
         private osu.Framework.Graphics.Lines.Path linePath = null!;
         private Container dataPointsContainer = null!;
         private OsuSpriteText maxLabel = null!;
+        private OsuSpriteText midLabel = null!;
         private OsuSpriteText minLabel = null!;
+        private OsuSpriteText startDateLabel = null!;
+        private OsuSpriteText endDateLabel = null!;
+        private OsuSpriteText summaryPillText = null!;
 
-        public PpGrowthTimelineChart(IReadOnlyList<(DateTime Date, double CumulativePp, double DayAccuracy)> timeline)
+        public PpGrowthTimelineChart(IReadOnlyList<SessionTimelineEntry> timeline)
         {
             this.timeline = timeline;
             RelativeSizeAxes = Axes.X;
-            Height = 120;
+            Height = 145;
         }
 
         [BackgroundDependencyLoader]
@@ -63,70 +68,124 @@ namespace LazerLens.UI.Components.Analytics
                         Padding = new MarginPadding(12),
                         Children = new Drawable[]
                         {
-                            // Title Row
-                            new FillFlowContainer
+                            // 1. Title Row
+                            new Container
                             {
-                                AutoSizeAxes = Axes.Both,
-                                Direction = FillDirection.Horizontal,
-                                Spacing = new Vector2(8, 0),
+                                RelativeSizeAxes = Axes.X,
+                                Height = 22,
                                 Children = new Drawable[]
                                 {
-                                    new SpriteIcon
+                                    new FillFlowContainer
                                     {
                                         Anchor = Anchor.CentreLeft,
                                         Origin = Anchor.CentreLeft,
-                                        Size = new Vector2(14),
-                                        Icon = FontAwesome.Solid.ChartLine,
-                                        Colour = colourProvider.Highlight1,
+                                        AutoSizeAxes = Axes.Both,
+                                        Direction = FillDirection.Horizontal,
+                                        Spacing = new Vector2(8, 0),
+                                        Children = new Drawable[]
+                                        {
+                                            new SpriteIcon
+                                            {
+                                                Anchor = Anchor.CentreLeft,
+                                                Origin = Anchor.CentreLeft,
+                                                Size = new Vector2(14),
+                                                Icon = FontAwesome.Solid.ChartLine,
+                                                Colour = colourProvider.Highlight1,
+                                            },
+                                            new OsuSpriteText
+                                            {
+                                                Anchor = Anchor.CentreLeft,
+                                                Origin = Anchor.CentreLeft,
+                                                Text = LazerLensStrings.AnalyticsPpGrowthTitle,
+                                                Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
+                                                Colour = Color4.White,
+                                            }
+                                        }
                                     },
-                                    new OsuSpriteText
+                                    summaryPillText = new OsuSpriteText
                                     {
-                                        Anchor = Anchor.CentreLeft,
-                                        Origin = Anchor.CentreLeft,
-                                        Text = LazerLensStrings.AnalyticsPpGrowthTitle,
-                                        Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
-                                        Colour = Color4.White,
+                                        Anchor = Anchor.CentreRight,
+                                        Origin = Anchor.CentreRight,
+                                        Font = OsuFont.Torus.With(size: 11, weight: FontWeight.SemiBold),
+                                        Colour = colourProvider.Highlight1,
                                     }
                                 }
                             },
 
-                            // Y-Axis Labels
+                            // 2. Y-Axis Labels
                             maxLabel = new OsuSpriteText
                             {
-                                Position = new Vector2(0, 24),
-                                Font = OsuFont.Torus.With(size: 10, weight: FontWeight.SemiBold),
+                                Position = new Vector2(0, 26),
+                                Font = OsuFont.Torus.With(size: 9, weight: FontWeight.SemiBold),
+                                Colour = colourProvider.Content2,
+                            },
+                            midLabel = new OsuSpriteText
+                            {
+                                Anchor = Anchor.CentreLeft,
+                                Origin = Anchor.CentreLeft,
+                                Position = new Vector2(0, 8),
+                                Font = OsuFont.Torus.With(size: 9, weight: FontWeight.SemiBold),
                                 Colour = colourProvider.Content2,
                             },
                             minLabel = new OsuSpriteText
                             {
                                 Anchor = Anchor.BottomLeft,
                                 Origin = Anchor.BottomLeft,
-                                Position = new Vector2(0, -2),
-                                Font = OsuFont.Torus.With(size: 10, weight: FontWeight.SemiBold),
+                                Position = new Vector2(0, -16),
+                                Font = OsuFont.Torus.With(size: 9, weight: FontWeight.SemiBold),
                                 Colour = colourProvider.Content2,
                             },
 
-                            // Chart Canvas
+                            // 3. X-Axis Date Labels
+                            startDateLabel = new OsuSpriteText
+                            {
+                                Anchor = Anchor.BottomLeft,
+                                Origin = Anchor.BottomLeft,
+                                Position = new Vector2(52, 0),
+                                Font = OsuFont.Torus.With(size: 9, weight: FontWeight.Regular),
+                                Colour = colourProvider.Content2,
+                            },
+                            endDateLabel = new OsuSpriteText
+                            {
+                                Anchor = Anchor.BottomRight,
+                                Origin = Anchor.BottomRight,
+                                Position = new Vector2(-16, 0),
+                                Font = OsuFont.Torus.With(size: 9, weight: FontWeight.Regular),
+                                Colour = colourProvider.Content2,
+                            },
+
+                            // 4. Chart Canvas
                             chartArea = new Container
                             {
-                                Position = new Vector2(50, 24),
+                                Position = new Vector2(52, 28),
                                 RelativeSizeAxes = Axes.Both,
-                                Padding = new MarginPadding { Right = 60, Bottom = 30 },
+                                Padding = new MarginPadding { Right = 24, Bottom = 42 },
                                 Children = new Drawable[]
                                 {
+                                    // Top Grid Line
                                     new Box
                                     {
                                         RelativeSizeAxes = Axes.X,
                                         Height = 1,
-                                        Colour = Color4.White.Opacity(0.08f),
+                                        Colour = Color4.White.Opacity(0.06f),
                                         Anchor = Anchor.TopLeft,
                                         Origin = Anchor.TopLeft,
                                     },
+                                    // Mid Grid Line
                                     new Box
                                     {
                                         RelativeSizeAxes = Axes.X,
                                         Height = 1,
-                                        Colour = Color4.White.Opacity(0.08f),
+                                        Colour = Color4.White.Opacity(0.06f),
+                                        Anchor = Anchor.CentreLeft,
+                                        Origin = Anchor.CentreLeft,
+                                    },
+                                    // Bottom Grid Line
+                                    new Box
+                                    {
+                                        RelativeSizeAxes = Axes.X,
+                                        Height = 1,
+                                        Colour = Color4.White.Opacity(0.06f),
                                         Anchor = Anchor.BottomLeft,
                                         Origin = Anchor.BottomLeft,
                                     },
@@ -169,16 +228,26 @@ namespace LazerLens.UI.Components.Analytics
 
             if (Math.Abs(maxVal - minVal) < 0.001)
             {
-                minVal -= 10;
+                minVal = Math.Max(0, minVal - 10);
                 maxVal += 10;
             }
 
+            double midVal = (maxVal + minVal) / 2.0;
+
             maxLabel.Text = $"{maxVal:F0} PP";
+            midLabel.Text = $"{midVal:F0} PP";
             minLabel.Text = $"{minVal:F0} PP";
 
+            startDateLabel.Text = sorted.First().Date.ToString("dd MMM yyyy", CultureInfo.InvariantCulture);
+            endDateLabel.Text = sorted.Last().Date.ToString("dd MMM yyyy", CultureInfo.InvariantCulture);
+
+            double totalGain = sorted.Last().CumulativePp;
+            double avgAcc = sorted.Average(s => s.SessionAccuracy);
+            summaryPillText.Text = $"Total: +{totalGain:F0} PP  •  {avgAcc:F2}% avg";
+
             double range = maxVal - minVal;
-            double paddedMin = minVal - (range > 0 ? range * 0.12 : 5);
-            double paddedMax = maxVal + (range > 0 ? range * 0.12 : 5);
+            double paddedMin = minVal - (range > 0 ? range * 0.10 : 5);
+            double paddedMax = maxVal + (range > 0 ? range * 0.10 : 5);
 
             float w = chartArea.DrawWidth;
             float h = chartArea.DrawHeight;
@@ -195,7 +264,7 @@ namespace LazerLens.UI.Components.Analytics
                 var pt = new Vector2(x, y);
                 linePath.AddVertex(pt);
 
-                dataPointsContainer.Add(new TimelinePoint(entry.Date, entry.CumulativePp, entry.DayAccuracy, colourProvider.Highlight1)
+                dataPointsContainer.Add(new TimelinePoint(entry, colourProvider.Highlight1)
                 {
                     Position = pt,
                 });
@@ -204,39 +273,58 @@ namespace LazerLens.UI.Components.Analytics
 
         private sealed partial class TimelinePoint : CompositeDrawable, IHasTooltip
         {
-            private readonly DateTime date;
-            private readonly double pp;
-            private readonly double acc;
+            private readonly SessionTimelineEntry entry;
+            private readonly Color4 accent;
+            private Container dot = null!;
 
-            public LocalisableString TooltipText => $"{date:dd MMM yyyy}\n+{pp:F0} PP • {acc:F2}% avg";
-
-            public TimelinePoint(DateTime date, double pp, double acc, Color4 accent)
+            public LocalisableString TooltipText
             {
-                this.date = date;
-                this.pp = pp;
-                this.acc = acc;
+                get
+                {
+                    string dateStr = entry.Date.ToString("dd MMM yyyy, HH:mm", CultureInfo.InvariantCulture);
+                    string playCountStr = entry.PlayCount > 0 ? $" • {entry.PlayCount} plays" : "";
+                    string noteStr = !string.IsNullOrWhiteSpace(entry.SessionTitle) && !entry.SessionTitle.Contains(dateStr, StringComparison.OrdinalIgnoreCase)
+                        ? $"\n🏷️ {entry.SessionTitle}"
+                        : "";
+
+                    return $"{dateStr}\n+{entry.SessionPpGain:F0} PP (Total: {entry.CumulativePp:F0} PP)\n{entry.SessionAccuracy:F2}% avg{playCountStr}{noteStr}";
+                }
+            }
+
+            public TimelinePoint(SessionTimelineEntry entry, Color4 accent)
+            {
+                this.entry = entry;
+                this.accent = accent;
 
                 Size = new Vector2(8);
                 Origin = Anchor.Centre;
-                Masking = true;
-                CornerRadius = 4;
 
-                InternalChild = new Box
+                InternalChild = dot = new Container
                 {
                     RelativeSizeAxes = Axes.Both,
-                    Colour = accent,
+                    Masking = true,
+                    CornerRadius = 4,
+                    BorderThickness = 1.5f,
+                    BorderColour = Color4.White,
+                    Child = new Box
+                    {
+                        RelativeSizeAxes = Axes.Both,
+                        Colour = accent,
+                    }
                 };
             }
 
             protected override bool OnHover(HoverEvent e)
             {
-                this.ScaleTo(1.6f, 100, Easing.OutQuint);
+                dot.ScaleTo(1.6f, 120, Easing.OutQuint);
+                dot.BorderThickness = 2.5f;
                 return base.OnHover(e);
             }
 
             protected override void OnHoverLost(HoverLostEvent e)
             {
-                this.ScaleTo(1.0f, 100, Easing.OutQuint);
+                dot.ScaleTo(1.0f, 120, Easing.OutQuint);
+                dot.BorderThickness = 1.5f;
                 base.OnHoverLost(e);
             }
         }

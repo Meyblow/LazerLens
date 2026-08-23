@@ -22,11 +22,21 @@ namespace LazerLens.Models
         public int MostActiveDayPlayCount { get; set; }
 
         public Dictionary<DateTime, int> DayPlayCounts { get; set; } = new();
-        public List<(DateTime Date, double CumulativePp, double DayAccuracy)> PpTimeline { get; set; } = new();
+        public List<SessionTimelineEntry> PpTimeline { get; set; } = new();
         public Dictionary<string, int> ModPlayCounts { get; set; } = new();
         public Dictionary<string, int> StarRatingBuckets { get; set; } = new();
         public List<TopBeatmapStat> TopBeatmaps { get; set; } = new();
         public List<TopMapperStat> TopMappers { get; set; } = new();
+    }
+
+    public class SessionTimelineEntry
+    {
+        public DateTime Date { get; set; }
+        public double CumulativePp { get; set; }
+        public double SessionAccuracy { get; set; }
+        public double SessionPpGain { get; set; }
+        public int PlayCount { get; set; }
+        public string SessionTitle { get; set; } = string.Empty;
     }
 
     public class TopBeatmapStat
