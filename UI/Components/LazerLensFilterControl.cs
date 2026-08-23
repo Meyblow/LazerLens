@@ -102,23 +102,11 @@ namespace LazerLens.UI.Components
                             ),
 
                             // 4. Sort By Row + Order Toggle
-                            new Container
-                            {
-                                RelativeSizeAxes = Axes.X,
-                                AutoSizeAxes = Axes.Y,
-                                Children = new Drawable[]
-                                {
-                                    createFilterRow(
-                                        LazerLensStrings.FilterCategorySort,
-                                        createSortButtons()
-                                    ),
-                                    directionButton = new SortDirectionButton(SortAscending, toggleSortDirection)
-                                    {
-                                        Anchor = Anchor.CentreRight,
-                                        Origin = Anchor.CentreRight,
-                                    }
-                                }
-                            }
+                            createFilterRow(
+                                LazerLensStrings.FilterCategorySort,
+                                createSortButtons(),
+                                directionButton = new SortDirectionButton(SortAscending, toggleSortDirection)
+                            )
                         }
                     }
                 }
@@ -131,9 +119,9 @@ namespace LazerLens.UI.Components
             });
         }
 
-        private Container createFilterRow(LocalisableString categoryLabel, IEnumerable<Drawable> buttons)
+        private Container createFilterRow(LocalisableString categoryLabel, IEnumerable<Drawable> buttons, Drawable? rightSlot = null)
         {
-            return new Container
+            var container = new Container
             {
                 RelativeSizeAxes = Axes.X,
                 AutoSizeAxes = Axes.Y,
@@ -160,6 +148,15 @@ namespace LazerLens.UI.Components
                     }
                 }
             };
+
+            if (rightSlot != null)
+            {
+                rightSlot.Anchor = Anchor.CentreRight;
+                rightSlot.Origin = Anchor.CentreRight;
+                container.Add(rightSlot);
+            }
+
+            return container;
         }
 
         private IEnumerable<Drawable> createRulesetButtons()

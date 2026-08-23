@@ -228,20 +228,14 @@ namespace LazerLens.UI.Components.Analytics
             linePath.ClearVertices();
 
             var sorted = timeline.OrderBy(t => t.Date).ToList();
-            double minVal = sorted.Min(t => t.CumulativePp);
-            double maxVal = sorted.Max(t => t.CumulativePp);
-
-            if (Math.Abs(maxVal - minVal) < 0.001)
-            {
-                minVal = Math.Max(0, minVal - 10);
-                maxVal += 10;
-            }
-
-            double midVal = (maxVal + minVal) / 2.0;
+            double minVal = 0.0;
+            double rawMax = sorted.Count > 0 ? sorted.Max(t => t.CumulativePp) : 0.0;
+            double maxVal = Math.Max(10.0, rawMax);
+            double midVal = maxVal / 2.0;
 
             maxLabel.Text = $"{maxVal:F0} PP";
             midLabel.Text = $"{midVal:F0} PP";
-            minLabel.Text = $"{minVal:F0} PP";
+            minLabel.Text = "0 PP";
 
             startDateLabel.Text = sorted.First().Date.ToString("dd MMM yyyy", CultureInfo.InvariantCulture);
             endDateLabel.Text = sorted.Last().Date.ToString("dd MMM yyyy", CultureInfo.InvariantCulture);
@@ -264,7 +258,7 @@ namespace LazerLens.UI.Components.Analytics
             {
                 var entry = sorted[i];
                 float x = sorted.Count > 1 ? (float)i / (sorted.Count - 1) * w : w / 2f;
-                float normalized = (float)((entry.CumulativePp - minVal) / (maxVal - minVal));
+                float normalized = maxVal > 0.001 ? (float)(entry.CumulativePp / maxVal) : 0f;
                 float y = (h - padY) - (normalized * usableH);
 
                 var pt = new Vector2(x, y);

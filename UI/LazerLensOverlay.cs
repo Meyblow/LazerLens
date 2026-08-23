@@ -222,7 +222,7 @@ namespace LazerLens.UI
             {
                 RelativeSizeAxes = Axes.X,
                 AutoSizeAxes = Axes.Y,
-                Padding = new MarginPadding { Right = 14 },
+                Padding = new MarginPadding { Horizontal = 14 },
                 Children = new Drawable[]
                 {
                     // TAB 1: Live Session Content
@@ -519,11 +519,12 @@ namespace LazerLens.UI
                                                 Padding = new MarginPadding(10),
                                                 Children = new Drawable[]
                                                 {
-                                                    // 1. Header Row (Title and Sort Dropdown vertically centered together)
+                                                    // 1. Header Row (Title and Sort Dropdown vertically centered together with high priority Depth)
                                                     new Container
                                                     {
                                                         RelativeSizeAxes = Axes.X,
                                                         Height = 32,
+                                                        Depth = -100,
                                                         Children = new Drawable[]
                                                         {
                                                             archiveListHeader = new OsuSpriteText
@@ -541,7 +542,6 @@ namespace LazerLens.UI
                                                                 Origin = Anchor.CentreRight,
                                                                 Position = new Vector2(-4, 0),
                                                                 Width = 115,
-                                                                Depth = -10,
                                                             }
                                                         }
                                                     },
@@ -550,11 +550,10 @@ namespace LazerLens.UI
                                                     archiveContextMenuContainer = new OsuContextMenuContainer
                                                     {
                                                         RelativeSizeAxes = Axes.Both,
-                                                        Padding = new MarginPadding { Top = 38, Right = 4 },
+                                                        Padding = new MarginPadding { Top = 40, Right = 0 },
                                                         Child = new OsuScrollContainer
                                                         {
                                                             RelativeSizeAxes = Axes.Both,
-                                                            Padding = new MarginPadding { Right = 6 },
                                                             ScrollbarVisible = true,
                                                             Child = archiveCardsList = new FillFlowContainer
                                                             {
@@ -562,6 +561,7 @@ namespace LazerLens.UI
                                                                 AutoSizeAxes = Axes.Y,
                                                                 Direction = FillDirection.Vertical,
                                                                 Spacing = new Vector2(0, CARD_SPACING),
+                                                                Padding = new MarginPadding { Right = 14 },
                                                             }
                                                         }
                                                     }
@@ -638,7 +638,7 @@ namespace LazerLens.UI
                                                 AutoSizeAxes = Axes.Y,
                                                 Direction = FillDirection.Vertical,
                                                 Spacing = new Vector2(0, CARD_SPACING),
-                                                Padding = new MarginPadding { Right = 6 },
+                                                Padding = new MarginPadding { Right = 18 },
                                                 Alpha = 0,
                                                 Children = new Drawable[]
                                                 {

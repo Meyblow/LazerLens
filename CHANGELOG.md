@@ -2,6 +2,15 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [2.2.7] - 2026-08-23
+
+### UI & Layout Refinements
+- **Symmetrical Overlay Margins**: Configured `MainAreaContent.Padding` with `Horizontal = 14px`, ensuring equal outer spacing from both the left and right borders of the overlay.
+- **Uniform 6px Filter Row Rhythm**: Integrated `directionButton` directly into `createFilterRow(..., rightSlot)` in `LazerLensFilterControl`, eliminating wrapper containers and establishing uniform 6px vertical spacing across all 4 filter rows (`Ruleset`, `Outcome`, `Status`, `Sort by`).
+- **Archive Dropdown Z-Index Fix**: Applied `Depth = -100` to the Saved Sessions header container, ensuring the `archiveSortDropdown` menu renders on top of the sessions list and cards without being obscured by card borders or text.
+- **Restored Scrollbar Gutters**: Restored dedicated scrollbar gutters (`14px` right padding on `archiveCardsList` and `18px` on `archiveDetailContent`), preventing scrollbars from clipping or overlapping metrics, buttons, and play history timestamps.
+- **Zero-Baseline Cumulative PP Chart**: Pinned the PP growth timeline chart's Y-axis to start at a `0 PP` baseline (`0 PP` $\rightarrow$ `(maxVal / 2) PP` $\rightarrow$ `maxVal PP`) with division-by-zero protection and Catmull-Rom spline curve rendering.
+
 ## [2.2.6] - 2026-08-23
 
 ### UI & Architecture Polish
