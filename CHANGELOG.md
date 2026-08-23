@@ -2,6 +2,15 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [2.2.6] - 2026-08-23
+
+### UI & Architecture Polish
+- **Centralized CARD_SPACING**: Standardized all horizontal grid gaps and vertical container margins across the entire overlay using `CARD_SPACING = 8f`.
+- **Extended Full-Width Map Rows**: Eliminated redundant right-hand container padding (`52px` & `24px` $\rightarrow$ `14px` & `6px`), extending filter controls and play history items across the full available panel width with symmetrical margins.
+- **Archive Header & Filter Alignment**: Integrated `archiveListHeader` and `archiveSortDropdown` into a shared 32px height row with synchronized vertical centering.
+- **Filter Row Column Alignment**: Standardized category label width (72px) and button offset (76px) across all 4 filter rows for vertical alignment.
+- **Official osu! Star Difficulty Colors**: Integrated `OsuColour.ForStarDifficulty(...)` in `DistributionBarChart` and `TopFavoritesLeaderboard` for game-accurate difficulty gradients.
+
 ## [2.2.5] - 2026-08-23
 
 ### Fixed

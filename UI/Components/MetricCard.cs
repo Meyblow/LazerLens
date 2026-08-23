@@ -33,8 +33,7 @@ namespace LazerLens.UI.Components
             this.icon = icon;
             this.title = title;
 
-            RelativeSizeAxes = Axes.X;
-            Height = 90;
+            RelativeSizeAxes = Axes.Both;
 
             InternalChildren = new Drawable[]
             {

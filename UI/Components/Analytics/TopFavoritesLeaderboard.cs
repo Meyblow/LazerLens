@@ -23,6 +23,9 @@ namespace LazerLens.UI.Components.Analytics
         [Resolved]
         private OverlayColourProvider colourProvider { get; set; } = null!;
 
+        [Resolved(canBeNull: true)]
+        private OsuColour? colours { get; set; }
+
         private readonly GlobalAnalyticsData analytics;
         private readonly Action<int>? onOpenBeatmap;
 
@@ -252,12 +255,28 @@ namespace LazerLens.UI.Components.Analytics
                                         Font = OsuFont.Torus.With(size: 12, weight: FontWeight.SemiBold),
                                         Colour = Color4.White,
                                     },
-                                    new TruncatingSpriteText
+                                    new FillFlowContainer
                                     {
                                         RelativeSizeAxes = Axes.X,
-                                        Text = $"[{map.Difficulty}] • {map.StarRating:F2}★",
-                                        Font = OsuFont.Torus.With(size: 10, weight: FontWeight.Regular),
-                                        Colour = colourProvider.Content2,
+                                        AutoSizeAxes = Axes.Y,
+                                        Direction = FillDirection.Horizontal,
+                                        Spacing = new Vector2(4, 0),
+                                        Children = new Drawable[]
+                                        {
+                                            new TruncatingSpriteText
+                                            {
+                                                Text = $"[{map.Difficulty}]",
+                                                Font = OsuFont.Torus.With(size: 10, weight: FontWeight.Regular),
+                                                Colour = colourProvider.Content2,
+                                                MaxWidth = 200,
+                                            },
+                                            new OsuSpriteText
+                                            {
+                                                Text = $"• {map.StarRating:F2}★",
+                                                Font = OsuFont.Torus.With(size: 10, weight: FontWeight.SemiBold),
+                                                Colour = colours != null ? colours.ForStarDifficulty(map.StarRating) : colourProvider.Highlight1,
+                                            }
+                                        }
                                     }
                                 }
                             }

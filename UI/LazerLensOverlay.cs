@@ -123,6 +123,8 @@ namespace LazerLens.UI
         [Resolved(canBeNull: true)]
         private NotificationOverlay? notifications { get; set; }
 
+        public const float CARD_SPACING = 8f;
+
         // Live Tab Components
         private FillFlowContainer liveContent = null!;
         private MetricCard liveTimeCard = null!;
@@ -220,7 +222,7 @@ namespace LazerLens.UI
             {
                 RelativeSizeAxes = Axes.X,
                 AutoSizeAxes = Axes.Y,
-                Padding = new MarginPadding { Right = 52 },
+                Padding = new MarginPadding { Right = 14 },
                 Children = new Drawable[]
                 {
                     // TAB 1: Live Session Content
@@ -358,7 +360,7 @@ namespace LazerLens.UI
                 RelativeSizeAxes = Axes.X,
                 AutoSizeAxes = Axes.Y,
                 Direction = FillDirection.Vertical,
-                Spacing = new Vector2(0, 8),
+                Spacing = new Vector2(0, CARD_SPACING),
                 Padding = new MarginPadding { Top = 12 },
                 Children = new Drawable[]
                 {
@@ -373,11 +375,11 @@ namespace LazerLens.UI
                             ColumnDimensions = new[]
                             {
                                 new Dimension(GridSizeMode.Distributed),
-                                new Dimension(GridSizeMode.Absolute, 8),
+                                new Dimension(GridSizeMode.Absolute, CARD_SPACING),
                                 new Dimension(GridSizeMode.Distributed),
-                                new Dimension(GridSizeMode.Absolute, 8),
+                                new Dimension(GridSizeMode.Absolute, CARD_SPACING),
                                 new Dimension(GridSizeMode.Distributed),
-                                new Dimension(GridSizeMode.Absolute, 8),
+                                new Dimension(GridSizeMode.Absolute, CARD_SPACING),
                                 new Dimension(GridSizeMode.Distributed),
                             },
                             Content = new[]
@@ -488,6 +490,7 @@ namespace LazerLens.UI
                         ColumnDimensions = new[]
                         {
                             new Dimension(GridSizeMode.Absolute, 340),
+                            new Dimension(GridSizeMode.Absolute, CARD_SPACING),
                             new Dimension(GridSizeMode.Distributed),
                         },
                         Content = new[]
@@ -498,7 +501,6 @@ namespace LazerLens.UI
                                 new Container
                                 {
                                     RelativeSizeAxes = Axes.Both,
-                                    Padding = new MarginPadding { Right = 14 },
                                     Child = new Container
                                     {
                                         RelativeSizeAxes = Axes.Both,
@@ -517,157 +519,162 @@ namespace LazerLens.UI
                                                 Padding = new MarginPadding(10),
                                                 Children = new Drawable[]
                                                 {
-                                                    // 1. Scrollable List Container (offset downwards so it doesn't overlap header)
+                                                    // 1. Header Row (Title and Sort Dropdown vertically centered together)
+                                                    new Container
+                                                    {
+                                                        RelativeSizeAxes = Axes.X,
+                                                        Height = 32,
+                                                        Children = new Drawable[]
+                                                        {
+                                                            archiveListHeader = new OsuSpriteText
+                                                            {
+                                                                Anchor = Anchor.CentreLeft,
+                                                                Origin = Anchor.CentreLeft,
+                                                                Position = new Vector2(4, 0),
+                                                                Text = LazerLensStrings.ArchiveSavedSessions(0),
+                                                                Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
+                                                                Colour = ColourProvider.Colour1,
+                                                            },
+                                                            archiveSortDropdown = new OsuEnumDropdown<SessionArchiveSortMode>
+                                                            {
+                                                                Anchor = Anchor.CentreRight,
+                                                                Origin = Anchor.CentreRight,
+                                                                Position = new Vector2(-4, 0),
+                                                                Width = 115,
+                                                                Depth = -10,
+                                                            }
+                                                        }
+                                                    },
+
+                                                    // 2. Scrollable List Container (offset downwards so it doesn't overlap header)
                                                     archiveContextMenuContainer = new OsuContextMenuContainer
                                                     {
                                                         RelativeSizeAxes = Axes.Both,
-                                                        Padding = new MarginPadding { Top = 42, Right = 4 },
+                                                        Padding = new MarginPadding { Top = 38, Right = 4 },
                                                         Child = new OsuScrollContainer
                                                         {
                                                             RelativeSizeAxes = Axes.Both,
-                                                            Padding = new MarginPadding { Right = 8 },
+                                                            Padding = new MarginPadding { Right = 6 },
                                                             ScrollbarVisible = true,
                                                             Child = archiveCardsList = new FillFlowContainer
                                                             {
                                                                 RelativeSizeAxes = Axes.X,
                                                                 AutoSizeAxes = Axes.Y,
                                                                 Direction = FillDirection.Vertical,
-                                                                Spacing = new Vector2(0, 8),
-                                                                Padding = new MarginPadding { Right = 18 },
+                                                                Spacing = new Vector2(0, CARD_SPACING),
                                                             }
                                                         }
-                                                    },
-
-                                                    // 2. Header Text (Anchored TopLeft, aligned with dropdown)
-                                                    archiveListHeader = new OsuSpriteText
-                                                    {
-                                                        Position = new Vector2(4, 6),
-                                                        Text = LazerLensStrings.ArchiveSavedSessions(0),
-                                                        Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
-                                                        Colour = ColourProvider.Colour1,
-                                                        Anchor = Anchor.TopLeft,
-                                                        Origin = Anchor.TopLeft,
-                                                    },
-
-                                                    // 3. Sort Dropdown (Anchored TopRight, sitting neatly inside header space)
-                                                    archiveSortDropdown = new OsuEnumDropdown<SessionArchiveSortMode>
-                                                    {
-                                                        Anchor = Anchor.TopRight,
-                                                        Origin = Anchor.TopRight,
-                                                        Position = new Vector2(-4, 0),
-                                                        Width = 115,
-                                                        Depth = -10,
                                                     }
                                                 }
                                             }
                                         }
                                     }
                                 },
-
-                            // Right Column: Selected Session Details (Parallel independent scroll pane)
-                            new Container
-                            {
-                                RelativeSizeAxes = Axes.Both,
-                                Children = new Drawable[]
+                                Empty(),
+                                // Right Column: Selected Session Details (Parallel independent scroll pane)
+                                new Container
                                 {
-                                    archiveEmptyContainer = new Container
+                                    RelativeSizeAxes = Axes.Both,
+                                    Children = new Drawable[]
                                     {
-                                        RelativeSizeAxes = Axes.X,
-                                        Height = 260,
-                                        Masking = true,
-                                        CornerRadius = 8,
-                                        Children = new Drawable[]
+                                        archiveEmptyContainer = new Container
                                         {
-                                            new Box
-                                            {
-                                                RelativeSizeAxes = Axes.Both,
-                                                Colour = ColourProvider.Background4,
-                                            },
-                                            new FillFlowContainer
-                                            {
-                                                Anchor = Anchor.Centre,
-                                                Origin = Anchor.Centre,
-                                                AutoSizeAxes = Axes.Both,
-                                                Direction = FillDirection.Vertical,
-                                                Spacing = new Vector2(0, 8),
-                                                Children = new Drawable[]
-                                                {
-                                                    new SpriteIcon
-                                                    {
-                                                        Anchor = Anchor.Centre,
-                                                        Origin = Anchor.Centre,
-                                                        Size = new Vector2(36),
-                                                        Icon = FontAwesome.Solid.Archive,
-                                                        Colour = ColourProvider.Content2,
-                                                    },
-                                                    new OsuSpriteText
-                                                    {
-                                                        Anchor = Anchor.Centre,
-                                                        Origin = Anchor.Centre,
-                                                        Text = LazerLensStrings.ArchiveEmptyTitle,
-                                                        Font = OsuFont.Torus.With(size: 16, weight: FontWeight.Bold),
-                                                        Colour = ColourProvider.Content1,
-                                                    },
-                                                    new OsuSpriteText
-                                                    {
-                                                        Anchor = Anchor.Centre,
-                                                        Origin = Anchor.Centre,
-                                                        Text = LazerLensStrings.ArchiveEmptySubtitle,
-                                                        Font = OsuFont.Torus.With(size: 13, weight: FontWeight.Regular),
-                                                        Colour = ColourProvider.Content2,
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    },
-
-                                    archiveDetailScroll = new OsuScrollContainer
-                                    {
-                                        RelativeSizeAxes = Axes.Both,
-                                        ScrollbarVisible = true,
-                                        Child = archiveDetailContent = new FillFlowContainer
-                                        {
-                                            RelativeSizeAxes = Axes.X,
-                                            AutoSizeAxes = Axes.Y,
-                                            Direction = FillDirection.Vertical,
-                                            Spacing = new Vector2(0, 8),
-                                            Padding = new MarginPadding { Right = 24 },
+                                            RelativeSizeAxes = Axes.Both,
+                                            Masking = true,
+                                            CornerRadius = 8,
                                             Alpha = 0,
                                             Children = new Drawable[]
                                             {
-                                                // 1. KPI Metric Cards Row
-                                                new Container
+                                                new Box
                                                 {
-                                                    RelativeSizeAxes = Axes.X,
-                                                    Height = 82,
-                                                    Child = new GridContainer
+                                                    RelativeSizeAxes = Axes.Both,
+                                                    Colour = ColourProvider.Background4,
+                                                },
+                                                new FillFlowContainer
+                                                {
+                                                    Anchor = Anchor.Centre,
+                                                    Origin = Anchor.Centre,
+                                                    AutoSizeAxes = Axes.Both,
+                                                    Direction = FillDirection.Vertical,
+                                                    Spacing = new Vector2(0, 8),
+                                                    Children = new Drawable[]
                                                     {
-                                                        RelativeSizeAxes = Axes.Both,
-                                                        ColumnDimensions = new[]
+                                                        new SpriteIcon
                                                         {
-                                                            new Dimension(GridSizeMode.Distributed),
-                                                            new Dimension(GridSizeMode.Absolute, 8),
-                                                            new Dimension(GridSizeMode.Distributed),
-                                                            new Dimension(GridSizeMode.Absolute, 8),
-                                                            new Dimension(GridSizeMode.Distributed),
-                                                            new Dimension(GridSizeMode.Absolute, 8),
-                                                            new Dimension(GridSizeMode.Distributed),
+                                                            Anchor = Anchor.Centre,
+                                                            Origin = Anchor.Centre,
+                                                            Size = new Vector2(36),
+                                                            Icon = FontAwesome.Solid.Archive,
+                                                            Colour = ColourProvider.Content2,
                                                         },
-                                                        Content = new[]
+                                                        new OsuSpriteText
                                                         {
-                                                            new Drawable[]
-                                                            {
-                                                                archiveTimeCard = new MetricCard(FontAwesome.Solid.Clock, LazerLensStrings.OverlaySessionTime, "00:00:00", ""),
-                                                                Empty(),
-                                                                archivePlaysCard = new MetricCard(FontAwesome.Solid.Play, LazerLensStrings.OverlayTotalPlays, "0", LazerLensStrings.PlaysPassFail(0, 0)),
-                                                                Empty(),
-                                                                archiveAccCard = new MetricCard(FontAwesome.Solid.Percent, LazerLensStrings.OverlayAvgAccuracy, "0.00%", LazerLensStrings.PlaysRecorded(0)),
-                                                                Empty(),
-                                                                archiveComboCard = new MetricCard(FontAwesome.Solid.Fire, LazerLensStrings.OverlayMaxCombo, "0x", LazerLensStrings.OverlaySessionPPGain("+0.0 pp")),
-                                                            }
+                                                            Anchor = Anchor.Centre,
+                                                            Origin = Anchor.Centre,
+                                                            Text = LazerLensStrings.ArchiveEmptyTitle,
+                                                            Font = OsuFont.Torus.With(size: 16, weight: FontWeight.Bold),
+                                                            Colour = ColourProvider.Content1,
+                                                        },
+                                                        new OsuSpriteText
+                                                        {
+                                                            Anchor = Anchor.Centre,
+                                                            Origin = Anchor.Centre,
+                                                            Text = LazerLensStrings.ArchiveEmptySubtitle,
+                                                            Font = OsuFont.Torus.With(size: 13, weight: FontWeight.Regular),
+                                                            Colour = ColourProvider.Content2,
                                                         }
                                                     }
-                                                },
+                                                }
+                                            }
+                                        },
+
+                                        archiveDetailScroll = new OsuScrollContainer
+                                        {
+                                            RelativeSizeAxes = Axes.Both,
+                                            ScrollbarVisible = true,
+                                            Child = archiveDetailContent = new FillFlowContainer
+                                            {
+                                                RelativeSizeAxes = Axes.X,
+                                                AutoSizeAxes = Axes.Y,
+                                                Direction = FillDirection.Vertical,
+                                                Spacing = new Vector2(0, CARD_SPACING),
+                                                Padding = new MarginPadding { Right = 6 },
+                                                Alpha = 0,
+                                                Children = new Drawable[]
+                                                {
+                                                    // 1. KPI Metric Cards Row
+                                                    new Container
+                                                    {
+                                                        RelativeSizeAxes = Axes.X,
+                                                        Height = 82,
+                                                        Child = new GridContainer
+                                                        {
+                                                            RelativeSizeAxes = Axes.Both,
+                                                            ColumnDimensions = new[]
+                                                            {
+                                                                new Dimension(GridSizeMode.Distributed),
+                                                                new Dimension(GridSizeMode.Absolute, CARD_SPACING),
+                                                                new Dimension(GridSizeMode.Distributed),
+                                                                new Dimension(GridSizeMode.Absolute, CARD_SPACING),
+                                                                new Dimension(GridSizeMode.Distributed),
+                                                                new Dimension(GridSizeMode.Absolute, CARD_SPACING),
+                                                                new Dimension(GridSizeMode.Distributed),
+                                                            },
+                                                            Content = new[]
+                                                            {
+                                                                new Drawable[]
+                                                                {
+                                                                    archiveTimeCard = new MetricCard(FontAwesome.Solid.Clock, LazerLensStrings.OverlaySessionTime, "00:00:00", ""),
+                                                                    Empty(),
+                                                                    archivePlaysCard = new MetricCard(FontAwesome.Solid.Play, LazerLensStrings.OverlayTotalPlays, "0", LazerLensStrings.PlaysPassFail(0, 0)),
+                                                                    Empty(),
+                                                                    archiveAccCard = new MetricCard(FontAwesome.Solid.Percent, LazerLensStrings.OverlayAvgAccuracy, "0.00%", LazerLensStrings.PlaysRecorded(0)),
+                                                                    Empty(),
+                                                                    archiveComboCard = new MetricCard(FontAwesome.Solid.Fire, LazerLensStrings.OverlayMaxCombo, "0x", LazerLensStrings.OverlaySessionPPGain("+0.0 pp")),
+                                                                }
+                                                            }
+                                                        }
+                                                    },
 
                                                 // 2. Best Score Banner
                                                 archiveBestScoreBanner = new BestScoreBanner(() => openBeatmap(currentArchivedState?.BestScore)),

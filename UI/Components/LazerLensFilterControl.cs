@@ -146,7 +146,7 @@ namespace LazerLens.UI.Components
                         Text = categoryLabel,
                         Font = OsuFont.Torus.With(size: 12, weight: FontWeight.Bold),
                         Colour = colourProvider.Content2,
-                        Width = 80,
+                        Width = 72,
                     },
                     new FillFlowContainer
                     {
@@ -155,7 +155,7 @@ namespace LazerLens.UI.Components
                         AutoSizeAxes = Axes.Both,
                         Direction = FillDirection.Horizontal,
                         Spacing = new Vector2(5, 0),
-                        Padding = new MarginPadding { Left = 84 },
+                        Padding = new MarginPadding { Left = 76 },
                         ChildrenEnumerable = buttons,
                     }
                 }

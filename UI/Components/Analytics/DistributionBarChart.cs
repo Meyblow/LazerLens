@@ -23,6 +23,9 @@ namespace LazerLens.UI.Components.Analytics
         [Resolved]
         private OverlayColourProvider colourProvider { get; set; } = null!;
 
+        [Resolved(canBeNull: true)]
+        private OsuColour? colours { get; set; }
+
         private readonly GlobalAnalyticsData analytics;
 
         public DistributionBarChart(GlobalAnalyticsData analytics)
@@ -248,14 +251,20 @@ namespace LazerLens.UI.Components.Analytics
             _ => Color4Extensions.FromHex("#ff80ab")
         };
 
-        private static Color4 getStarGroupColour(string key) => key switch
+        private Color4 getStarGroupColour(string key)
         {
-            "< 4.0★" => Color4Extensions.FromHex("#4fc3f7"),
-            "4.0 - 4.9★" => Color4Extensions.FromHex("#81c784"),
-            "5.0 - 5.9★" => Color4Extensions.FromHex("#ffd54f"),
-            "6.0 - 6.9★" => Color4Extensions.FromHex("#ff9800"),
-            "7.0 - 7.9★" => Color4Extensions.FromHex("#ff5252"),
-            _ => Color4Extensions.FromHex("#b35cff")
-        };
+            double sampleSr = key switch
+            {
+                "< 4.0★" => 3.2,
+                "4.0 - 4.9★" => 4.5,
+                "5.0 - 5.9★" => 5.5,
+                "6.0 - 6.9★" => 6.5,
+                "7.0 - 7.9★" => 7.5,
+                "8.0★+" => 8.5,
+                _ => 5.0
+            };
+
+            return colours != null ? colours.ForStarDifficulty(sampleSr) : Color4Extensions.FromHex("#ffd54f");
+        }
     }
 }
