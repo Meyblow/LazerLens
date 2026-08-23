@@ -211,6 +211,12 @@ namespace LazerLens.UI
                 Current = service.ToolbarBadgeColor,
             });
 
+            Add(new SettingsEnumDropdown<ShareFormattingMode>
+            {
+                LabelText = LazerLensStrings.SettingsShareFormattingCaption,
+                Current = service.ShareFormatting,
+            });
+
             Add(new SettingsDoubleActionRow(
                 LazerLensStrings.SettingsOpenDirectory, onOpenDirectoryRequested,
                 LazerLensStrings.SettingsExportCsv, onExportRequested

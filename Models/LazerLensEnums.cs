@@ -151,4 +151,16 @@ namespace LazerLens.Models
         [Description("Average Accuracy Target (%)")]
         Accuracy
     }
+
+    public enum ShareFormattingMode
+    {
+        [Description("Markdown (Discord / Telegram)")]
+        Markdown,
+
+        [Description("Plain Text (No markup)")]
+        PlainText,
+
+        [Description("HTML (Telegram HTML mode)")]
+        Html
+    }
 }

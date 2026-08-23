@@ -203,5 +203,7 @@
   "lazer-lens:ShareSessionFailed": "Не удалось сгенерировать карточку сессии.",
   "lazer-lens:ContextMenuAddTag": "Добавить тег...",
   "lazer-lens:DialogTagTitle": "Тег для сессии",
-  "lazer-lens:DialogTagDesc": "Введите тег для этой сессии (например, турнир, фарм, разминка):"
+  "lazer-lens:DialogTagDesc": "Введите тег для этой сессии (например, турнир, фарм, разминка):",
+  "lazer-lens:SettingsShareFormattingCaption": "Формат отчета для соцсетей",
+  "lazer-lens:SettingsShareFormattingSubtitle": "Стиль разметки при копировании отчета сессии (Markdown, Обычный текст, HTML)"
 }

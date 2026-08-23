@@ -117,21 +117,18 @@ namespace LazerLens.UI.Components.Analytics
                                 }
                             },
 
-                            // 52 Weeks Grid
+                            // 52 Weeks Grid (Fit all 52 weeks cleanly across width)
                             new Container
                             {
                                 RelativeSizeAxes = Axes.X,
-                                Height = 80,
-                                Child = new OsuScrollContainer(Direction.Horizontal)
+                                Height = 84,
+                                Child = weeksFlow = new FillFlowContainer
                                 {
-                                    RelativeSizeAxes = Axes.Both,
-                                    ScrollbarVisible = false,
-                                    Child = weeksFlow = new FillFlowContainer
-                                    {
-                                        AutoSizeAxes = Axes.Both,
-                                        Direction = FillDirection.Horizontal,
-                                        Spacing = new Vector2(3.5f, 0),
-                                    }
+                                    Anchor = Anchor.Centre,
+                                    Origin = Anchor.Centre,
+                                    AutoSizeAxes = Axes.Both,
+                                    Direction = FillDirection.Horizontal,
+                                    Spacing = new Vector2(3f, 0),
                                 }
                             },
 

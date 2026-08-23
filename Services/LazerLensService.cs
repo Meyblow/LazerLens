@@ -76,6 +76,7 @@ namespace LazerLens.Services
         public Bindable<SessionGoal?> ActiveGoal { get; } = new();
         public Bindable<bool> ShowSessionGraph { get; } = new(true);
         public Bindable<bool> ExcludeWarmupFromStats { get; } = new(false);
+        public Bindable<ShareFormattingMode> ShareFormatting { get; } = new(ShareFormattingMode.Markdown);
 
         // Existing / Backward Compatibility
         public Bindable<bool> TrackRetries { get; } = new(false);
@@ -216,7 +217,10 @@ namespace LazerLens.Services
                 OnlineBeatmapSetID: score.BeatmapInfo?.BeatmapSet?.OnlineID ?? 0,
                 Rank: passed ? score.Rank : ScoreRank.F,
                 Statistics: statsDict,
-                UnstableRate: ur
+                UnstableRate: ur,
+                IsChoke: false,
+                IsWarmup: IsWarmupMode.Value,
+                BeatmapMapper: score.BeatmapInfo?.Metadata?.Author?.Username ?? score.BeatmapInfo?.Metadata?.Author?.ToString() ?? string.Empty
             );
 
             LiveState.Plays.Add(record);
@@ -332,13 +336,16 @@ namespace LazerLens.Services
             decimal ppAfter = update.After.PP ?? 0;
             double roundedDelta = Math.Round((double)(ppAfter - ppBefore));
 
-            // Find matching play in current session
+            // Find matching play in current session with ruleset awareness
             SessionPlayRecord? match = null;
 
             if (update.Score != null)
             {
+                string updateRuleset = update.Score.Ruleset?.ShortName ?? update.Score.Ruleset?.Name ?? "";
+
                 match = LiveState.Plays.LastOrDefault(p =>
                     (update.Score.BeatmapInfo?.OnlineID > 0 && p.OnlineBeatmapID == update.Score.BeatmapInfo.OnlineID && p.TotalScore == update.Score.TotalScore) ||
+                    (!string.IsNullOrEmpty(updateRuleset) && string.Equals(p.RulesetName, updateRuleset, StringComparison.OrdinalIgnoreCase) && p.TotalScore == update.Score.TotalScore) ||
                     p.TotalScore == update.Score.TotalScore
                 );
             }
@@ -346,7 +353,9 @@ namespace LazerLens.Services
             match ??= LiveState.Plays.LastOrDefault(p => p.Passed);
 
             if (match != null)
+            {
                 UpdatePlay(match.Id, p => p with { ProfilePerformancePoints = roundedDelta }, save: true);
+            }
         }
 
         public void OnDirectStatisticsUpdated(UserStatistics oldStats, UserStatistics newStats)

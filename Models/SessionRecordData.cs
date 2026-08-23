@@ -46,6 +46,7 @@ namespace LazerLens.Models
         public double? IfFcPerformancePoints { get; set; }
         public bool IsChoke { get; set; }
         public bool IsWarmup { get; set; }
+        public string BeatmapMapper { get; set; } = string.Empty;
     }
 
     public class SessionArchive
@@ -99,7 +100,8 @@ namespace LazerLens.Models
                     UnstableRate = p.UnstableRate,
                     IfFcPerformancePoints = p.IfFcPerformancePoints,
                     IsChoke = p.IsChoke,
-                    IsWarmup = p.IsWarmup
+                    IsWarmup = p.IsWarmup,
+                    BeatmapMapper = p.BeatmapMapper
                 }).ToList()
             };
         }
@@ -159,7 +161,8 @@ namespace LazerLens.Models
                     playDto.IfFcPerformancePoints,
                     playDto.IsChoke,
                     playDto.IsWarmup,
-                    playDto.Id
+                    playDto.Id,
+                    playDto.BeatmapMapper ?? string.Empty
                 );
                 state.Plays.Add(play);
             }

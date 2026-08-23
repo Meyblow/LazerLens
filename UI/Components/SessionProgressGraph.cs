@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using osu.Framework.Allocation;
 using osu.Framework.Extensions.Color4Extensions;
@@ -321,10 +322,12 @@ namespace LazerLens.UI.Components
                 double val = values[i];
                 string valStr = currentMetric switch
                 {
-                    GraphMetric.PerformancePoints => $"{val:+0.0;-0.0;0.0} pp",
+                    GraphMetric.PerformancePoints => play.PerformancePoints.HasValue && play.PerformancePoints.Value > 0
+                        ? $"{play.PerformancePoints.Value:F0}pp ({val:+0.0;-0.0;0.0} pp)"
+                        : $"{val:+0.0;-0.0;0.0} pp",
                     GraphMetric.Accuracy => $"{val:F2}% acc",
                     GraphMetric.StarRating => $"{val:F2}★ diff",
-                    _ => val.ToString("F1")
+                    _ => val.ToString("F1", CultureInfo.InvariantCulture)
                 };
 
                 dataPointsContainer.Add(new GraphPoint(play, valStr, lineColor)

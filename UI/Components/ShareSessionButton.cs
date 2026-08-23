@@ -30,6 +30,9 @@ namespace LazerLens.UI.Components
         [Resolved(canBeNull: true)]
         private NotificationOverlay? notifications { get; set; }
 
+        [Resolved(canBeNull: true)]
+        private LazerLensService? service { get; set; }
+
         private readonly Func<SessionState> sessionProvider;
         private Container card = null!;
         private Box background = null!;
@@ -89,7 +92,8 @@ namespace LazerLens.UI.Components
             Action = () =>
             {
                 var session = sessionProvider();
-                SessionShareCardExporter.ExportAndShare(session, clipboard, notifications);
+                var format = service?.ShareFormatting.Value ?? ShareFormattingMode.Markdown;
+                SessionShareCardExporter.ExportAndShare(session, format, clipboard, notifications);
             };
         }
 

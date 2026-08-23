@@ -14,7 +14,7 @@ namespace LazerLens.UI.Components
 {
     public static class SessionShareCardExporter
     {
-        public static void ExportAndShare(SessionState session, Clipboard? clipboard = null, NotificationOverlay? notifications = null)
+        public static void ExportAndShare(SessionState session, ShareFormattingMode format = ShareFormattingMode.Markdown, Clipboard? clipboard = null, NotificationOverlay? notifications = null)
         {
             try
             {
@@ -27,9 +27,16 @@ namespace LazerLens.UI.Components
                     return;
                 }
 
-                // Generate rich text summary formatted for Discord / Socials
+                Func<string, string> b = format switch
+                {
+                    ShareFormattingMode.Html => t => $"<b>{t}</b>",
+                    ShareFormattingMode.Markdown => t => $"**{t}**",
+                    _ => t => t
+                };
+
+                // Generate text summary formatted according to user preference
                 var sb = new StringBuilder();
-                sb.AppendLine($"📊 **osu! LazerLens Session Report** — {session.SessionStart:dd MMM yyyy}");
+                sb.AppendLine($"📊 {b("osu! LazerLens Session Report")} — {session.SessionStart:dd MMM yyyy}");
                 sb.AppendLine($"⏱ Duration: {session.SessionDuration.Hours:00}:{session.SessionDuration.Minutes:00}:{session.SessionDuration.Seconds:00}");
                 sb.AppendLine($"🎯 Plays: {session.TotalPlays} ({session.TotalPasses} Pass / {session.TotalFails} Fail)");
                 sb.AppendLine($"📈 Session PP: {session.SessionPPGain:+0.0;-0.0;0.0} pp");
@@ -46,13 +53,14 @@ namespace LazerLens.UI.Components
 
                 if (topScores.Count > 0)
                 {
-                    sb.AppendLine("\n🏆 **Top Scores:**");
+                    sb.AppendLine($"\n🏆 {b("Top Scores:")}");
                     for (int i = 0; i < topScores.Count; i++)
                     {
                         var s = topScores[i];
                         string pp = s.PerformancePoints.HasValue && s.PerformancePoints.Value > 0 ? $"{s.PerformancePoints.Value:F0}pp" : $"{s.TotalScore:N0} pts";
                         string mods = s.Mods.Length > 0 ? $" +{string.Join("", s.Mods)}" : "";
-                        sb.AppendLine($"{i + 1}. **{s.BeatmapArtist} - {s.BeatmapTitle} [{s.DifficultyName}]**{mods} — {s.Grade} ({s.Accuracy:F2}%) • {pp}");
+                        string badge = getRulesetBadge(s.RulesetName);
+                        sb.AppendLine($"{i + 1}. {badge} {b($"{s.BeatmapArtist} - {s.BeatmapTitle} [{s.DifficultyName}]")}{mods} — {s.Grade} ({s.Accuracy:F2}%) • {pp}");
                     }
                 }
 
@@ -87,5 +95,13 @@ namespace LazerLens.UI.Components
                 });
             }
         }
+
+        private static string getRulesetBadge(string rulesetName) => rulesetName.ToLowerInvariant() switch
+        {
+            "taiko" or "osu!taiko" => "🥁 [taiko]",
+            "fruits" or "catch" or "osu!catch" => "🍎 [catch]",
+            "mania" or "osu!mania" => "🎹 [mania]",
+            _ => "🔴 [osu!]"
+        };
     }
 }

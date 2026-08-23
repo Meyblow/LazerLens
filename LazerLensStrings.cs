@@ -291,5 +291,8 @@ namespace LazerLens
         public static LocalisableString ContextMenuAddTag => OsuCcLocalisation.Get(getKey(nameof(ContextMenuAddTag)), "Add tag...");
         public static LocalisableString DialogTagTitle => OsuCcLocalisation.Get(getKey(nameof(DialogTagTitle)), "Add Session Tag");
         public static LocalisableString DialogTagDesc => OsuCcLocalisation.Get(getKey(nameof(DialogTagDesc)), "Enter a tag for this session (e.g. tournament, farm, warmup):");
+
+        public static LocalisableString SettingsShareFormattingCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsShareFormattingCaption)), "Share session formatting");
+        public static LocalisableString SettingsShareFormattingSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsShareFormattingSubtitle)), "Markup format used when copying session reports to clipboard (Markdown, Plain text, HTML)");
     }
 }

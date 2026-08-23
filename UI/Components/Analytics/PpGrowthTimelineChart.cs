@@ -37,7 +37,7 @@ namespace LazerLens.UI.Components.Analytics
         {
             this.timeline = timeline;
             RelativeSizeAxes = Axes.X;
-            Height = 200;
+            Height = 120;
         }
 
         [BackgroundDependencyLoader]
@@ -47,7 +47,7 @@ namespace LazerLens.UI.Components.Analytics
             {
                 RelativeSizeAxes = Axes.Both,
                 Masking = true,
-                CornerRadius = 10,
+                CornerRadius = 8,
                 BorderThickness = 1,
                 BorderColour = colourProvider.Background1,
                 Children = new Drawable[]
@@ -60,7 +60,7 @@ namespace LazerLens.UI.Components.Analytics
                     new Container
                     {
                         RelativeSizeAxes = Axes.Both,
-                        Padding = new MarginPadding(14),
+                        Padding = new MarginPadding(12),
                         Children = new Drawable[]
                         {
                             // Title Row
@@ -75,7 +75,7 @@ namespace LazerLens.UI.Components.Analytics
                                     {
                                         Anchor = Anchor.CentreLeft,
                                         Origin = Anchor.CentreLeft,
-                                        Size = new Vector2(15),
+                                        Size = new Vector2(14),
                                         Icon = FontAwesome.Solid.ChartLine,
                                         Colour = colourProvider.Highlight1,
                                     },
@@ -84,18 +84,34 @@ namespace LazerLens.UI.Components.Analytics
                                         Anchor = Anchor.CentreLeft,
                                         Origin = Anchor.CentreLeft,
                                         Text = LazerLensStrings.AnalyticsPpGrowthTitle,
-                                        Font = OsuFont.Torus.With(size: 15, weight: FontWeight.Bold),
+                                        Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
                                         Colour = Color4.White,
                                     }
                                 }
                             },
 
+                            // Y-Axis Labels
+                            maxLabel = new OsuSpriteText
+                            {
+                                Position = new Vector2(0, 24),
+                                Font = OsuFont.Torus.With(size: 10, weight: FontWeight.SemiBold),
+                                Colour = colourProvider.Content2,
+                            },
+                            minLabel = new OsuSpriteText
+                            {
+                                Anchor = Anchor.BottomLeft,
+                                Origin = Anchor.BottomLeft,
+                                Position = new Vector2(0, -2),
+                                Font = OsuFont.Torus.With(size: 10, weight: FontWeight.SemiBold),
+                                Colour = colourProvider.Content2,
+                            },
+
                             // Chart Canvas
                             chartArea = new Container
                             {
-                                Position = new Vector2(50, 32),
+                                Position = new Vector2(50, 24),
                                 RelativeSizeAxes = Axes.Both,
-                                Padding = new MarginPadding { Right = 60, Bottom = 42 },
+                                Padding = new MarginPadding { Right = 60, Bottom = 30 },
                                 Children = new Drawable[]
                                 {
                                     new Box
@@ -116,27 +132,13 @@ namespace LazerLens.UI.Components.Analytics
                                     },
                                     linePath = new osu.Framework.Graphics.Lines.Path
                                     {
-                                        PathRadius = 2.5f,
+                                        PathRadius = 2f,
                                     },
                                     dataPointsContainer = new Container
                                     {
                                         RelativeSizeAxes = Axes.Both,
                                     }
                                 }
-                            },
-
-                            // Y-Axis Labels
-                            maxLabel = new OsuSpriteText
-                            {
-                                Position = new Vector2(0, 30),
-                                Font = OsuFont.Torus.With(size: 10, weight: FontWeight.SemiBold),
-                                Colour = colourProvider.Content2,
-                            },
-                            minLabel = new OsuSpriteText
-                            {
-                                Position = new Vector2(0, 160),
-                                Font = OsuFont.Torus.With(size: 10, weight: FontWeight.SemiBold),
-                                Colour = colourProvider.Content2,
                             }
                         }
                     }
@@ -174,6 +176,10 @@ namespace LazerLens.UI.Components.Analytics
             maxLabel.Text = $"{maxVal:F0} PP";
             minLabel.Text = $"{minVal:F0} PP";
 
+            double range = maxVal - minVal;
+            double paddedMin = minVal - (range > 0 ? range * 0.12 : 5);
+            double paddedMax = maxVal + (range > 0 ? range * 0.12 : 5);
+
             float w = chartArea.DrawWidth;
             float h = chartArea.DrawHeight;
 
@@ -183,8 +189,8 @@ namespace LazerLens.UI.Components.Analytics
             {
                 var entry = sorted[i];
                 float x = sorted.Count > 1 ? (float)i / (sorted.Count - 1) * w : w / 2f;
-                float normalized = (float)((entry.CumulativePp - minVal) / (maxVal - minVal));
-                float y = h - (normalized * (h - 14) + 7);
+                float normalized = (float)((entry.CumulativePp - paddedMin) / (paddedMax - paddedMin));
+                float y = h - (normalized * h);
 
                 var pt = new Vector2(x, y);
                 linePath.AddVertex(pt);
