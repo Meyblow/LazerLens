@@ -2,6 +2,12 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [2.1.1] - 2026-08-23
+
+### Redesigned & Polished
+- **Full-Width 52-Week Activity Heatmap (График активности)**: Completely rebuilt using responsive `GridContainer` distribution. The 52-week grid now expands to 100% width of the card without empty side gaps, with month names along the top and day-of-week indicators (`Mon`, `Wed`, `Fri`) on the left.
+- **Rich Chronological Session PP & Accuracy Timeline (График динамики)**: Reworked data pipeline to plot each saved session and live plays chronologically. Added horizontal grid guidelines, date markers on X-axis, total gain pill summary, and interactive glowing dots with detailed session tooltips.
+
 ## [2.1.0] - 2026-08-23
 
 ### Added
