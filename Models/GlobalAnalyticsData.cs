@@ -27,6 +27,7 @@ namespace LazerLens.Models
         public Dictionary<string, int> StarRatingBuckets { get; set; } = new();
         public List<TopBeatmapStat> TopBeatmaps { get; set; } = new();
         public List<TopMapperStat> TopMappers { get; set; } = new();
+        public List<SessionPlayRecord> AllPlays { get; set; } = new();
     }
 
     public class SessionTimelineEntry

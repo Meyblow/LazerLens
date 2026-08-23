@@ -282,8 +282,73 @@ namespace LazerLens.Services
             }
 
             data.PpTimeline = timelineList;
+            data.AllPlays = allPlays;
 
             return data;
+        }
+
+        /// <summary>
+        /// Normalizes ruleset name strings into canonical keys: "osu", "taiko", "catch", "mania".
+        /// </summary>
+        public static string NormalizeRuleset(string? ruleset)
+        {
+            string r = (ruleset ?? "").ToLowerInvariant().Trim();
+            if (r.Contains("taiko")) return "taiko";
+            if (r.Contains("catch") || r.Contains("fruit")) return "catch";
+            if (r.Contains("mania")) return "mania";
+            if (r.Contains("osu") || r.Contains("std") || r.Contains("standard")) return "osu";
+            return string.IsNullOrEmpty(r) ? "osu" : r;
+        }
+
+        /// <summary>
+        /// Converts canonical ruleset key into friendly display label.
+        /// </summary>
+        public static string GetRulesetDisplayLabel(string rulesetKey) => rulesetKey switch
+        {
+            "osu" => "osu!",
+            "taiko" => "osu!taiko",
+            "catch" => "osu!catch",
+            "mania" => "osu!mania",
+            "all" => "All",
+            _ => rulesetKey
+        };
+
+        /// <summary>
+        /// Builds chronological cumulative PP timeline from raw plays filtered by a specific ruleset (or all).
+        /// Recalculates cumulative PP strictly from 0 PP for that specific ruleset.
+        /// </summary>
+        public static List<SessionTimelineEntry> BuildTimelineFromPlays(IEnumerable<SessionPlayRecord> plays, string? rulesetFilter = null)
+        {
+            var filtered = plays.AsEnumerable();
+
+            if (!string.IsNullOrEmpty(rulesetFilter) && rulesetFilter != "all")
+            {
+                string target = NormalizeRuleset(rulesetFilter);
+                filtered = filtered.Where(p => NormalizeRuleset(p.RulesetName) == target);
+            }
+
+            var ordered = filtered.OrderBy(p => p.Timestamp).ToList();
+            var timeline = new List<SessionTimelineEntry>();
+            double runningPp = 0;
+
+            for (int i = 0; i < ordered.Count; i++)
+            {
+                var p = ordered[i];
+                double pPp = p.PerformancePoints ?? 0;
+                runningPp += Math.Max(0, pPp);
+
+                timeline.Add(new SessionTimelineEntry
+                {
+                    Date = p.Timestamp.LocalDateTime,
+                    CumulativePp = runningPp,
+                    SessionAccuracy = p.Accuracy,
+                    SessionPpGain = pPp,
+                    PlayCount = i + 1,
+                    SessionTitle = $"{p.BeatmapArtist} - {p.BeatmapTitle}"
+                });
+            }
+
+            return timeline;
         }
     }
 }

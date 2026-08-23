@@ -18,6 +18,7 @@ using osu.Game.Overlays;
 using osuTK;
 using osuTK.Graphics;
 using LazerLens.Models;
+using LazerLens.Services;
 
 namespace LazerLens.UI.Components.Analytics
 {
@@ -26,7 +27,10 @@ namespace LazerLens.UI.Components.Analytics
         [Resolved]
         private OverlayColourProvider colourProvider { get; set; } = null!;
 
-        private readonly IReadOnlyList<SessionTimelineEntry> timeline;
+        private readonly GlobalAnalyticsData? analyticsData;
+        private readonly IReadOnlyList<SessionTimelineEntry> initialTimeline;
+        private IReadOnlyList<SessionTimelineEntry> currentTimeline;
+        private string currentRuleset = "all";
 
         private Container chartArea = null!;
         private osu.Framework.Graphics.Lines.Path linePath = null!;
@@ -37,12 +41,24 @@ namespace LazerLens.UI.Components.Analytics
         private OsuSpriteText startDateLabel = null!;
         private OsuSpriteText endDateLabel = null!;
         private OsuSpriteText summaryPillText = null!;
+        private FillFlowContainer rulesetButtonsFlow = null!;
+        private readonly List<(string Key, Box Bg, OsuSpriteText Text)> rulesetButtons = new();
 
         private const float CHART_PADDING_Y = 12f;
 
+        public PpGrowthTimelineChart(GlobalAnalyticsData data)
+        {
+            analyticsData = data;
+            initialTimeline = data.PpTimeline;
+            currentTimeline = data.PpTimeline;
+            RelativeSizeAxes = Axes.X;
+            Height = 175;
+        }
+
         public PpGrowthTimelineChart(IReadOnlyList<SessionTimelineEntry> timeline)
         {
-            this.timeline = timeline;
+            initialTimeline = timeline;
+            currentTimeline = timeline;
             RelativeSizeAxes = Axes.X;
             Height = 175;
         }
@@ -102,12 +118,31 @@ namespace LazerLens.UI.Components.Analytics
                                             }
                                         }
                                     },
-                                    summaryPillText = new OsuSpriteText
+                                    new FillFlowContainer
                                     {
                                         Anchor = Anchor.CentreRight,
                                         Origin = Anchor.CentreRight,
-                                        Font = OsuFont.Torus.With(size: 11, weight: FontWeight.SemiBold),
-                                        Colour = colourProvider.Highlight1,
+                                        AutoSizeAxes = Axes.Both,
+                                        Direction = FillDirection.Horizontal,
+                                        Spacing = new Vector2(8, 0),
+                                        Children = new Drawable[]
+                                        {
+                                            rulesetButtonsFlow = new FillFlowContainer
+                                            {
+                                                Anchor = Anchor.CentreRight,
+                                                Origin = Anchor.CentreRight,
+                                                AutoSizeAxes = Axes.Both,
+                                                Direction = FillDirection.Horizontal,
+                                                Spacing = new Vector2(4, 0),
+                                            },
+                                            summaryPillText = new OsuSpriteText
+                                            {
+                                                Anchor = Anchor.CentreRight,
+                                                Origin = Anchor.CentreRight,
+                                                Font = OsuFont.Torus.With(size: 11, weight: FontWeight.SemiBold),
+                                                Colour = colourProvider.Highlight1,
+                                            }
+                                        }
                                     }
                                 }
                             },
@@ -218,12 +253,118 @@ namespace LazerLens.UI.Components.Analytics
                     }
                 }
             };
+
+            populateRulesetButtons();
+        }
+
+        private void populateRulesetButtons()
+        {
+            rulesetButtonsFlow.Clear();
+            rulesetButtons.Clear();
+
+            var available = getAvailableRulesets();
+
+            // Only show ruleset selector if player has played more than 1 mode or has active data
+            if (available.Count <= 1 && (analyticsData?.AllPlays == null || analyticsData.AllPlays.Count == 0))
+                return;
+
+            foreach (var (key, label) in available)
+            {
+                Box bg = null!;
+                OsuSpriteText text = null!;
+                bool isActive = key == currentRuleset;
+
+                var btn = new OsuClickableContainer
+                {
+                    AutoSizeAxes = Axes.Both,
+                    Action = () => UpdateTimeline(key),
+                    Child = new Container
+                    {
+                        AutoSizeAxes = Axes.Both,
+                        Masking = true,
+                        CornerRadius = 4,
+                        Children = new Drawable[]
+                        {
+                            bg = new Box
+                            {
+                                RelativeSizeAxes = Axes.Both,
+                                Colour = isActive ? colourProvider.Highlight1 : Color4.White.Opacity(0.06f),
+                            },
+                            text = new OsuSpriteText
+                            {
+                                Text = label,
+                                Font = OsuFont.Torus.With(size: 10, weight: isActive ? FontWeight.Bold : FontWeight.SemiBold),
+                                Colour = isActive ? Color4.Black : colourProvider.Content2,
+                                Padding = new MarginPadding { Horizontal = 6, Vertical = 2 },
+                            }
+                        }
+                    }
+                };
+
+                rulesetButtons.Add((key, bg, text));
+                rulesetButtonsFlow.Add(btn);
+            }
+        }
+
+        private List<(string Key, LocalisableString Label)> getAvailableRulesets()
+        {
+            var list = new List<(string Key, LocalisableString Label)>
+            {
+                ("all", LazerLensStrings.FilterAll)
+            };
+
+            if (analyticsData?.AllPlays == null || analyticsData.AllPlays.Count == 0)
+                return list;
+
+            var modes = new HashSet<string>();
+            foreach (var p in analyticsData.AllPlays)
+            {
+                modes.Add(LazerLensAnalyticsEngine.NormalizeRuleset(p.RulesetName));
+            }
+
+            if (modes.Contains("osu")) list.Add(("osu", "osu!"));
+            if (modes.Contains("taiko")) list.Add(("taiko", "osu!taiko"));
+            if (modes.Contains("catch")) list.Add(("catch", "osu!catch"));
+            if (modes.Contains("mania")) list.Add(("mania", "osu!mania"));
+
+            return list;
+        }
+
+        public void UpdateTimeline(string? ruleset)
+        {
+            currentRuleset = ruleset ?? "all";
+
+            // 1. Update button visual states
+            foreach (var (key, bg, text) in rulesetButtons)
+            {
+                bool active = key == currentRuleset;
+                bg.Colour = active ? colourProvider.Highlight1 : Color4.White.Opacity(0.06f);
+                text.Colour = active ? Color4.Black : colourProvider.Content2;
+                text.Font = OsuFont.Torus.With(size: 10, weight: active ? FontWeight.Bold : FontWeight.SemiBold);
+            }
+
+            // 2. Filter raw plays and recalculate cumulative PP strictly from 0
+            if (currentRuleset == "all")
+            {
+                currentTimeline = initialTimeline;
+            }
+            else if (analyticsData?.AllPlays != null && analyticsData.AllPlays.Count > 0)
+            {
+                currentTimeline = LazerLensAnalyticsEngine.BuildTimelineFromPlays(analyticsData.AllPlays, currentRuleset);
+            }
+            else
+            {
+                currentTimeline = Array.Empty<SessionTimelineEntry>();
+            }
+
+            // 3. Redraw chart
+            rebuildTimeline();
         }
 
         protected override void Update()
         {
             base.Update();
-            if (chartArea.ChildSize.X > 20 && linePath.Vertices.Count == 0 && timeline.Count > 0)
+            if (chartArea.ChildSize.X > 20 && linePath.Vertices.Count == 0 && currentTimeline.Count > 0)
             {
                 rebuildTimeline();
             }
@@ -231,14 +372,24 @@ namespace LazerLens.UI.Components.Analytics
 
         private void rebuildTimeline()
         {
-            if (timeline.Count == 0 || chartArea.ChildSize.X <= 0 || chartArea.ChildSize.Y <= 0)
+            if (chartArea.ChildSize.X <= 0 || chartArea.ChildSize.Y <= 0)
                 return;
 
             dataPointsContainer.Clear();
             linePath.ClearVertices();
 
-            var sorted = timeline.OrderBy(t => t.Date).ToList();
-            double minVal = 0.0;
+            if (currentTimeline == null || currentTimeline.Count == 0)
+            {
+                maxLabel.Text = "10 PP";
+                midLabel.Text = "5 PP";
+                minLabel.Text = "0 PP";
+                startDateLabel.Text = "";
+                endDateLabel.Text = "";
+                summaryPillText.Text = "Total: +0 PP  •  0.00% avg";
+                return;
+            }
+
+            var sorted = currentTimeline.OrderBy(t => t.Date).ToList();
             double rawMax = sorted.Count > 0 ? sorted.Max(t => t.CumulativePp) : 0.0;
             double maxVal = Math.Max(10.0, rawMax);
             double midVal = maxVal / 2.0;
@@ -370,9 +521,12 @@ namespace LazerLens.UI.Components.Analytics
 
                 Size = new Vector2(8);
                 Origin = Anchor.Centre;
+                Anchor = Anchor.TopLeft;
 
                 InternalChild = dot = new Container
                 {
+                    Anchor = Anchor.Centre,
+                    Origin = Anchor.Centre,
                     RelativeSizeAxes = Axes.Both,
                     Masking = true,
                     CornerRadius = 4,

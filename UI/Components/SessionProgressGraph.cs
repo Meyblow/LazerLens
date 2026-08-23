@@ -124,61 +124,80 @@ namespace LazerLens.UI.Components
                                 }
                             },
 
-                            // Chart Plot Container
-                            chartArea = new Container
+                            // Chart Plot Wrapper Container (Padding restricts ChildSize for relative-sized children)
+                            new Container
                             {
                                 RelativeSizeAxes = Axes.Both,
-                                Margin = new MarginPadding { Top = 30, Bottom = 10, Left = 36, Right = 10 },
+                                Padding = new MarginPadding { Top = 30, Bottom = 10 },
                                 Children = new Drawable[]
                                 {
-                                    // Subtle Grid lines
-                                    new Box
+                                    // Y-Axis Labels (Aligned with plot area)
+                                    new Container
                                     {
-                                        RelativeSizeAxes = Axes.X,
-                                        Height = 1,
-                                        Colour = Color4.White.Opacity(0.08f),
-                                        Anchor = Anchor.TopLeft,
-                                        Origin = Anchor.TopLeft,
+                                        RelativeSizeAxes = Axes.Y,
+                                        Width = 32,
+                                        Children = new Drawable[]
+                                        {
+                                            maxLabel = new OsuSpriteText
+                                            {
+                                                Anchor = Anchor.TopLeft,
+                                                Origin = Anchor.TopLeft,
+                                                Font = OsuFont.Torus.With(size: 10, weight: FontWeight.SemiBold),
+                                                Colour = Color4.White.Opacity(0.5f),
+                                            },
+                                            minLabel = new OsuSpriteText
+                                            {
+                                                Anchor = Anchor.BottomLeft,
+                                                Origin = Anchor.BottomLeft,
+                                                Font = OsuFont.Torus.With(size: 10, weight: FontWeight.SemiBold),
+                                                Colour = Color4.White.Opacity(0.5f),
+                                            }
+                                        }
                                     },
-                                    new Box
-                                    {
-                                        RelativeSizeAxes = Axes.X,
-                                        Height = 1,
-                                        Colour = Color4.White.Opacity(0.08f),
-                                        Anchor = Anchor.CentreLeft,
-                                        Origin = Anchor.CentreLeft,
-                                    },
-                                    new Box
-                                    {
-                                        RelativeSizeAxes = Axes.X,
-                                        Height = 1,
-                                        Colour = Color4.White.Opacity(0.08f),
-                                        Anchor = Anchor.BottomLeft,
-                                        Origin = Anchor.BottomLeft,
-                                    },
-                                    linePath = new osu.Framework.Graphics.Lines.Path
-                                    {
-                                        PathRadius = 2.0f,
-                                    },
-                                    dataPointsContainer = new Container
+
+                                    // Chart Canvas
+                                    chartArea = new Container
                                     {
                                         RelativeSizeAxes = Axes.Both,
+                                        Padding = new MarginPadding { Left = 36, Right = 10 },
+                                        Children = new Drawable[]
+                                        {
+                                            // Subtle Grid lines
+                                            new Box
+                                            {
+                                                RelativeSizeAxes = Axes.X,
+                                                Height = 1,
+                                                Colour = Color4.White.Opacity(0.08f),
+                                                Anchor = Anchor.TopLeft,
+                                                Origin = Anchor.TopLeft,
+                                            },
+                                            new Box
+                                            {
+                                                RelativeSizeAxes = Axes.X,
+                                                Height = 1,
+                                                Colour = Color4.White.Opacity(0.08f),
+                                                Anchor = Anchor.CentreLeft,
+                                                Origin = Anchor.CentreLeft,
+                                            },
+                                            new Box
+                                            {
+                                                RelativeSizeAxes = Axes.X,
+                                                Height = 1,
+                                                Colour = Color4.White.Opacity(0.08f),
+                                                Anchor = Anchor.BottomLeft,
+                                                Origin = Anchor.BottomLeft,
+                                            },
+                                            linePath = new osu.Framework.Graphics.Lines.Path
+                                            {
+                                                PathRadius = 2.0f,
+                                            },
+                                            dataPointsContainer = new Container
+                                            {
+                                                RelativeSizeAxes = Axes.Both,
+                                            }
+                                        }
                                     }
                                 }
-                            },
-
-                            // Y-Axis Labels
-                            maxLabel = new OsuSpriteText
-                            {
-                                Position = new Vector2(0, 30),
-                                Font = OsuFont.Torus.With(size: 10, weight: FontWeight.SemiBold),
-                                Colour = Color4.White.Opacity(0.5f),
-                            },
-                            minLabel = new OsuSpriteText
-                            {
-                                Position = new Vector2(0, 130),
-                                Font = OsuFont.Torus.With(size: 10, weight: FontWeight.SemiBold),
-                                Colour = Color4.White.Opacity(0.5f),
                             }
                         }
                     }
@@ -225,7 +244,7 @@ namespace LazerLens.UI.Components
         protected override void Update()
         {
             base.Update();
-            if (chartArea.DrawWidth > 0 && linePath.Vertices.Count == 0 && plays.Count > 0)
+            if (chartArea.ChildSize.X > 0 && linePath.Vertices.Count == 0 && plays.Count > 0)
             {
                 rebuildGraph();
             }
@@ -246,8 +265,8 @@ namespace LazerLens.UI.Components
                 return;
             }
 
-            float width = chartArea.DrawWidth;
-            float height = chartArea.DrawHeight;
+            float width = chartArea.ChildSize.X;
+            float height = chartArea.ChildSize.Y;
             if (width <= 0) width = 800;
             if (height <= 0) height = 80;
 
@@ -351,8 +370,11 @@ namespace LazerLens.UI.Components
 
                 Size = new Vector2(8);
                 Origin = Anchor.Centre;
+                Anchor = Anchor.TopLeft;
                 InternalChild = new CircularContainer
                 {
+                    Anchor = Anchor.Centre,
+                    Origin = Anchor.Centre,
                     RelativeSizeAxes = Axes.Both,
                     Masking = true,
                     BorderThickness = 2,

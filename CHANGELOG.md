@@ -2,6 +2,18 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [2.2.12] - 2026-08-23
+
+### Added
+- **Interactive Ruleset Filtering for PP Growth Timeline**: Added dynamic mode filter pills (`All`, `osu!`, `osu!taiko`, `osu!catch`, `osu!mania`) in the header of the Cumulative PP & Accuracy Timeline in the Analytics tab. Only displays buttons for rulesets with played maps.
+- **Pure Cumulative PP Recalculation**: Ruleset filtering processes raw play data (`AllPlays`) *prior* to cumulative accumulation, ensuring cumulative PP for a specific mode begins cleanly from 0 PP rather than inheriting global timeline deltas.
+- **Centralized Ruleset Normalization**: Added `NormalizeRuleset` engine method to canonically resolve standard, taiko, catch/fruits, and mania aliases across the analytics pipeline.
+- **Rich Screenshot Documentation**: Added 9 high-resolution in-game screenshots to `README.md` and `README.ru.md` using direct GitHub raw URLs to support rendering both on GitHub and inside the osu-cc in-game documentation viewer.
+
+### Fixed
+- **Point Center-Scaling on Hover**: Fixed `TimelinePoint` dot scaling (`ScaleTo(1.6f)`) by assigning `Anchor = Anchor.Centre` and `Origin = Anchor.Centre` to the inner dot container, preventing point circles from expanding downward/rightward on hover.
+- **Session Progression Graph Grid Alignment**: Wrapped Y-axis labels and plot canvas in `SessionProgressGraph` with a `Padding = { Top = 30, Bottom = 10 }` container, anchoring `minLabel` (`+0pp`) strictly to the bottom grid line without clipping.
+
 ## [2.2.11] - 2026-08-23
 
 ### Fixed

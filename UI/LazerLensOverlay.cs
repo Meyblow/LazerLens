@@ -779,7 +779,7 @@ namespace LazerLens.UI
             analyticsContentFlow.Children = new Drawable[]
             {
                 new GlobalActivityHeatmap(data),
-                new PpGrowthTimelineChart(data.PpTimeline),
+                new PpGrowthTimelineChart(data),
                 new DistributionBarChart(data),
                 new TopFavoritesLeaderboard(data, id =>
                 {
