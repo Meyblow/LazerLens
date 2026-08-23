@@ -2,6 +2,12 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [2.2.8] - 2026-08-23
+
+### Fixed
+- **PP Growth Chart Y-Axis Labels Clipping**: Adjusted the origin anchor of `minLabel` to `BottomRight` and `maxLabel` to `TopRight`, preventing the `0 PP` baseline label from being clipped below the bottom chart margin.
+- **Full-Range Chart Scaling**: Reduced internal chart padding buffer (`padY = 6f`) so data points and spline curves scale smoothly from the bottom 0 PP baseline all the way to peak PP.
+
 ## [2.2.7] - 2026-08-23
 
 ### UI & Layout Refinements

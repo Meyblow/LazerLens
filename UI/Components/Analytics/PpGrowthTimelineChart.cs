@@ -121,7 +121,7 @@ namespace LazerLens.UI.Components.Analytics
                                     maxLabel = new OsuSpriteText
                                     {
                                         Anchor = Anchor.TopRight,
-                                        Origin = Anchor.CentreRight,
+                                        Origin = Anchor.TopRight,
                                         Font = OsuFont.Torus.With(size: 9, weight: FontWeight.SemiBold),
                                         Colour = colourProvider.Content2,
                                     },
@@ -135,7 +135,7 @@ namespace LazerLens.UI.Components.Analytics
                                     minLabel = new OsuSpriteText
                                     {
                                         Anchor = Anchor.BottomRight,
-                                        Origin = Anchor.CentreRight,
+                                        Origin = Anchor.BottomRight,
                                         Font = OsuFont.Torus.With(size: 9, weight: FontWeight.SemiBold),
                                         Colour = colourProvider.Content2,
                                     },
@@ -247,7 +247,7 @@ namespace LazerLens.UI.Components.Analytics
             float w = chartArea.DrawWidth;
             float h = chartArea.DrawHeight;
 
-            float padY = h * 0.12f;
+            float padY = 6f;
             float usableH = h - padY * 2;
 
             linePath.Colour = colourProvider.Highlight1;
