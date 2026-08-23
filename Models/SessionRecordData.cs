@@ -43,16 +43,19 @@ namespace LazerLens.Models
         public string Rank { get; set; } = "A";
         public Dictionary<string, int>? Statistics { get; set; }
         public double? UnstableRate { get; set; }
+        public double? IfFcPerformancePoints { get; set; }
+        public bool IsChoke { get; set; }
+        public bool IsWarmup { get; set; }
     }
 
     public class SessionArchive
     {
         /// <summary>
-        /// §10: Schema version for migration compatibility.
+        /// JSON Schema version for forwards-compatibility.
         /// </summary>
-        public int SchemaVersion { get; set; } = 1;
+        public int Version { get; set; } = 1;
 
-        public Guid Id { get; set; } = Guid.NewGuid();
+        public Guid Id { get; set; }
         public DateTimeOffset StartTime { get; set; }
         public DateTimeOffset EndTime { get; set; }
         public double? InitialProfilePP { get; set; }
@@ -93,7 +96,10 @@ namespace LazerLens.Models
                     OnlineBeatmapSetID = p.OnlineBeatmapSetID,
                     Rank = p.Rank.ToString(),
                     Statistics = p.Statistics?.ToDictionary(k => k.Key.ToString(), v => v.Value),
-                    UnstableRate = p.UnstableRate
+                    UnstableRate = p.UnstableRate,
+                    IfFcPerformancePoints = p.IfFcPerformancePoints,
+                    IsChoke = p.IsChoke,
+                    IsWarmup = p.IsWarmup
                 }).ToList()
             };
         }
@@ -150,6 +156,9 @@ namespace LazerLens.Models
                     rank,
                     stats.Count > 0 ? stats : null,
                     playDto.UnstableRate,
+                    playDto.IfFcPerformancePoints,
+                    playDto.IsChoke,
+                    playDto.IsWarmup,
                     playDto.Id
                 );
                 state.Plays.Add(play);

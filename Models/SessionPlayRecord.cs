@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using osu.Game.Rulesets.Scoring;
 using osu.Game.Scoring;
@@ -30,6 +30,9 @@ namespace LazerLens.Models
         ScoreRank Rank = ScoreRank.A,
         IReadOnlyDictionary<HitResult, int>? Statistics = null,
         double? UnstableRate = null,
+        double? IfFcPerformancePoints = null,
+        bool IsChoke = false,
+        bool IsWarmup = false,
         Guid Id = default
     )
     {

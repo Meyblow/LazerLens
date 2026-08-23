@@ -199,7 +199,7 @@ namespace LazerLens.UI
             AddInternal(dialogContainer = new Container
             {
                 RelativeSizeAxes = Axes.Both,
-                Depth = float.MinValue,
+                Depth = -10000,
             });
 
             currentSection.BindValueChanged(e =>
@@ -1059,6 +1059,7 @@ namespace LazerLens.UI
 
         private void handleSetNote(Guid id, string? currentNote)
         {
+            dialogContainer.Clear();
             var dialog = new SessionNoteDialog(currentNote, newNote =>
             {
                 service.StorageService?.SetSessionNote(id, newNote);

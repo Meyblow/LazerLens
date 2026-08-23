@@ -185,10 +185,25 @@ namespace LazerLens.UI.Components
             return base.OnKeyDown(e);
         }
 
+        protected override void LoadComplete()
+        {
+            base.LoadComplete();
+            if (State.Value == Visibility.Visible)
+            {
+                this.FadeIn(200, Easing.OutQuint);
+                dialogCard?.ScaleTo(0.95f).ScaleTo(1.0f, 250, Easing.OutQuint);
+                Schedule(() =>
+                {
+                    if (IsDisposed) return;
+                    GetContainingFocusManager()?.ChangeFocus(textBox);
+                });
+            }
+        }
+
         protected override void PopIn()
         {
             this.FadeIn(200, Easing.OutQuint);
-            dialogCard.ScaleTo(0.95f).ScaleTo(1.0f, 250, Easing.OutQuint);
+            dialogCard?.ScaleTo(0.95f).ScaleTo(1.0f, 250, Easing.OutQuint);
             Schedule(() =>
             {
                 if (IsDisposed) return;
@@ -199,7 +214,7 @@ namespace LazerLens.UI.Components
         protected override void PopOut()
         {
             this.FadeOut(150, Easing.OutQuint);
-            dialogCard.ScaleTo(0.95f, 150, Easing.OutQuint);
+            dialogCard?.ScaleTo(0.95f, 150, Easing.OutQuint);
             Expire();
         }
     }

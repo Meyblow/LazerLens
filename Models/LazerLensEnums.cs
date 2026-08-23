@@ -136,4 +136,19 @@ namespace LazerLens.Models
         [Description("Centre")]
         Centre
     }
+
+    public enum SessionGoalType
+    {
+        [Description("None")]
+        None,
+
+        [Description("Play Count Target")]
+        PlayCount,
+
+        [Description("PP Gain Target (+PP)")]
+        PpGain,
+
+        [Description("Average Accuracy Target (%)")]
+        Accuracy
+    }
 }
