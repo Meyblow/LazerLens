@@ -60,8 +60,6 @@ namespace LazerLens.UI.Components
                 RelativeSizeAxes = Axes.Both,
                 Masking = true,
                 CornerRadius = 8,
-                BorderThickness = 1,
-                BorderColour = colourProvider.Background1,
                 Children = new Drawable[]
                 {
                     new Box

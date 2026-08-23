@@ -45,8 +45,6 @@ namespace LazerLens.UI.Components
                 AutoSizeAxes = Axes.Both,
                 Masking = true,
                 CornerRadius = 6,
-                BorderThickness = 1.5f,
-                BorderColour = Color4.Transparent,
                 Children = new Drawable[]
                 {
                     background = new Box
@@ -106,7 +104,6 @@ namespace LazerLens.UI.Components
             if (isActive)
             {
                 background.FadeColour(Color4Extensions.FromHex("#e65100"), 180, Easing.OutQuint);
-                borderContainer.BorderColour = Color4Extensions.FromHex("#ff9800");
                 icon.FadeColour(Color4.White, 180, Easing.OutQuint);
                 text.Text = LazerLensStrings.WarmupModeOn;
                 text.Colour = Color4.White;
@@ -114,21 +111,24 @@ namespace LazerLens.UI.Components
             else
             {
                 background.FadeColour(colourProvider.Background4, 180, Easing.OutQuint);
-                borderContainer.BorderColour = Color4.Transparent;
                 icon.FadeColour(Color4Extensions.FromHex("#ff9800"), 180, Easing.OutQuint);
                 text.Text = LazerLensStrings.WarmupModeOff;
-                text.Colour = Color4.White.Opacity(0.9f);
+                text.Colour = Color4.White;
             }
         }
 
         protected override bool OnHover(HoverEvent e)
         {
-            borderContainer.ScaleTo(1.04f, 100, Easing.OutQuint);
+            if (!service.IsWarmupMode.Value)
+                background.FadeColour(colourProvider.Background3, 100, Easing.OutQuint);
+            borderContainer.ScaleTo(1.03f, 100, Easing.OutQuint);
             return base.OnHover(e);
         }
 
         protected override void OnHoverLost(HoverLostEvent e)
         {
+            if (!service.IsWarmupMode.Value)
+                background.FadeColour(colourProvider.Background4, 100, Easing.OutQuint);
             borderContainer.ScaleTo(1.0f, 100, Easing.OutQuint);
             base.OnHoverLost(e);
         }

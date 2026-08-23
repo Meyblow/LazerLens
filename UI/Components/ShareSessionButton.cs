@@ -51,14 +51,12 @@ namespace LazerLens.UI.Components
                 AutoSizeAxes = Axes.Both,
                 Masking = true,
                 CornerRadius = 6,
-                BorderThickness = 1,
-                BorderColour = colourProvider.Background1,
                 Children = new Drawable[]
                 {
                     background = new Box
                     {
                         RelativeSizeAxes = Axes.Both,
-                        Colour = colourProvider.Background3,
+                        Colour = colourProvider.Background4,
                     },
                     new FillFlowContainer
                     {
@@ -81,7 +79,7 @@ namespace LazerLens.UI.Components
                                 Anchor = Anchor.CentreLeft,
                                 Origin = Anchor.CentreLeft,
                                 Text = LazerLensStrings.ShareSessionButton,
-                                Font = OsuFont.Torus.With(size: 12, weight: FontWeight.Bold),
+                                Font = OsuFont.Torus.With(size: 12, weight: FontWeight.SemiBold),
                                 Colour = Color4.White,
                             }
                         }
@@ -99,14 +97,14 @@ namespace LazerLens.UI.Components
 
         protected override bool OnHover(HoverEvent e)
         {
-            background.FadeColour(colourProvider.Background2, 100, Easing.OutQuint);
-            card.ScaleTo(1.04f, 100, Easing.OutQuint);
+            background.FadeColour(colourProvider.Background3, 100, Easing.OutQuint);
+            card.ScaleTo(1.03f, 100, Easing.OutQuint);
             return base.OnHover(e);
         }
 
         protected override void OnHoverLost(HoverLostEvent e)
         {
-            background.FadeColour(colourProvider.Background3, 100, Easing.OutQuint);
+            background.FadeColour(colourProvider.Background4, 100, Easing.OutQuint);
             card.ScaleTo(1.0f, 100, Easing.OutQuint);
             base.OnHoverLost(e);
         }

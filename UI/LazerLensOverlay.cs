@@ -358,7 +358,7 @@ namespace LazerLens.UI
                 RelativeSizeAxes = Axes.X,
                 AutoSizeAxes = Axes.Y,
                 Direction = FillDirection.Vertical,
-                Spacing = new Vector2(0, 10),
+                Spacing = new Vector2(0, 8),
                 Padding = new MarginPadding { Top = 12 },
                 Children = new Drawable[]
                 {
@@ -502,8 +502,6 @@ namespace LazerLens.UI
                                         RelativeSizeAxes = Axes.Both,
                                         Masking = true,
                                         CornerRadius = 8,
-                                        BorderThickness = 1,
-                                        BorderColour = ColourProvider.Background1,
                                         Children = new Drawable[]
                                         {
                                             new Box
@@ -521,7 +519,7 @@ namespace LazerLens.UI
                                                     archiveContextMenuContainer = new OsuContextMenuContainer
                                                     {
                                                         RelativeSizeAxes = Axes.Both,
-                                                        Padding = new MarginPadding { Top = 36, Right = 4 },
+                                                        Padding = new MarginPadding { Top = 42, Right = 4 },
                                                         Child = new OsuScrollContainer
                                                         {
                                                             RelativeSizeAxes = Axes.Both,
@@ -532,30 +530,30 @@ namespace LazerLens.UI
                                                                 RelativeSizeAxes = Axes.X,
                                                                 AutoSizeAxes = Axes.Y,
                                                                 Direction = FillDirection.Vertical,
-                                                                Spacing = new Vector2(0, 6),
+                                                                Spacing = new Vector2(0, 8),
                                                                 Padding = new MarginPadding { Right = 18 },
                                                             }
                                                         }
                                                     },
 
-                                                    // 2. Header Text (Anchored TopLeft, aligned at Y = 14)
+                                                    // 2. Header Text (Anchored TopLeft, aligned with dropdown)
                                                     archiveListHeader = new OsuSpriteText
                                                     {
-                                                        Position = new Vector2(0, 14),
+                                                        Position = new Vector2(4, 6),
                                                         Text = LazerLensStrings.ArchiveSavedSessions(0),
                                                         Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
                                                         Colour = ColourProvider.Colour1,
                                                         Anchor = Anchor.TopLeft,
-                                                        Origin = Anchor.CentreLeft,
+                                                        Origin = Anchor.TopLeft,
                                                     },
 
-                                                    // 3. Sort Dropdown (Direct child of the full-height container, centered at Y = 14 with header text)
+                                                    // 3. Sort Dropdown (Anchored TopRight, sitting neatly inside header space)
                                                     archiveSortDropdown = new OsuEnumDropdown<SessionArchiveSortMode>
                                                     {
                                                         Anchor = Anchor.TopRight,
-                                                        Origin = Anchor.CentreRight,
-                                                        Position = new Vector2(0, 14),
-                                                        Width = 110,
+                                                        Origin = Anchor.TopRight,
+                                                        Position = new Vector2(-4, 0),
+                                                        Width = 115,
                                                         Depth = -10,
                                                     }
                                                 }
@@ -576,8 +574,6 @@ namespace LazerLens.UI
                                         Height = 260,
                                         Masking = true,
                                         CornerRadius = 8,
-                                        BorderThickness = 1,
-                                        BorderColour = ColourProvider.Background1,
                                         Children = new Drawable[]
                                         {
                                             new Box
@@ -632,7 +628,7 @@ namespace LazerLens.UI
                                             RelativeSizeAxes = Axes.X,
                                             AutoSizeAxes = Axes.Y,
                                             Direction = FillDirection.Vertical,
-                                            Spacing = new Vector2(0, 10),
+                                            Spacing = new Vector2(0, 8),
                                             Padding = new MarginPadding { Right = 24 },
                                             Alpha = 0,
                                             Children = new Drawable[]
@@ -1710,8 +1706,6 @@ namespace LazerLens.UI
                     RelativeSizeAxes = Axes.Both,
                     Masking = true,
                     CornerRadius = 8,
-                    BorderThickness = 1,
-                    BorderColour = Color4Extensions.FromHex("ffcc00").Opacity(0.35f),
                     Children = new Drawable[]
                     {
                         background = new Box

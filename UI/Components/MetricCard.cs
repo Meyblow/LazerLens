@@ -43,7 +43,6 @@ namespace LazerLens.UI.Components
                     RelativeSizeAxes = Axes.Both,
                     Masking = true,
                     CornerRadius = 8,
-                    BorderThickness = 1,
                     Children = new Drawable[]
                     {
                         background = new Box
@@ -128,7 +127,6 @@ namespace LazerLens.UI.Components
         private void load()
         {
             background.Colour = colourProvider.Background4;
-            cardContainer.BorderColour = colourProvider.Background1;
             spriteIcon.Colour = colourProvider.Colour1;
         }
 

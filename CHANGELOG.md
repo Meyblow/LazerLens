@@ -2,6 +2,14 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [2.2.4] - 2026-08-23
+
+### UI & Styling Refinements
+- **Unified Borderless Design**: Removed borders and outlines across all UI blocks, metric cards, session goal progress bar, best score banner, play history items, and analytics charts for a modern, flat aesthetic.
+- **Consistent 8px Spacing**: Standardized vertical and horizontal gaps between all blocks to exactly 8px across the Live Session and Archive Session Detail panels.
+- **Header Button Visual Parity**: Unified `WarmupToggleButton` and `ShareSessionButton` to share identical geometry, padding, background colours, `SemiBold` typography, and smooth hover animations.
+- **Archive Filter Dropdown Fix**: Repositioned the archive session sort dropdown and header to prevent clipping and menu overlap at the top of the archive list container.
+
 ## [2.2.3] - 2026-08-23
 
 ### Architecture, Stability & Performance
