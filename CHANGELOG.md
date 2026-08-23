@@ -2,6 +2,12 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [2.2.11] - 2026-08-23
+
+### Fixed
+- **0 PP Label Clipping (Root Cause)**: Replaced `Margin` with a shared wrapper `Container` using `Padding = { Top = 30, Bottom = 22 }` for Y-axis labels and chart canvas. In osu.Framework, `Margin` on a `RelativeSizeAxes` child only offsets position without reducing size — the Y-axis label container was oversized by the sum of its margins, causing `minLabel` at `Anchor.BottomRight` to render ~16px below the masked card boundary. `Padding` on a parent correctly constrains `ChildSize`, ensuring all relative-sized children fit within visible bounds.
+- **Chart Canvas Coordinate Accuracy**: Switched `rebuildTimeline()` from `chartArea.DrawSize` to `chartArea.ChildSize` for point/spline coordinate calculations, matching the actual drawable area after padding deduction.
+
 ## [2.2.10] - 2026-08-23
 
 ### Polish & Geometry Refinements
