@@ -38,11 +38,13 @@ namespace LazerLens.UI.Components.Analytics
         private OsuSpriteText endDateLabel = null!;
         private OsuSpriteText summaryPillText = null!;
 
+        private const float CHART_PADDING_Y = 12f;
+
         public PpGrowthTimelineChart(IReadOnlyList<SessionTimelineEntry> timeline)
         {
             this.timeline = timeline;
             RelativeSizeAxes = Axes.X;
-            Height = 160;
+            Height = 175;
         }
 
         [BackgroundDependencyLoader]
@@ -247,8 +249,7 @@ namespace LazerLens.UI.Components.Analytics
             float w = chartArea.DrawWidth;
             float h = chartArea.DrawHeight;
 
-            float padY = 6f;
-            float usableH = h - padY * 2;
+            float usableH = h - CHART_PADDING_Y * 2;
 
             linePath.Colour = colourProvider.Highlight1;
 
@@ -259,7 +260,8 @@ namespace LazerLens.UI.Components.Analytics
                 var entry = sorted[i];
                 float x = sorted.Count > 1 ? (float)i / (sorted.Count - 1) * w : w / 2f;
                 float normalized = maxVal > 0.001 ? (float)(entry.CumulativePp / maxVal) : 0f;
-                float y = (h - padY) - (normalized * usableH);
+                float y = (h - CHART_PADDING_Y) - (normalized * usableH);
+                y = Math.Clamp(y, CHART_PADDING_Y, h - CHART_PADDING_Y);
 
                 var pt = new Vector2(x, y);
                 rawPoints.Add(pt);
@@ -270,7 +272,7 @@ namespace LazerLens.UI.Components.Analytics
                 });
             }
 
-            var splineVertices = generateSmoothSpline(rawPoints, w, h, padY);
+            var splineVertices = generateSmoothSpline(rawPoints, w, h, CHART_PADDING_Y);
             foreach (var vertex in splineVertices)
             {
                 linePath.AddVertex(vertex);

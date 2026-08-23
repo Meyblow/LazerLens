@@ -2,6 +2,12 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [2.2.10] - 2026-08-23
+
+### Polish & Geometry Refinements
+- **Unified Point & Spline Y-Clamping**: Clamped point coordinates directly prior to creating `TimelinePoint` instances (`y = Math.Clamp(y, CHART_PADDING_Y, h - CHART_PADDING_Y)`), ensuring absolute parity between curve paths and dot visual anchors.
+- **Enhanced Vertical Clearance (`CHART_PADDING_Y = 12f`)**: Expanded chart vertical buffer from 6px to 12px and raised chart card height to 175px, guaranteeing 8px of clear spacing between 8px point circles and graph boundaries.
+
 ## [2.2.9] - 2026-08-23
 
 ### Fixed
