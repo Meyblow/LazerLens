@@ -2,6 +2,17 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [1.6.0] - 2026-08-23
+
+### Added
+- **Live Session Progress Graph & Trends**: Dynamic vector progress chart (`SessionProgressGraph`) visualizing PP progression, accuracy %, and star rating curve across the session with interactive metric switching and point hover tooltips.
+- **Session Goals & Target Tracking**: Interactive goal system (`SessionGoalWidget` and `SetGoalDialog`) with animated progress bar for tracking Session PP (+PP), Play Count, or Accuracy targets with completion status.
+- **Choke & "If FC" PP Analyzer**: Automatic choke detection for plays with 1–3 misses or combo breaks losing >8% PP, calculating simulated Full Combo PP (`CalculateIfFcPerformanceAsync`), with a 💔 icon badge and detailed hover tooltip (`Choke: Xpp if FC (-Ypp)`).
+- **Warmup Mode**: Quick header warmup mode toggle (`☕ Warmup`) marking warmup plays with orange badges and optionally isolating them from main session statistics.
+- **Session Share Card / Report Exporter**: Quick session report exporter (`📤 Share`) generating a formatted Discord/Markdown summary copied to clipboard and saved to user's exports folder.
+- **Play Activity Calendar**: GitHub-style interactive heatmap grid (`SessionActivityCalendar`) in the Archive tab displaying play volume across days and weeks with hover tooltips.
+- **Session Note Dialog Root Presentation**: Modal session note dialogs now attach directly to the root game viewport for full-screen backdrop and crisp pop-in animations.
+
 ## [1.5.0] - 2026-08-23
 
 ### Added

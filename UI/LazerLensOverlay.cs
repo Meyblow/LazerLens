@@ -15,6 +15,7 @@ using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Events;
 using osu.Framework.Localisation;
+using osu.Framework.Platform;
 using osu.Game;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Containers;
@@ -23,6 +24,7 @@ using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
 using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Overlays;
+using osu.Game.Overlays.Notifications;
 using osu.Game.Overlays.Settings;
 using osu.Game.Scoring;
 using osucc.Client;
@@ -111,6 +113,12 @@ namespace LazerLens.UI
         [Resolved(canBeNull: true)]
         private BeatmapSetOverlay? beatmapSetOverlay { get; set; }
 
+        [Resolved(canBeNull: true)]
+        private Clipboard? clipboard { get; set; }
+
+        [Resolved(canBeNull: true)]
+        private NotificationOverlay? notifications { get; set; }
+
         // Live Tab Components
         private FillFlowContainer liveContent = null!;
         private MetricCard liveTimeCard = null!;
@@ -123,6 +131,8 @@ namespace LazerLens.UI
         private OsuSpriteText liveNoHistoryText = null!;
         private OsuSpriteText liveHistoryCountText = null!;
         private LazerLensFilterControl liveFilterControl = null!;
+        private SessionGoalWidget liveGoalWidget = null!;
+        private Container liveGraphContainer = null!;
 
         // Archive Tab Components
         private Container archiveContent = null!;
@@ -146,6 +156,7 @@ namespace LazerLens.UI
         private OsuSpriteText archiveNoHistoryText = null!;
         private OsuSpriteText archiveHistoryCountText = null!;
         private LazerLensFilterControl archiveFilterControl = null!;
+        private Container archiveCalendarContainer = null!;
 
         // Settings Tab Components
         private FillFlowContainer settingsContent = null!;
@@ -178,6 +189,115 @@ namespace LazerLens.UI
             tabControl.Current.BindTo(currentSection);
 
             Header.ContentRow.Add(tabControl);
+
+            Header.ContentRow.Add(new FillFlowContainer
+            {
+                Anchor = Anchor.CentreRight,
+                Origin = Anchor.CentreRight,
+                AutoSizeAxes = Axes.Both,
+                Direction = FillDirection.Horizontal,
+                Spacing = new Vector2(8, 0),
+                Margin = new MarginPadding { Right = 14 },
+                Children = new Drawable[]
+                {
+                    // Warmup Toggle Button
+                    new OsuClickableContainer
+                    {
+                        Anchor = Anchor.CentreRight,
+                        Origin = Anchor.CentreRight,
+                        AutoSizeAxes = Axes.Both,
+                        Action = () => service.IsWarmupMode.Value = !service.IsWarmupMode.Value,
+                        Child = new Container
+                        {
+                            AutoSizeAxes = Axes.Both,
+                            Masking = true,
+                            CornerRadius = 6,
+                            Children = new Drawable[]
+                            {
+                                new Box
+                                {
+                                    RelativeSizeAxes = Axes.Both,
+                                    Colour = ColourProvider.Background5,
+                                },
+                                new FillFlowContainer
+                                {
+                                    AutoSizeAxes = Axes.Both,
+                                    Direction = FillDirection.Horizontal,
+                                    Spacing = new Vector2(6, 0),
+                                    Padding = new MarginPadding { Horizontal = 10, Vertical = 6 },
+                                    Children = new Drawable[]
+                                    {
+                                        new SpriteIcon
+                                        {
+                                            Anchor = Anchor.CentreLeft,
+                                            Origin = Anchor.CentreLeft,
+                                            Size = new Vector2(13),
+                                            Icon = FontAwesome.Solid.Coffee,
+                                            Colour = Color4Extensions.FromHex("#ff9800"),
+                                        },
+                                        new OsuSpriteText
+                                        {
+                                            Anchor = Anchor.CentreLeft,
+                                            Origin = Anchor.CentreLeft,
+                                            Text = LazerLensStrings.WarmupToggle,
+                                            Font = OsuFont.Torus.With(size: 12, weight: FontWeight.SemiBold),
+                                            Colour = Color4.White,
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    // Share Session Button
+                    new OsuClickableContainer
+                    {
+                        Anchor = Anchor.CentreRight,
+                        Origin = Anchor.CentreRight,
+                        AutoSizeAxes = Axes.Both,
+                        Action = () => SessionShareCardExporter.ExportAndShare(service.LiveState, clipboard, notifications),
+                        Child = new Container
+                        {
+                            AutoSizeAxes = Axes.Both,
+                            Masking = true,
+                            CornerRadius = 6,
+                            Children = new Drawable[]
+                            {
+                                new Box
+                                {
+                                    RelativeSizeAxes = Axes.Both,
+                                    Colour = ColourProvider.Highlight1,
+                                },
+                                new FillFlowContainer
+                                {
+                                    AutoSizeAxes = Axes.Both,
+                                    Direction = FillDirection.Horizontal,
+                                    Spacing = new Vector2(6, 0),
+                                    Padding = new MarginPadding { Horizontal = 10, Vertical = 6 },
+                                    Children = new Drawable[]
+                                    {
+                                        new SpriteIcon
+                                        {
+                                            Anchor = Anchor.CentreLeft,
+                                            Origin = Anchor.CentreLeft,
+                                            Size = new Vector2(13),
+                                            Icon = FontAwesome.Solid.ShareAlt,
+                                            Colour = Color4.Black,
+                                        },
+                                        new OsuSpriteText
+                                        {
+                                            Anchor = Anchor.CentreLeft,
+                                            Origin = Anchor.CentreLeft,
+                                            Text = LazerLensStrings.ShareSessionButton,
+                                            Font = OsuFont.Torus.With(size: 12, weight: FontWeight.Bold),
+                                            Colour = Color4.Black,
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
 
             MainAreaContent.Add(new Container
             {
@@ -333,6 +453,16 @@ namespace LazerLens.UI
                         }
                     },
 
+                    // 1.5. Session Goal Progress Widget
+                    liveGoalWidget = new SessionGoalWidget(service, handleSetGoal),
+
+                    // 1.8. Live Progress Graph Container
+                    liveGraphContainer = new Container
+                    {
+                        RelativeSizeAxes = Axes.X,
+                        AutoSizeAxes = Axes.Y,
+                    },
+
                     // 2. Best Score Banner (Clickable)
                     liveBestScoreBanner = new BestScoreBanner(() => openBeatmap(service.LiveState.BestScore)),
 
@@ -399,27 +529,44 @@ namespace LazerLens.UI
             return new Container
             {
                 RelativeSizeAxes = Axes.X,
-                Height = 650,
+                AutoSizeAxes = Axes.Y,
                 Alpha = 0,
                 BypassAutoSizeAxes = Axes.Both,
                 Padding = new MarginPadding { Top = 12 },
-                Child = new GridContainer
+                Child = new FillFlowContainer
                 {
-                    RelativeSizeAxes = Axes.Both,
-                    ColumnDimensions = new[]
+                    RelativeSizeAxes = Axes.X,
+                    AutoSizeAxes = Axes.Y,
+                    Direction = FillDirection.Vertical,
+                    Spacing = new Vector2(0, 12),
+                    Children = new Drawable[]
                     {
-                        new Dimension(GridSizeMode.Absolute, 340),
-                        new Dimension(GridSizeMode.Distributed),
-                    },
-                    Content = new[]
-                    {
-                        new Drawable[]
+                        archiveCalendarContainer = new Container
                         {
-                            // Left Column: Sessions List (Solid panel with integrated header and sorting)
-                            new Container
+                            RelativeSizeAxes = Axes.X,
+                            AutoSizeAxes = Axes.Y,
+                        },
+                        new Container
+                        {
+                            RelativeSizeAxes = Axes.X,
+                            Height = 650,
+                            Child = new GridContainer
                             {
                                 RelativeSizeAxes = Axes.Both,
-                                Padding = new MarginPadding { Right = 14 },
+                                ColumnDimensions = new[]
+                                {
+                                    new Dimension(GridSizeMode.Absolute, 340),
+                                    new Dimension(GridSizeMode.Distributed),
+                                },
+                                Content = new[]
+                                {
+                                    new Drawable[]
+                                    {
+                                        // Left Column: Sessions List (Solid panel with integrated header and sorting)
+                                        new Container
+                                        {
+                                            RelativeSizeAxes = Axes.Both,
+                                            Padding = new MarginPadding { Right = 14 },
                                 Child = new Container
                                 {
                                     RelativeSizeAxes = Axes.Both,
@@ -671,8 +818,11 @@ namespace LazerLens.UI
                         }
                     }
                 }
-            };
+            }
         }
+    }
+};
+}
 
         private FillFlowContainer buildSettingsContent()
         {
@@ -998,6 +1148,11 @@ namespace LazerLens.UI
             var summaries = service.GetAllSessionSummaries();
             archiveListHeader.Text = LazerLensStrings.ArchiveSavedSessions(summaries.Count);
 
+            if (archiveCalendarContainer != null)
+            {
+                archiveCalendarContainer.Child = new SessionActivityCalendar(summaries);
+            }
+
             archiveCardsList.Clear();
             archiveCards.Clear();
 
@@ -1057,9 +1212,21 @@ namespace LazerLens.UI
             }
         }
 
+        private void handleSetGoal()
+        {
+            var dialog = new SetGoalDialog(service.ActiveGoal.Value, newGoal =>
+            {
+                service.ActiveGoal.Value = newGoal;
+            });
+
+            if (ClientApi.Game != null)
+                ClientApi.Game.Add(dialog);
+            else
+                dialogContainer.Add(dialog);
+        }
+
         private void handleSetNote(Guid id, string? currentNote)
         {
-            dialogContainer.Clear();
             var dialog = new SessionNoteDialog(currentNote, newNote =>
             {
                 service.StorageService?.SetSessionNote(id, newNote);
@@ -1071,8 +1238,15 @@ namespace LazerLens.UI
                 }
             });
 
-            dialogContainer.Add(dialog);
-            dialog.Show();
+            if (ClientApi.Game != null)
+            {
+                ClientApi.Game.Add(dialog);
+            }
+            else
+            {
+                dialogContainer.Clear();
+                dialogContainer.Add(dialog);
+            }
         }
 
         private void handleDeleteSession(Guid id)
@@ -1236,6 +1410,20 @@ namespace LazerLens.UI
 
             // 6. Play History
             renderHistoryItems(state.Plays, liveFilterControl, liveHistoryContainer, liveHistoryCountText, liveNoHistoryText, liveItemMap);
+
+            // 6.5. Goal Widget & Graph Updates
+            liveGoalWidget?.UpdateState();
+            if (liveGraphContainer != null)
+            {
+                if (service.ShowSessionGraph.Value && state.TotalPlays > 0)
+                {
+                    liveGraphContainer.Child = new SessionProgressGraph(state.Plays);
+                }
+                else
+                {
+                    liveGraphContainer.Clear();
+                }
+            }
 
             // 7. Refresh archive if viewing archive
             if (currentSection.Value == LazerLensSection.Archive && currentArchivedState != null)

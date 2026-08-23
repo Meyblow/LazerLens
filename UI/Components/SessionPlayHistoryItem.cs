@@ -425,6 +425,34 @@ namespace LazerLens.UI.Components
                                                             }
                                                         },
                                                         statusContainer,
+                                                        currentPlay.IsWarmup ? new Container
+                                                        {
+                                                            Anchor = Anchor.CentreLeft,
+                                                            Origin = Anchor.CentreLeft,
+                                                            AutoSizeAxes = Axes.Both,
+                                                            Masking = true,
+                                                            CornerRadius = 3,
+                                                            Child = new Box
+                                                            {
+                                                                RelativeSizeAxes = Axes.Both,
+                                                                Colour = Color4Extensions.FromHex("#ff9800"),
+                                                            },
+                                                            Children = new Drawable[]
+                                                            {
+                                                                new Box
+                                                                {
+                                                                    RelativeSizeAxes = Axes.Both,
+                                                                    Colour = Color4Extensions.FromHex("#ff9800"),
+                                                                },
+                                                                new OsuSpriteText
+                                                                {
+                                                                    Text = LazerLensStrings.WarmupBadge,
+                                                                    Font = OsuFont.Torus.With(size: 9, weight: FontWeight.Bold),
+                                                                    Colour = Color4.Black,
+                                                                    Padding = new MarginPadding { Horizontal = 4, Vertical = 1 },
+                                                                }
+                                                            }
+                                                        } : Empty()
                                                     }
                                                 }
                                             }
@@ -503,7 +531,8 @@ namespace LazerLens.UI.Components
                                     ppSecondary,
                                     colourProvider.Content1,
                                     ppSecondaryColour,
-                                    isPpGain
+                                    isPpGain,
+                                    currentPlay
                                 ),
                                 // Column 9: Time
                                 buildCell(
@@ -727,39 +756,81 @@ namespace LazerLens.UI.Components
             return "-";
         }
 
-        private static Container buildPpCell(string primary, string secondary, Color4 primaryColour, Color4 secondaryColour, bool isGain)
+        private static Container buildPpCell(string primary, string secondary, Color4 primaryColour, Color4 secondaryColour, bool isGain, SessionPlayRecord play)
         {
-            return new Container
+            var content = new FillFlowContainer
             {
-                RelativeSizeAxes = Axes.Both,
-                Child = new FillFlowContainer
+                AutoSizeAxes = Axes.Both,
+                Anchor = Anchor.Centre,
+                Origin = Anchor.Centre,
+                Direction = FillDirection.Vertical,
+                Spacing = new Vector2(0, 2),
+                Children = new Drawable[]
                 {
-                    AutoSizeAxes = Axes.Both,
-                    Anchor = Anchor.Centre,
-                    Origin = Anchor.Centre,
-                    Direction = FillDirection.Vertical,
-                    Spacing = new Vector2(0, 2),
-                    Children = new Drawable[]
+                    new FillFlowContainer
                     {
-                        new OsuSpriteText
+                        Anchor = Anchor.TopCentre,
+                        Origin = Anchor.TopCentre,
+                        AutoSizeAxes = Axes.Both,
+                        Direction = FillDirection.Horizontal,
+                        Spacing = new Vector2(3, 0),
+                        Children = new Drawable[]
                         {
-                            Anchor = Anchor.TopCentre,
-                            Origin = Anchor.TopCentre,
-                            Text = primary,
-                            Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
-                            Colour = primaryColour,
-                        },
-                        new OsuSpriteText
-                        {
-                            Anchor = Anchor.TopCentre,
-                            Origin = Anchor.TopCentre,
-                            Text = secondary,
-                            Font = OsuFont.Torus.With(size: isGain ? 11 : 10, weight: isGain ? FontWeight.Bold : FontWeight.Regular),
-                            Colour = secondaryColour,
+                            new OsuSpriteText
+                            {
+                                Anchor = Anchor.CentreLeft,
+                                Origin = Anchor.CentreLeft,
+                                Text = primary,
+                                Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
+                                Colour = primaryColour,
+                            },
+                            play.IsChoke ? new SpriteIcon
+                            {
+                                Anchor = Anchor.CentreLeft,
+                                Origin = Anchor.CentreLeft,
+                                Size = new Vector2(10),
+                                Icon = FontAwesome.Solid.HeartBroken,
+                                Colour = Color4Extensions.FromHex("#ff4081"),
+                            } : Empty()
                         }
+                    },
+                    new OsuSpriteText
+                    {
+                        Anchor = Anchor.TopCentre,
+                        Origin = Anchor.TopCentre,
+                        Text = secondary,
+                        Font = OsuFont.Torus.With(size: isGain ? 11 : 10, weight: isGain ? FontWeight.Bold : FontWeight.Regular),
+                        Colour = secondaryColour,
                     }
                 }
             };
+
+            if (play.IsChoke)
+            {
+                double ifFc = play.IfFcPerformancePoints ?? 0;
+                double lost = ifFc - (play.PerformancePoints ?? 0);
+                return new ChokeTooltipContainer(LazerLensStrings.ChokeTooltip(ifFc, lost))
+                {
+                    Child = content
+                };
+            }
+
+            return new Container
+            {
+                RelativeSizeAxes = Axes.Both,
+                Child = content
+            };
+        }
+
+        private sealed partial class ChokeTooltipContainer : Container, IHasTooltip
+        {
+            public LocalisableString TooltipText { get; }
+
+            public ChokeTooltipContainer(LocalisableString tooltip)
+            {
+                TooltipText = tooltip;
+                RelativeSizeAxes = Axes.Both;
+            }
         }
 
         private static Container buildCell(string primary, LocalisableString secondary, Color4 primaryColour, Color4 secondaryColour, bool primaryBold = false)

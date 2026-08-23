@@ -6,6 +6,7 @@ using osu.Framework.Bindables;
 using osu.Game.Beatmaps;
 using osu.Game.Online;
 using osu.Game.Rulesets.Mods;
+using osu.Game.Rulesets.Scoring;
 using osu.Game.Scoring;
 using osu.Game.Users;
 using osucc.Client;
@@ -69,6 +70,12 @@ namespace LazerLens.Services
         public Bindable<SearchBarPosition> SearchPosition { get; } = new(SearchBarPosition.Right);
         public Bindable<int> OverlayWidth { get; } = new(960);
         public Bindable<float> OverlayBackdropOpacity { get; } = new(0.9f);
+
+        // 6. v1.6.0 Goals, Warmup & Graph
+        public Bindable<bool> IsWarmupMode { get; } = new(false);
+        public Bindable<SessionGoal?> ActiveGoal { get; } = new();
+        public Bindable<bool> ShowSessionGraph { get; } = new(true);
+        public Bindable<bool> ExcludeWarmupFromStats { get; } = new(false);
 
         // Existing / Backward Compatibility
         public Bindable<bool> TrackRetries { get; } = new(false);
@@ -217,13 +224,27 @@ namespace LazerLens.Services
             AutoSave();
 
             // If raw PP is not populated yet or 0 on a pass, compute it asynchronously
-            if (passed && (!score.PP.HasValue || score.PP.Value <= 0))
+            if (passed)
             {
                 calculateAndAssignPP(score, record);
             }
             else
             {
                 triggerNewPlayEvent(record);
+            }
+
+            checkGoalProgress();
+        }
+
+        private void checkGoalProgress()
+        {
+            var goal = ActiveGoal.Value;
+            if (goal == null || goal.Type == SessionGoalType.None || goal.IsAchieved)
+                return;
+
+            if (goal.GetProgress(LiveState) >= 1.0)
+            {
+                goal.IsAchieved = true;
             }
         }
 
@@ -253,26 +274,45 @@ namespace LazerLens.Services
                 try
                 {
                     double? calculatedPp = await CalculatePerformanceAsync(score);
-                    if (calculatedPp.HasValue && calculatedPp.Value > 0)
-                    {
-                        var updatedRecord = record with { PerformancePoints = calculatedPp.Value };
+                    double? ifFcPp = await CalculateIfFcPerformanceAsync(score);
 
-                        // §13: Mutating game state and raising UI events MUST happen on the main game thread
-                        if (LazerLensPlugin.Instance?.Host.Scheduler != null)
-                        {
-                            LazerLensPlugin.Instance.Host.Scheduler.Add(() =>
-                            {
-                                UpdatePlay(updatedRecord.Id, p => p with { PerformancePoints = calculatedPp.Value });
-                                triggerNewPlayEvent(updatedRecord);
-                            });
-                        }
-                        else
-                        {
-                            UpdatePlay(updatedRecord.Id, p => p with { PerformancePoints = calculatedPp.Value });
-                            triggerNewPlayEvent(updatedRecord);
-                        }
-                        return;
+                    double actualPp = calculatedPp ?? record.PerformancePoints ?? 0;
+                    bool isChoke = false;
+                    if (ifFcPp.HasValue && ifFcPp.Value > actualPp * 1.08 && record.CountMiss <= 3 && actualPp > 0)
+                    {
+                        isChoke = true;
                     }
+
+                    if (LazerLensPlugin.Instance?.Host.Scheduler != null)
+                    {
+                        LazerLensPlugin.Instance.Host.Scheduler.Add(() =>
+                        {
+                            UpdatePlay(record.Id, p => p with
+                            {
+                                PerformancePoints = calculatedPp ?? p.PerformancePoints,
+                                IfFcPerformancePoints = ifFcPp,
+                                IsChoke = isChoke
+                            });
+
+                            var updated = LiveState.Plays.FirstOrDefault(p => p.Id == record.Id) ?? record;
+                            triggerNewPlayEvent(updated);
+                            checkGoalProgress();
+                        });
+                    }
+                    else
+                    {
+                        UpdatePlay(record.Id, p => p with
+                        {
+                            PerformancePoints = calculatedPp ?? p.PerformancePoints,
+                            IfFcPerformancePoints = ifFcPp,
+                            IsChoke = isChoke
+                        });
+
+                        var updated = LiveState.Plays.FirstOrDefault(p => p.Id == record.Id) ?? record;
+                        triggerNewPlayEvent(updated);
+                        checkGoalProgress();
+                    }
+                    return;
                 }
                 catch { /* PP calculation can fail for unconverted or custom rulesets; safely ignored */ }
 
@@ -485,6 +525,68 @@ namespace LazerLens.Services
                     if (diffAttributes != null)
                     {
                         var perfAttributes = perfCalc.Calculate(score, diffAttributes);
+                        return perfAttributes.Total;
+                    }
+                }
+            }
+            catch
+            {
+                // Defensive fallback
+            }
+
+            return null;
+        }
+
+        public static async Task<double?> CalculateIfFcPerformanceAsync(ScoreInfo score)
+        {
+            if (score.BeatmapInfo == null || score.Ruleset == null)
+                return null;
+
+            try
+            {
+                var ruleset = score.Ruleset.CreateInstance();
+                var perfCalc = ruleset?.CreatePerformanceCalculator();
+                if (perfCalc == null)
+                    return null;
+
+                var fcScore = score.DeepClone();
+                int misses = fcScore.Statistics.TryGetValue(HitResult.Miss, out int m) ? m : 0;
+                int largeMisses = fcScore.Statistics.TryGetValue(HitResult.LargeTickMiss, out int lm) ? lm : 0;
+
+                var stats = new Dictionary<HitResult, int>(fcScore.Statistics);
+                stats[HitResult.Miss] = 0;
+                stats[HitResult.LargeTickMiss] = 0;
+
+                if (stats.ContainsKey(HitResult.Great))
+                    stats[HitResult.Great] += (misses + largeMisses);
+                else if (stats.ContainsKey(HitResult.Perfect))
+                    stats[HitResult.Perfect] += (misses + largeMisses);
+
+                fcScore.Statistics = stats;
+
+                var diffCache = ClientApi.Game?.Dependencies?.Get(typeof(BeatmapDifficultyCache)) as BeatmapDifficultyCache;
+                if (diffCache != null)
+                {
+                    var starDiff = await diffCache.GetDifficultyAsync(score.BeatmapInfo, score.Ruleset, score.Mods);
+                    if (starDiff?.DifficultyAttributes != null)
+                    {
+                        fcScore.MaxCombo = starDiff.Value.DifficultyAttributes.MaxCombo;
+                        var perfAttributes = perfCalc.Calculate(fcScore, starDiff.Value.DifficultyAttributes);
+                        if (perfAttributes.Total > 0)
+                            return perfAttributes.Total;
+                    }
+                }
+
+                var beatmapMgr = ClientApi.Game?.Dependencies?.Get(typeof(osu.Game.Beatmaps.BeatmapManager)) as osu.Game.Beatmaps.BeatmapManager;
+                var working = beatmapMgr?.GetWorkingBeatmap(score.BeatmapInfo);
+                if (working != null)
+                {
+                    var diffCalc = ruleset.CreateDifficultyCalculator(working);
+                    var diffAttributes = diffCalc.Calculate(score.Mods);
+                    if (diffAttributes != null)
+                    {
+                        fcScore.MaxCombo = diffAttributes.MaxCombo;
+                        var perfAttributes = perfCalc.Calculate(fcScore, diffAttributes);
                         return perfAttributes.Total;
                     }
                 }

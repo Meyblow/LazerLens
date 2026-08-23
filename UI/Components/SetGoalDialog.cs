@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using osu.Framework.Allocation;
 using osu.Framework.Extensions.Color4Extensions;
 using osu.Framework.Graphics;
@@ -15,22 +16,25 @@ using osu.Game.Overlays;
 using osuTK;
 using osuTK.Graphics;
 using osuTK.Input;
+using LazerLens.Models;
 
 namespace LazerLens.UI.Components
 {
-    public sealed partial class SessionNoteDialog : VisibilityContainer
+    public sealed partial class SetGoalDialog : VisibilityContainer
     {
         [Resolved]
         private OverlayColourProvider colourProvider { get; set; } = null!;
 
-        private readonly string initialNote;
-        private readonly Action<string?> onSave;
-        private OsuTextBox textBox = null!;
-        private Container dialogCard = null!;
+        private readonly SessionGoal? currentGoal;
+        private readonly Action<SessionGoal?> onSave;
 
-        public SessionNoteDialog(string? currentNote, Action<string?> onSave)
+        private Container dialogCard = null!;
+        private OsuEnumDropdown<SessionGoalType> typeDropdown = null!;
+        private OsuTextBox targetBox = null!;
+
+        public SetGoalDialog(SessionGoal? currentGoal, Action<SessionGoal?> onSave)
         {
-            initialNote = currentNote ?? string.Empty;
+            this.currentGoal = currentGoal;
             this.onSave = onSave;
 
             RelativeSizeAxes = Axes.Both;
@@ -43,7 +47,6 @@ namespace LazerLens.UI.Components
         {
             Children = new Drawable[]
             {
-                // Semi-transparent clickable backdrop
                 new ClickableContainer
                 {
                     RelativeSizeAxes = Axes.Both,
@@ -54,7 +57,6 @@ namespace LazerLens.UI.Components
                         Colour = Color4.Black.Opacity(0.65f),
                     }
                 },
-                // Centered Dialog Card
                 dialogCard = new Container
                 {
                     Anchor = Anchor.Centre,
@@ -81,7 +83,6 @@ namespace LazerLens.UI.Components
                             Padding = new MarginPadding(20),
                             Children = new Drawable[]
                             {
-                                // Header: Icon + Title
                                 new FillFlowContainer
                                 {
                                     RelativeSizeAxes = Axes.X,
@@ -95,35 +96,48 @@ namespace LazerLens.UI.Components
                                             Anchor = Anchor.CentreLeft,
                                             Origin = Anchor.CentreLeft,
                                             Size = new Vector2(18),
-                                            Icon = FontAwesome.Solid.Tag,
+                                            Icon = FontAwesome.Solid.Bullseye,
                                             Colour = colourProvider.Highlight1,
                                         },
                                         new OsuSpriteText
                                         {
                                             Anchor = Anchor.CentreLeft,
                                             Origin = Anchor.CentreLeft,
-                                            Text = LazerLensStrings.DialogSetNoteTitle,
+                                            Text = LazerLensStrings.GoalDialogTitle,
                                             Font = OsuFont.Torus.With(size: 16, weight: FontWeight.Bold),
                                             Colour = Color4.White,
                                         }
                                     }
                                 },
-                                // Subtitle
                                 new OsuSpriteText
                                 {
-                                    Text = LazerLensStrings.DialogSetNoteDescription,
+                                    Text = LazerLensStrings.GoalDialogDesc,
                                     Font = OsuFont.Torus.With(size: 13, weight: FontWeight.Regular),
                                     Colour = Color4.White.Opacity(0.7f),
                                 },
-                                // Text Box
-                                textBox = new OsuTextBox
+                                new OsuSpriteText
+                                {
+                                    Text = LazerLensStrings.GoalTypeLabel,
+                                    Font = OsuFont.Torus.With(size: 12, weight: FontWeight.SemiBold),
+                                    Colour = Color4.White.Opacity(0.9f),
+                                },
+                                typeDropdown = new OsuEnumDropdown<SessionGoalType>
+                                {
+                                    RelativeSizeAxes = Axes.X,
+                                    Current = { Value = currentGoal?.Type ?? SessionGoalType.PlayCount }
+                                },
+                                new OsuSpriteText
+                                {
+                                    Text = LazerLensStrings.GoalTargetValueLabel,
+                                    Font = OsuFont.Torus.With(size: 12, weight: FontWeight.SemiBold),
+                                    Colour = Color4.White.Opacity(0.9f),
+                                },
+                                targetBox = new OsuTextBox
                                 {
                                     RelativeSizeAxes = Axes.X,
                                     Height = 38,
-                                    PlaceholderText = LazerLensStrings.DialogSetNotePlaceholder.ToString(),
-                                    Text = initialNote,
+                                    Text = currentGoal?.TargetValue > 0 ? currentGoal.TargetValue.ToString(CultureInfo.InvariantCulture) : "20",
                                 },
-                                // Action Buttons (Save / Cancel)
                                 new Container
                                 {
                                     RelativeSizeAxes = Axes.X,
@@ -165,13 +179,37 @@ namespace LazerLens.UI.Components
                 }
             };
 
-            textBox.OnCommit += (_, _) => submit();
+            targetBox.OnCommit += (_, _) => submit();
         }
 
         private void submit()
         {
-            var note = textBox.Text?.Trim();
-            onSave(string.IsNullOrEmpty(note) ? null : note);
+            var type = typeDropdown.Current.Value;
+            if (type == SessionGoalType.None)
+            {
+                onSave(null);
+                Hide();
+                return;
+            }
+
+            if (double.TryParse(targetBox.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out double target) ||
+                double.TryParse(targetBox.Text, NumberStyles.Float, CultureInfo.CurrentCulture, out target))
+            {
+                if (target > 0)
+                {
+                    onSave(new SessionGoal
+                    {
+                        Type = type,
+                        TargetValue = target,
+                        IsAchieved = false
+                    });
+                }
+                else
+                {
+                    onSave(null);
+                }
+            }
+
             Hide();
         }
 
@@ -193,11 +231,6 @@ namespace LazerLens.UI.Components
             {
                 this.FadeIn(200, Easing.OutQuint);
                 dialogCard?.ScaleTo(0.95f).ScaleTo(1.0f, 250, Easing.OutQuint);
-                Schedule(() =>
-                {
-                    if (IsDisposed) return;
-                    GetContainingFocusManager()?.ChangeFocus(textBox);
-                });
             }
         }
 
@@ -205,11 +238,6 @@ namespace LazerLens.UI.Components
         {
             this.FadeIn(200, Easing.OutQuint);
             dialogCard?.ScaleTo(0.95f).ScaleTo(1.0f, 250, Easing.OutQuint);
-            Schedule(() =>
-            {
-                if (IsDisposed) return;
-                GetContainingFocusManager()?.ChangeFocus(textBox);
-            });
         }
 
         protected override void PopOut()

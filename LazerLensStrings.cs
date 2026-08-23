@@ -236,5 +236,42 @@ namespace LazerLens
         public static LocalisableString SortSessionDate => OsuCcLocalisation.Get(getKey(nameof(SortSessionDate)), "Date");
         public static LocalisableString SortSessionPP => OsuCcLocalisation.Get(getKey(nameof(SortSessionPP)), "Top PP");
         public static LocalisableString SortSessionPlays => OsuCcLocalisation.Get(getKey(nameof(SortSessionPlays)), "Play Count");
+
+        // --- Goals & Warmup ---
+        public static LocalisableString GoalHeader => OsuCcLocalisation.Get(getKey(nameof(GoalHeader)), "SESSION GOAL");
+        public static LocalisableString GoalNoneActive => OsuCcLocalisation.Get(getKey(nameof(GoalNoneActive)), "No goal set \u2022 Click to set target");
+        public static LocalisableString GoalAchieved => OsuCcLocalisation.Get(getKey(nameof(GoalAchieved)), "GOAL ACHIEVED! 🎉");
+        public static LocalisableString GoalAchievedNotification => OsuCcLocalisation.Get(getKey(nameof(GoalAchievedNotification)), "Session goal successfully completed!");
+        public static LocalisableString GoalDialogTitle => OsuCcLocalisation.Get(getKey(nameof(GoalDialogTitle)), "Session Target Goal");
+        public static LocalisableString GoalDialogDesc => OsuCcLocalisation.Get(getKey(nameof(GoalDialogDesc)), "Set a target metric for this gaming session:");
+        public static LocalisableString GoalTypeLabel => OsuCcLocalisation.Get(getKey(nameof(GoalTypeLabel)), "Goal Type");
+        public static LocalisableString GoalTargetValueLabel => OsuCcLocalisation.Get(getKey(nameof(GoalTargetValueLabel)), "Target Value (e.g. 20 plays, 50 pp, 97.5%)");
+        public static LocalisableString WarmupToggle => OsuCcLocalisation.Get(getKey(nameof(WarmupToggle)), "Warmup Mode");
+        public static LocalisableString WarmupBadge => OsuCcLocalisation.Get(getKey(nameof(WarmupBadge)), "WARMUP");
+
+        // --- Choke & If FC ---
+        public static LocalisableString ChokeBadge => OsuCcLocalisation.Get(getKey(nameof(ChokeBadge)), "CHOKE");
+        public static LocalisableString ChokeTooltip(double ifFc, double lost) => OsuCcLocalisation.Get(getKey(nameof(ChokeTooltip)), "Choke: {0:F0}pp if FC (-{1:F0}pp)", ifFc, lost);
+
+        // --- Graphs & Trends ---
+        public static LocalisableString GraphToggle => OsuCcLocalisation.Get(getKey(nameof(GraphToggle)), "Session Graph");
+        public static LocalisableString GraphTitle => OsuCcLocalisation.Get(getKey(nameof(GraphTitle)), "SESSION PROGRESSION");
+        public static LocalisableString GraphMetricPP => OsuCcLocalisation.Get(getKey(nameof(GraphMetricPP)), "PP Gain");
+        public static LocalisableString GraphMetricAcc => OsuCcLocalisation.Get(getKey(nameof(GraphMetricAcc)), "Accuracy %");
+        public static LocalisableString GraphMetricSR => OsuCcLocalisation.Get(getKey(nameof(GraphMetricSR)), "Star Rating ★");
+
+        // --- Activity Calendar ---
+        public static LocalisableString ActivityCalendarTitle => OsuCcLocalisation.Get(getKey(nameof(ActivityCalendarTitle)), "PLAY ACTIVITY CALENDAR");
+        public static LocalisableString ActivityPlaysCount(int count, string date) => OsuCcLocalisation.Get(getKey(nameof(ActivityPlaysCount)), "{0} plays on {1}", count, date);
+
+        // --- Share Poster Card ---
+        public static LocalisableString ShareSessionButton => OsuCcLocalisation.Get(getKey(nameof(ShareSessionButton)), "Share Session");
+        public static LocalisableString ShareSessionSuccess => OsuCcLocalisation.Get(getKey(nameof(ShareSessionSuccess)), "Session poster saved to screenshots and copied to clipboard!");
+        public static LocalisableString ShareSessionFailed => OsuCcLocalisation.Get(getKey(nameof(ShareSessionFailed)), "Failed to generate share card.");
+
+        // --- Tags ---
+        public static LocalisableString ContextMenuAddTag => OsuCcLocalisation.Get(getKey(nameof(ContextMenuAddTag)), "Add tag...");
+        public static LocalisableString DialogTagTitle => OsuCcLocalisation.Get(getKey(nameof(DialogTagTitle)), "Add Session Tag");
+        public static LocalisableString DialogTagDesc => OsuCcLocalisation.Get(getKey(nameof(DialogTagDesc)), "Enter a tag for this session (e.g. tournament, farm, warmup):");
     }
 }
