@@ -106,6 +106,7 @@ namespace LazerLens
         public static LocalisableString ToastSessionBestBody(string title, string metric) => OsuCcLocalisation.Get(getKey(nameof(ToastSessionBestBody)), "{0}\n{1}", title, metric);
         public static LocalisableString ToastMilestoneTitle => OsuCcLocalisation.Get(getKey(nameof(ToastMilestoneTitle)), "⭐ Milestone Reached!");
         public static LocalisableString ToastMilestoneBody(string message) => OsuCcLocalisation.Get(getKey(nameof(ToastMilestoneBody)), "{0}", message);
+        public static LocalisableString ToastGoalAchieved(string target) => OsuCcLocalisation.Get(getKey(nameof(ToastGoalAchieved)), "🎯 Session goal achieved: {0}! 🎉", target);
 
         // 5. Overlay & Toolbar
         public static LocalisableString SettingsToolbarBadgeCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsToolbarBadgeCaption)), "Toolbar button badge");

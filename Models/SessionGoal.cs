@@ -37,5 +37,30 @@ namespace LazerLens.Models
                 _ => string.Empty
             };
         }
+
+        public string GetTargetDisplayString()
+        {
+            return Type switch
+            {
+                SessionGoalType.PlayCount => $"{TargetValue:F0} plays",
+                SessionGoalType.PpGain => $"+{TargetValue:F1} PP",
+                SessionGoalType.Accuracy => $"{TargetValue:F2}% acc",
+                _ => string.Empty
+            };
+        }
+
+        public bool CheckAchieved(SessionState session)
+        {
+            if (session == null || Type == SessionGoalType.None || TargetValue <= 0 || IsAchieved)
+                return false;
+
+            if (GetProgress(session) >= 1.0)
+            {
+                IsAchieved = true;
+                return true;
+            }
+
+            return false;
+        }
     }
 }

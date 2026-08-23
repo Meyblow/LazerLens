@@ -72,6 +72,7 @@
   "lazer-lens:ToastSessionBestBody": "{0}\n{1}",
   "lazer-lens:ToastMilestoneTitle": "⭐ Достигнут майлстоун!",
   "lazer-lens:ToastMilestoneBody": "{0}",
+  "lazer-lens:ToastGoalAchieved": "🎯 Цель сессии достигнута: {0}! 🎉",
 
   "lazer-lens:SettingsToolbarBadgeCaption": "Бейдж на кнопке верхней панели",
   "lazer-lens:SettingsToolbarBadgeSubtitle": "Отображает число плеев, прирост PP или точность на тулбаре",

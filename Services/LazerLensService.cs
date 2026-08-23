@@ -30,6 +30,7 @@ namespace LazerLens.Services
 
         public event Action? OnSessionUpdated;
         public event Action<SessionPlayRecord>? OnNewPlayRecorded;
+        public event Action<SessionGoal>? OnGoalAchieved;
         public event Action? OnSessionReset;
 
         // 1. Metrics & Display
@@ -86,6 +87,11 @@ namespace LazerLens.Services
 
         private SessionState? viewedState;
         public SessionStorageService? StorageService { get; private set; }
+
+        public LazerLensService()
+        {
+            ActiveGoal.BindValueChanged(_ => checkGoalProgress());
+        }
 
         public void OpenSessionsDirectory()
         {
@@ -246,9 +252,9 @@ namespace LazerLens.Services
             if (goal == null || goal.Type == SessionGoalType.None || goal.IsAchieved)
                 return;
 
-            if (goal.GetProgress(LiveState) >= 1.0)
+            if (goal.CheckAchieved(LiveState))
             {
-                goal.IsAchieved = true;
+                OnGoalAchieved?.Invoke(goal);
             }
         }
 
@@ -461,6 +467,7 @@ namespace LazerLens.Services
                 if (LiveState.Plays[i].Id == id)
                 {
                     LiveState.Plays[i] = transform(LiveState.Plays[i]);
+                    checkGoalProgress();
                     OnSessionUpdated?.Invoke();
                     if (save) AutoSave();
                     return;

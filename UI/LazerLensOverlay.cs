@@ -517,7 +517,7 @@ namespace LazerLens.UI
                                                 Padding = new MarginPadding(10),
                                                 Children = new Drawable[]
                                                 {
-                                                    // Scroll list placed under header
+                                                    // 1. Scrollable List Container (offset downwards so it doesn't overlap header)
                                                     archiveContextMenuContainer = new OsuContextMenuContainer
                                                     {
                                                         RelativeSizeAxes = Axes.Both,
@@ -538,29 +538,25 @@ namespace LazerLens.UI
                                                         }
                                                     },
 
-                                                    // Header Row with Sort Dropdown (Depth = -1 opens downwards over scroll list)
-                                                    new Container
+                                                    // 2. Header Text (Anchored TopLeft)
+                                                    archiveListHeader = new OsuSpriteText
                                                     {
-                                                        RelativeSizeAxes = Axes.X,
-                                                        Height = 34,
-                                                        Depth = -1,
-                                                        Children = new Drawable[]
-                                                        {
-                                                            archiveListHeader = new OsuSpriteText
-                                                            {
-                                                                Text = LazerLensStrings.ArchiveSavedSessions(0),
-                                                                Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
-                                                                Colour = ColourProvider.Colour1,
-                                                                Anchor = Anchor.CentreLeft,
-                                                                Origin = Anchor.CentreLeft,
-                                                            },
-                                                            archiveSortDropdown = new OsuEnumDropdown<SessionArchiveSortMode>
-                                                            {
-                                                                Anchor = Anchor.CentreRight,
-                                                                Origin = Anchor.CentreRight,
-                                                                Width = 110,
-                                                            }
-                                                        }
+                                                        Position = new Vector2(0, 8),
+                                                        Text = LazerLensStrings.ArchiveSavedSessions(0),
+                                                        Font = OsuFont.Torus.With(size: 14, weight: FontWeight.Bold),
+                                                        Colour = ColourProvider.Colour1,
+                                                        Anchor = Anchor.TopLeft,
+                                                        Origin = Anchor.CentreLeft,
+                                                    },
+
+                                                    // 3. Sort Dropdown (Direct child of the full-height container so it strictly opens downwards)
+                                                    archiveSortDropdown = new OsuEnumDropdown<SessionArchiveSortMode>
+                                                    {
+                                                        Anchor = Anchor.TopRight,
+                                                        Origin = Anchor.TopRight,
+                                                        Position = new Vector2(0, 0),
+                                                        Width = 110,
+                                                        Depth = -10,
                                                     }
                                                 }
                                             }
@@ -630,7 +626,6 @@ namespace LazerLens.UI
                                     archiveDetailScroll = new OsuScrollContainer
                                     {
                                         RelativeSizeAxes = Axes.Both,
-                                        Padding = new MarginPadding { Right = 14 },
                                         ScrollbarVisible = true,
                                         Child = archiveDetailContent = new FillFlowContainer
                                         {
@@ -638,6 +633,7 @@ namespace LazerLens.UI
                                             AutoSizeAxes = Axes.Y,
                                             Direction = FillDirection.Vertical,
                                             Spacing = new Vector2(0, 10),
+                                            Padding = new MarginPadding { Right = 24 },
                                             Alpha = 0,
                                             Children = new Drawable[]
                                             {

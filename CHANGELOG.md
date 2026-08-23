@@ -2,6 +2,16 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [2.2.0] - 2026-08-23
+
+### Added
+- **Session Goal Achieved Notifications**: In-game toast notifications (`🎯 Session goal achieved: ...! 🎉`) and golden glowing widget highlight whenever your active session goal is completed (Play Count, Session PP gain, or Accuracy).
+
+### Fixed & Polished
+- **PP Growth Timeline Chart**: Fixed date label overlap at 0 PP in bottom-left corner. Added dedicated footer row for start/end date labels and accurately aligned min, mid, and max PP values with horizontal gridlines.
+- **Archive Detail Scrollbar Overlap**: Added dedicated 24px right padding so the vertical scrollbar track never overlaps history cards, metric blocks, or the Share Session button.
+- **Archive Sort Dropdown Direction**: Restructured the saved sessions list header so the sort dropdown menu strictly opens downwards instead of rolling up above the header.
+
 ## [2.1.1] - 2026-08-23
 
 ### Redesigned & Polished

@@ -42,7 +42,7 @@ namespace LazerLens.UI.Components.Analytics
         {
             this.timeline = timeline;
             RelativeSizeAxes = Axes.X;
-            Height = 145;
+            Height = 150;
         }
 
         [BackgroundDependencyLoader]
@@ -112,36 +112,45 @@ namespace LazerLens.UI.Components.Analytics
                                 }
                             },
 
-                            // 2. Y-Axis Labels
-                            maxLabel = new OsuSpriteText
+                            // 2. Y-Axis Labels (Aligned exactly with Top, Mid, Bottom gridlines)
+                            new Container
                             {
-                                Position = new Vector2(0, 26),
-                                Font = OsuFont.Torus.With(size: 9, weight: FontWeight.SemiBold),
-                                Colour = colourProvider.Content2,
-                            },
-                            midLabel = new OsuSpriteText
-                            {
-                                Anchor = Anchor.CentreLeft,
-                                Origin = Anchor.CentreLeft,
-                                Position = new Vector2(0, 8),
-                                Font = OsuFont.Torus.With(size: 9, weight: FontWeight.SemiBold),
-                                Colour = colourProvider.Content2,
-                            },
-                            minLabel = new OsuSpriteText
-                            {
-                                Anchor = Anchor.BottomLeft,
-                                Origin = Anchor.BottomLeft,
-                                Position = new Vector2(0, -16),
-                                Font = OsuFont.Torus.With(size: 9, weight: FontWeight.SemiBold),
-                                Colour = colourProvider.Content2,
+                                Position = new Vector2(0, 30),
+                                RelativeSizeAxes = Axes.Both,
+                                Padding = new MarginPadding { Bottom = 38 },
+                                Width = 48,
+                                Children = new Drawable[]
+                                {
+                                    maxLabel = new OsuSpriteText
+                                    {
+                                        Anchor = Anchor.TopRight,
+                                        Origin = Anchor.CentreRight,
+                                        Font = OsuFont.Torus.With(size: 9, weight: FontWeight.SemiBold),
+                                        Colour = colourProvider.Content2,
+                                    },
+                                    midLabel = new OsuSpriteText
+                                    {
+                                        Anchor = Anchor.CentreRight,
+                                        Origin = Anchor.CentreRight,
+                                        Font = OsuFont.Torus.With(size: 9, weight: FontWeight.SemiBold),
+                                        Colour = colourProvider.Content2,
+                                    },
+                                    minLabel = new OsuSpriteText
+                                    {
+                                        Anchor = Anchor.BottomRight,
+                                        Origin = Anchor.CentreRight,
+                                        Font = OsuFont.Torus.With(size: 9, weight: FontWeight.SemiBold),
+                                        Colour = colourProvider.Content2,
+                                    },
+                                }
                             },
 
-                            // 3. X-Axis Date Labels
+                            // 3. X-Axis Date Labels (Positioned neatly in the bottom footer)
                             startDateLabel = new OsuSpriteText
                             {
                                 Anchor = Anchor.BottomLeft,
                                 Origin = Anchor.BottomLeft,
-                                Position = new Vector2(52, 0),
+                                Position = new Vector2(56, 0),
                                 Font = OsuFont.Torus.With(size: 9, weight: FontWeight.Regular),
                                 Colour = colourProvider.Content2,
                             },
@@ -149,7 +158,7 @@ namespace LazerLens.UI.Components.Analytics
                             {
                                 Anchor = Anchor.BottomRight,
                                 Origin = Anchor.BottomRight,
-                                Position = new Vector2(-16, 0),
+                                Position = new Vector2(-20, 0),
                                 Font = OsuFont.Torus.With(size: 9, weight: FontWeight.Regular),
                                 Colour = colourProvider.Content2,
                             },
@@ -157,9 +166,9 @@ namespace LazerLens.UI.Components.Analytics
                             // 4. Chart Canvas
                             chartArea = new Container
                             {
-                                Position = new Vector2(52, 28),
+                                Position = new Vector2(56, 30),
                                 RelativeSizeAxes = Axes.Both,
-                                Padding = new MarginPadding { Right = 24, Bottom = 42 },
+                                Padding = new MarginPadding { Right = 20, Bottom = 38 },
                                 Children = new Drawable[]
                                 {
                                     // Top Grid Line
@@ -245,10 +254,6 @@ namespace LazerLens.UI.Components.Analytics
             double avgAcc = sorted.Average(s => s.SessionAccuracy);
             summaryPillText.Text = $"Total: +{totalGain:F0} PP  •  {avgAcc:F2}% avg";
 
-            double range = maxVal - minVal;
-            double paddedMin = minVal - (range > 0 ? range * 0.10 : 5);
-            double paddedMax = maxVal + (range > 0 ? range * 0.10 : 5);
-
             float w = chartArea.DrawWidth;
             float h = chartArea.DrawHeight;
 
@@ -258,7 +263,7 @@ namespace LazerLens.UI.Components.Analytics
             {
                 var entry = sorted[i];
                 float x = sorted.Count > 1 ? (float)i / (sorted.Count - 1) * w : w / 2f;
-                float normalized = (float)((entry.CumulativePp - paddedMin) / (paddedMax - paddedMin));
+                float normalized = (float)((entry.CumulativePp - minVal) / (maxVal - minVal));
                 float y = h - (normalized * h);
 
                 var pt = new Vector2(x, y);

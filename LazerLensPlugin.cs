@@ -100,6 +100,7 @@ namespace LazerLens
             trackerService.OverlayBackdropOpacity.BindTo(settings.Bind("overlay_opacity", 0.9f));
 
             trackerService.OnNewPlayRecorded += onNewPlayRecorded;
+            trackerService.OnGoalAchieved += onGoalAchieved;
 
             // Instantiate overlay early so the toolbar toggle button can track its visibility state
             overlay = new LazerLensOverlay(trackerService, ExportSessionsToCsv);
@@ -396,6 +397,15 @@ namespace LazerLens
             }
         }
 
+        private void onGoalAchieved(SessionGoal goal)
+        {
+            string desc = goal.GetTargetDisplayString();
+            Host.Notify(
+                LazerLensStrings.ToastGoalAchieved(desc),
+                NotificationKind.Success
+            );
+        }
+
         public override void Dispose()
         {
             Host.Log("Disposing LazerLens plugin and unhooking events...");
@@ -412,6 +422,7 @@ namespace LazerLens
             // Save current session before disposing
             trackerService.AutoSave();
             trackerService.OnNewPlayRecorded -= onNewPlayRecorded;
+            trackerService.OnGoalAchieved -= onGoalAchieved;
 
             trackerService.NotifyOnPlay.UnbindAll();
             trackerService.TrackRetries.UnbindAll();

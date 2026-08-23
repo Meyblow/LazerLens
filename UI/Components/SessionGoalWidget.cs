@@ -160,6 +160,7 @@ namespace LazerLens.UI.Components
                 progressBar.ResizeWidthTo(DrawWidth, 300, Easing.OutQuint);
                 glowContainer.FadeIn(300);
                 iconSprite.Colour = Color4Extensions.FromHex("ffcc00");
+                titleText.Colour = Color4Extensions.FromHex("ffcc00");
             }
             else
             {
@@ -168,6 +169,7 @@ namespace LazerLens.UI.Components
                 progressBar.ResizeWidthTo((float)(DrawWidth * progress), 300, Easing.OutQuint);
                 glowContainer.FadeOut(200);
                 iconSprite.Colour = colourProvider.Highlight1;
+                titleText.Colour = Color4.White;
             }
         }
     }
