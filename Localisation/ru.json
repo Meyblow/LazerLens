@@ -159,7 +159,7 @@
   "lazer-lens:SettingsSearchBarPositionCaption": "Расположение строки поиска",
   "lazer-lens:SettingsSearchBarPositionSubtitle": "Позиционирование строки поиска в заголовках (Справа или По центру)",
   "lazer-lens:SettingsToolbarBadgeColorCaption": "Цвет бейджа на панели",
-  "lazer-lens:SettingsToolbarBadgeColorSubtitle": "Цвет фона индикатора на кнопке верхней панели (Hex, например #00d2ff)",
+  "lazer-lens:SettingsToolbarBadgeColorSubtitle": "Цвет фона индикатора на кнопке верхней панели (Hex, например #aa66ff)",
   "lazer-lens:SettingsTrackCustomCaption": "Записывать кастомные рулсеты",
   "lazer-lens:SettingsTrackCustomSubtitle": "Записывать игры Sentakki, Tau, Soyokaze и других нестандартных режимов",
   "lazer-lens:GoalHeader": "ЦЕЛЬ СЕССИИ",

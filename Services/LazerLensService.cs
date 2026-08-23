@@ -10,7 +10,9 @@ using osu.Game.Rulesets.Scoring;
 using osu.Game.Scoring;
 using osu.Game.Users;
 using osucc.Client;
+using osucc.Core;
 using LazerLens.Models;
+using LazerLens.Utilities;
 
 namespace LazerLens.Services
 {
@@ -67,7 +69,7 @@ namespace LazerLens.Services
         // 5. Overlay & Toolbar
         public Bindable<bool> AutoOpenOverlayOnPass { get; } = new(false);
         public Bindable<ToolbarBadgeMode> ToolbarBadge { get; } = new(ToolbarBadgeMode.PlayCount);
-        public Bindable<string> ToolbarBadgeColor { get; } = new("#00d2ff");
+        public Bindable<string> ToolbarBadgeColor { get; } = new("#aa66ff");
         public Bindable<SearchBarPosition> SearchPosition { get; } = new(SearchBarPosition.Right);
         public Bindable<int> OverlayWidth { get; } = new(960);
         public Bindable<float> OverlayBackdropOpacity { get; } = new(0.9f);
@@ -293,9 +295,10 @@ namespace LazerLens.Services
                         isChoke = true;
                     }
 
-                    if (LazerLensPlugin.Instance?.Host.Scheduler != null)
+                    var scheduler = LazerLensPlugin.Instance?.Host.Scheduler;
+                    if (scheduler != null)
                     {
-                        LazerLensPlugin.Instance.Host.Scheduler.Add(() =>
+                        scheduler.Add(() =>
                         {
                             UpdatePlay(record.Id, p => p with
                             {
@@ -311,25 +314,15 @@ namespace LazerLens.Services
                     }
                     else
                     {
-                        UpdatePlay(record.Id, p => p with
-                        {
-                            PerformancePoints = calculatedPp ?? p.PerformancePoints,
-                            IfFcPerformancePoints = ifFcPp,
-                            IsChoke = isChoke
-                        });
-
-                        var updated = LiveState.Plays.FirstOrDefault(p => p.Id == record.Id) ?? record;
-                        triggerNewPlayEvent(updated);
-                        checkGoalProgress();
+                        TimingLog.Warn("LazerLens calculateAndAssignPP: Scheduler not available, skipping background play update.");
                     }
                     return;
                 }
                 catch { /* PP calculation can fail for unconverted or custom rulesets; safely ignored */ }
 
-                if (LazerLensPlugin.Instance?.Host.Scheduler != null)
-                    LazerLensPlugin.Instance.Host.Scheduler.Add(() => triggerNewPlayEvent(record));
-                else
-                    triggerNewPlayEvent(record);
+                var fallbackScheduler = LazerLensPlugin.Instance?.Host.Scheduler;
+                if (fallbackScheduler != null)
+                    fallbackScheduler.Add(() => triggerNewPlayEvent(record));
             });
         }
 
@@ -643,6 +636,66 @@ namespace LazerLens.Services
         public void AttachStorage(osucc.Data.IOsuCcStorage? storage)
         {
             StorageService = new SessionStorageService(storage);
+
+            // Asynchronously run background session pruning with 24-hour throttling
+            Task.Run(() =>
+            {
+                try
+                {
+                    StorageService?.PruneOldSessions(ArchiveRetention.Value);
+                }
+                catch (Exception ex)
+                {
+                    TimingLog.Warn($"LazerLens background prune error: {ex.Message}");
+                }
+            });
+        }
+
+        public void UnbindAllSettings()
+        {
+            DefaultSort.UnbindAll();
+            PpDisplay.UnbindAll();
+            AccuracyCalculation.UnbindAll();
+            HighlightUR.UnbindAll();
+            ShowModsInHistory.UnbindAll();
+            ShowDifficultyRating.UnbindAll();
+            CompactMode.UnbindAll();
+            ShowUR.UnbindAll();
+
+            SessionSplit.UnbindAll();
+            AfkPause.UnbindAll();
+            EnableSessionPause.UnbindAll();
+            IsSessionPaused.UnbindAll();
+            AutoExportCsv.UnbindAll();
+            ArchiveRetention.UnbindAll();
+
+            MinPlayDurationSeconds.UnbindAll();
+            TrackStandard.UnbindAll();
+            TrackTaiko.UnbindAll();
+            TrackCatch.UnbindAll();
+            TrackMania.UnbindAll();
+            TrackCustomRulesets.UnbindAll();
+            TrackRetries.UnbindAll();
+            IgnoreNoFailPlays.UnbindAll();
+            RankedLovedOnly.UnbindAll();
+
+            PlayNotifFilter.UnbindAll();
+            NotifySessionBest.UnbindAll();
+            Milestones.UnbindAll();
+            NotifyOnPlay.UnbindAll();
+
+            AutoOpenOverlayOnPass.UnbindAll();
+            ToolbarBadge.UnbindAll();
+            ToolbarBadgeColor.UnbindAll();
+            SearchPosition.UnbindAll();
+            OverlayWidth.UnbindAll();
+            OverlayBackdropOpacity.UnbindAll();
+
+            IsWarmupMode.UnbindAll();
+            ActiveGoal.UnbindAll();
+            ShowSessionGraph.UnbindAll();
+            ExcludeWarmupFromStats.UnbindAll();
+            ShareFormatting.UnbindAll();
         }
 
         public void AutoSave()

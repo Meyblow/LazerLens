@@ -36,6 +36,7 @@ namespace LazerLens
         {
             new PlayerImportScorePatch(this, Host),
             new PlayerPerformFailPatch(this, Host),
+            new PlayerConcludeFailedScorePatch(this, Host),
             new SubmittingPlayerConcludeFailedScorePatch(this, Host),
             new PlayerRestartPatch(this, Host),
             new PlayerPerformExitPatch(this, Host),
@@ -94,7 +95,7 @@ namespace LazerLens
             // 5. Overlay & Toolbar
             trackerService.AutoOpenOverlayOnPass.BindTo(settings.Bind("auto_open_overlay_on_pass", false));
             trackerService.ToolbarBadge.BindTo(settings.Bind("toolbar_badge", ToolbarBadgeMode.PlayCount));
-            trackerService.ToolbarBadgeColor.BindTo(settings.Bind("toolbar_badge_color", "#00d2ff"));
+            trackerService.ToolbarBadgeColor.BindTo(settings.Bind("toolbar_badge_color", "#aa66ff"));
             trackerService.SearchPosition.BindTo(settings.Bind("search_position", SearchBarPosition.Right));
             trackerService.OverlayWidth.BindTo(settings.Bind("overlay_width", 960));
             trackerService.OverlayBackdropOpacity.BindTo(settings.Bind("overlay_opacity", 0.9f));
@@ -410,25 +411,25 @@ namespace LazerLens
         {
             Host.Log("Disposing LazerLens plugin and unhooking events...");
 
-            // Auto-export CSV if enabled
+            // 1. Auto-export CSV if enabled
             if (trackerService.AutoExportCsv.Value)
             {
-                trackerService.ExportSessionsToCsv();
+                try
+                {
+                    trackerService.ExportSessionsToCsv();
+                }
+                catch { }
             }
 
-            // Prune old sessions based on retention limit
-            trackerService.StorageService?.PruneOldSessions(trackerService.ArchiveRetention.Value);
-
-            // Save current session before disposing
+            // 2. Save current session before disposing
             trackerService.AutoSave();
+
+            // 3. Unbind event handlers and settings
             trackerService.OnNewPlayRecorded -= onNewPlayRecorded;
             trackerService.OnGoalAchieved -= onGoalAchieved;
+            trackerService.UnbindAllSettings();
 
-            trackerService.NotifyOnPlay.UnbindAll();
-            trackerService.TrackRetries.UnbindAll();
-            trackerService.CompactMode.UnbindAll();
-            trackerService.ShowUR.UnbindAll();
-
+            // 4. Unhook stats watcher
             if (isWatcherHooked && watcherAction != null)
             {
                 var watcher = GetWatcher();
@@ -441,6 +442,7 @@ namespace LazerLens
                 isWatcherHooked = false;
             }
 
+            // 5. Unhook stats provider
             if (isProviderHooked && providerAction != null)
             {
                 var provider = GetStatsProvider();
@@ -453,10 +455,18 @@ namespace LazerLens
                 isProviderHooked = false;
             }
 
+            // 6. Clear recorded player hashes before resetting Instance
+            lock (recordedPlayerHashes)
+            {
+                recordedPlayerHashes.Clear();
+            }
+
+            // 7. Dispose overlay registration
             overlayRegistration?.Dispose();
             overlayRegistration = null;
-
             overlay = null;
+
+            // 8. Reset instance and complete disposal
             Instance = null;
 
             Host.Log("Plugin disposal complete.");

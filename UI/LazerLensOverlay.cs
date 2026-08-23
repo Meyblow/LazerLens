@@ -179,7 +179,7 @@ namespace LazerLens.UI
         private int lastUpdatedSecond = -1;
 
         public LazerLensOverlay(LazerLensService service, Action? exportCsvAction = null)
-            : base(OverlayColourScheme.Aquamarine)
+            : base(OverlayColourScheme.Purple)
         {
             this.service = service;
             this.exportCsvAction = exportCsvAction;
@@ -1165,14 +1165,21 @@ namespace LazerLens.UI
 
         private void handleTogglePin(Guid id, bool pinned)
         {
-            service.StorageService?.SetSessionPinned(id, pinned);
-
             var card = archiveCards.FirstOrDefault(c => c.Summary.Id == id);
             if (card != null)
             {
                 card.UpdatePinned(pinned);
                 reorderArchiveCards();
             }
+
+            Task.Run(() =>
+            {
+                try
+                {
+                    service.StorageService?.SetSessionPinned(id, pinned);
+                }
+                catch { }
+            });
         }
 
         private void handleSetGoal()
@@ -1190,13 +1197,20 @@ namespace LazerLens.UI
         {
             var dialog = new SessionNoteDialog(currentNote, newNote =>
             {
-                service.StorageService?.SetSessionNote(id, newNote);
-
                 var card = archiveCards.FirstOrDefault(c => c.Summary.Id == id);
                 if (card != null)
                 {
                     card.UpdateNote(newNote);
                 }
+
+                Task.Run(() =>
+                {
+                    try
+                    {
+                        service.StorageService?.SetSessionNote(id, newNote);
+                    }
+                    catch { }
+                });
             });
 
             dialogContainer.Clear();
@@ -1210,7 +1224,14 @@ namespace LazerLens.UI
                 LazerLensStrings.DialogDeleteConfirmBody,
                 () =>
                 {
-                    service.StorageService?.DeleteSession(id);
+                    Task.Run(() =>
+                    {
+                        try
+                        {
+                            service.StorageService?.DeleteSession(id);
+                        }
+                        catch { }
+                    });
 
                     var card = archiveCards.FirstOrDefault(c => c.Summary.Id == id);
                     if (card != null)

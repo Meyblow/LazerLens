@@ -24,6 +24,9 @@ namespace LazerLens.Patches
             if (typeName.Contains("Replay") || typeName.Contains("Spectator"))
                 return;
 
+            if (!LazerLensPlugin.TryMarkPlayerRecorded(__instance))
+                return;
+
             Plugin.RecordUnpassedPlayerScore(__instance, forceFailed: true);
         }
     }

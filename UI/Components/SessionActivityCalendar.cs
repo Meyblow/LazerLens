@@ -155,10 +155,10 @@ namespace LazerLens.UI.Components
                 Color4 cellColor = count switch
                 {
                     0 => Color4.White.Opacity(0.06f),
-                    < 5 => Color4Extensions.FromHex("216e39"),
-                    < 15 => Color4Extensions.FromHex("30a14e"),
-                    < 30 => Color4Extensions.FromHex("40c463"),
-                    _ => Color4Extensions.FromHex("9be9a8")
+                    < 5 => Color4Extensions.FromHex("#4c2882"),
+                    < 15 => Color4Extensions.FromHex("#7038b8"),
+                    < 30 => Color4Extensions.FromHex("#9b51e0"),
+                    _ => Color4Extensions.FromHex("#bb86fc")
                 };
 
                 InternalChild = new Box

@@ -16,6 +16,8 @@ namespace LazerLens.Services
         private const string sessions_directory = "sessions";
 
         private readonly IOsuCcStorage? _storage;
+        private readonly object storageLock = new();
+        private static DateTimeOffset? lastPruneTimestamp;
         private List<SessionSummary>? _cachedSummaries;
 
         public SessionStorageService(IOsuCcStorage? storage)
@@ -28,59 +30,65 @@ namespace LazerLens.Services
         {
             if (_storage == null) return;
 
-            try
+            lock (storageLock)
             {
-                var archive = SessionArchive.FromState(state);
-                var timestamp = archive.StartTime.ToUnixTimeSeconds();
-                var fileName = $"{timestamp}_{archive.Id}.json";
+                try
+                {
+                    var archive = SessionArchive.FromState(state);
+                    var timestamp = archive.StartTime.ToUnixTimeSeconds();
+                    var fileName = $"{timestamp}_{archive.Id}.json";
 
-                _storage.WriteJson($"{sessions_directory}/{fileName}", archive);
-                InvalidateCache();
-            }
-            catch (Exception ex)
-            {
-                TimingLog.Error($"Failed to save session: {ex.Message}");
+                    _storage.WriteJson($"{sessions_directory}/{fileName}", archive);
+                    InvalidateCache();
+                }
+                catch (Exception ex)
+                {
+                    TimingLog.Error($"Failed to save session: {ex.Message}");
+                }
             }
         }
 
         public List<SessionSummary> GetAllSessions()
         {
-            if (_cachedSummaries != null)
-                return _cachedSummaries;
-
-            var summaries = new List<SessionSummary>();
-            if (_storage == null) return summaries;
-
-            try
+            lock (storageLock)
             {
-                var files = _storage.GetFiles(sessions_directory, "*.json");
-                foreach (var file in files)
-                {
-                    try
-                    {
-                        var path = file.StartsWith(sessions_directory, StringComparison.OrdinalIgnoreCase)
-                            ? file
-                            : $"{sessions_directory}/{file}";
+                if (_cachedSummaries != null)
+                    return _cachedSummaries;
 
-                        var archive = _storage.ReadJson<SessionArchive>(path);
-                        if (archive != null)
+                var summaries = new List<SessionSummary>();
+                if (_storage == null) return summaries;
+
+                try
+                {
+                    var files = _storage.GetFiles(sessions_directory, "*.json");
+                    foreach (var file in files)
+                    {
+                        try
                         {
-                            summaries.Add(SessionArchive.ToSummary(archive));
+                            var path = file.StartsWith(sessions_directory, StringComparison.OrdinalIgnoreCase)
+                                ? file
+                                : $"{sessions_directory}/{file}";
+
+                            var archive = _storage.ReadJson<SessionArchive>(path);
+                            if (archive != null)
+                            {
+                                summaries.Add(SessionArchive.ToSummary(archive));
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            TimingLog.Error($"Failed to load session file {file}: {ex.Message}");
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        TimingLog.Error($"Failed to load session file {file}: {ex.Message}");
-                    }
-                }
 
-                _cachedSummaries = summaries.OrderByDescending(s => s.IsPinned).ThenByDescending(s => s.StartTime).ToList();
-                return _cachedSummaries;
-            }
-            catch (Exception ex)
-            {
-                TimingLog.Error($"Failed to get all sessions: {ex.Message}");
-                return new List<SessionSummary>();
+                    _cachedSummaries = summaries.OrderByDescending(s => s.IsPinned).ThenByDescending(s => s.StartTime).ToList();
+                    return _cachedSummaries;
+                }
+                catch (Exception ex)
+                {
+                    TimingLog.Error($"Failed to get all sessions: {ex.Message}");
+                    return new List<SessionSummary>();
+                }
             }
         }
 
@@ -88,26 +96,29 @@ namespace LazerLens.Services
         {
             if (_storage == null) return null;
 
-            try
+            lock (storageLock)
             {
-                var files = _storage.GetFiles(sessions_directory, $"*_{sessionId}.json");
-                var file = files.FirstOrDefault();
+                try
+                {
+                    var files = _storage.GetFiles(sessions_directory, $"*_{sessionId}.json");
+                    var file = files.FirstOrDefault();
 
-                if (file == null) return null;
+                    if (file == null) return null;
 
-                var path = file.StartsWith(sessions_directory, StringComparison.OrdinalIgnoreCase)
-                    ? file
-                    : $"{sessions_directory}/{file}";
+                    var path = file.StartsWith(sessions_directory, StringComparison.OrdinalIgnoreCase)
+                        ? file
+                        : $"{sessions_directory}/{file}";
 
-                var archive = _storage.ReadJson<SessionArchive>(path);
-                if (archive == null) return null;
+                    var archive = _storage.ReadJson<SessionArchive>(path);
+                    if (archive == null) return null;
 
-                return SessionArchive.ToState(archive);
-            }
-            catch (Exception ex)
-            {
-                TimingLog.Error($"Failed to load session {sessionId}: {ex.Message}");
-                return null;
+                    return SessionArchive.ToState(archive);
+                }
+                catch (Exception ex)
+                {
+                    TimingLog.Error($"Failed to load session {sessionId}: {ex.Message}");
+                    return null;
+                }
             }
         }
 
@@ -115,28 +126,31 @@ namespace LazerLens.Services
         {
             if (_storage == null) return;
 
-            try
+            lock (storageLock)
             {
-                var files = _storage.GetFiles(sessions_directory, $"*_{sessionId}.json");
-                var file = files.FirstOrDefault();
-
-                if (file == null) return;
-
-                var path = file.StartsWith(sessions_directory, StringComparison.OrdinalIgnoreCase)
-                    ? file
-                    : $"{sessions_directory}/{file}";
-
-                var archive = _storage.ReadJson<SessionArchive>(path);
-                if (archive != null)
+                try
                 {
-                    archive.IsPinned = pinned;
-                    _storage.WriteJson(path, archive);
-                    InvalidateCache();
+                    var files = _storage.GetFiles(sessions_directory, $"*_{sessionId}.json");
+                    var file = files.FirstOrDefault();
+
+                    if (file == null) return;
+
+                    var path = file.StartsWith(sessions_directory, StringComparison.OrdinalIgnoreCase)
+                        ? file
+                        : $"{sessions_directory}/{file}";
+
+                    var archive = _storage.ReadJson<SessionArchive>(path);
+                    if (archive != null)
+                    {
+                        archive.IsPinned = pinned;
+                        _storage.WriteJson(path, archive);
+                        InvalidateCache();
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                TimingLog.Error($"Failed to set pinned for session {sessionId}: {ex.Message}");
+                catch (Exception ex)
+                {
+                    TimingLog.Error($"Failed to set pinned for session {sessionId}: {ex.Message}");
+                }
             }
         }
 
@@ -144,28 +158,31 @@ namespace LazerLens.Services
         {
             if (_storage == null) return;
 
-            try
+            lock (storageLock)
             {
-                var files = _storage.GetFiles(sessions_directory, $"*_{sessionId}.json");
-                var file = files.FirstOrDefault();
-
-                if (file == null) return;
-
-                var path = file.StartsWith(sessions_directory, StringComparison.OrdinalIgnoreCase)
-                    ? file
-                    : $"{sessions_directory}/{file}";
-
-                var archive = _storage.ReadJson<SessionArchive>(path);
-                if (archive != null)
+                try
                 {
-                    archive.Note = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
-                    _storage.WriteJson(path, archive);
-                    InvalidateCache();
+                    var files = _storage.GetFiles(sessions_directory, $"*_{sessionId}.json");
+                    var file = files.FirstOrDefault();
+
+                    if (file == null) return;
+
+                    var path = file.StartsWith(sessions_directory, StringComparison.OrdinalIgnoreCase)
+                        ? file
+                        : $"{sessions_directory}/{file}";
+
+                    var archive = _storage.ReadJson<SessionArchive>(path);
+                    if (archive != null)
+                    {
+                        archive.Note = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
+                        _storage.WriteJson(path, archive);
+                        InvalidateCache();
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                TimingLog.Error($"Failed to set note for session {sessionId}: {ex.Message}");
+                catch (Exception ex)
+                {
+                    TimingLog.Error($"Failed to set note for session {sessionId}: {ex.Message}");
+                }
             }
         }
 
@@ -205,32 +222,38 @@ namespace LazerLens.Services
         {
             if (_storage == null) return;
 
-            try
+            lock (storageLock)
             {
-                var files = _storage.GetFiles(sessions_directory, $"*_{sessionId}.json");
-                foreach (var file in files)
+                try
                 {
-                    var path = file.StartsWith(sessions_directory, StringComparison.OrdinalIgnoreCase)
-                        ? file
-                        : $"{sessions_directory}/{file}";
-
-                    var fullPath = _storage.GetFullPath(path);
-                    if (!string.IsNullOrEmpty(fullPath) && File.Exists(fullPath))
+                    var files = _storage.GetFiles(sessions_directory, $"*_{sessionId}.json");
+                    foreach (var file in files)
                     {
-                        File.Delete(fullPath);
-                        InvalidateCache();
+                        var path = file.StartsWith(sessions_directory, StringComparison.OrdinalIgnoreCase)
+                            ? file
+                            : $"{sessions_directory}/{file}";
+
+                        var fullPath = _storage.GetFullPath(path);
+                        if (!string.IsNullOrEmpty(fullPath) && File.Exists(fullPath))
+                        {
+                            File.Delete(fullPath);
+                            InvalidateCache();
+                        }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                TimingLog.Error($"Failed to delete session {sessionId}: {ex.Message}");
+                catch (Exception ex)
+                {
+                    TimingLog.Error($"Failed to delete session {sessionId}: {ex.Message}");
+                }
             }
         }
 
         public void InvalidateCache()
         {
-            _cachedSummaries = null;
+            lock (storageLock)
+            {
+                _cachedSummaries = null;
+            }
         }
 
         public void OpenSessionsDirectory()
@@ -341,36 +364,46 @@ namespace LazerLens.Services
         {
             if (_storage == null || limit == ArchiveRetentionLimit.Unlimited) return;
 
-            try
+            lock (storageLock)
             {
-                var summaries = GetAllSessions().Where(s => !s.IsPinned).ToList();
                 var now = DateTimeOffset.Now;
-                var toDelete = new List<SessionSummary>();
 
-                switch (limit)
+                // Throttling: execute at most once every 24 hours
+                if (lastPruneTimestamp.HasValue && (now - lastPruneTimestamp.Value).TotalHours < 24)
+                    return;
+
+                lastPruneTimestamp = now;
+
+                try
                 {
-                    case ArchiveRetentionLimit.ThirtyDays:
-                        toDelete = summaries.Where(s => (now - s.StartTime).TotalDays > 30).ToList();
-                        break;
+                    var summaries = GetAllSessions().Where(s => !s.IsPinned).ToList();
+                    var toDelete = new List<SessionSummary>();
 
-                    case ArchiveRetentionLimit.NinetyDays:
-                        toDelete = summaries.Where(s => (now - s.StartTime).TotalDays > 90).ToList();
-                        break;
+                    switch (limit)
+                    {
+                        case ArchiveRetentionLimit.ThirtyDays:
+                            toDelete = summaries.Where(s => (now - s.StartTime).TotalDays > 30).ToList();
+                            break;
 
-                    case ArchiveRetentionLimit.OneHundredSessions:
-                        if (summaries.Count > 100)
-                            toDelete = summaries.OrderByDescending(s => s.StartTime).Skip(100).ToList();
-                        break;
+                        case ArchiveRetentionLimit.NinetyDays:
+                            toDelete = summaries.Where(s => (now - s.StartTime).TotalDays > 90).ToList();
+                            break;
+
+                        case ArchiveRetentionLimit.OneHundredSessions:
+                            if (summaries.Count > 100)
+                                toDelete = summaries.OrderByDescending(s => s.StartTime).Skip(100).ToList();
+                            break;
+                    }
+
+                    foreach (var s in toDelete)
+                    {
+                        DeleteSession(s.Id);
+                    }
                 }
-
-                foreach (var s in toDelete)
+                catch (Exception ex)
                 {
-                    DeleteSession(s.Id);
+                    TimingLog.Error($"Failed to prune old sessions: {ex.Message}");
                 }
-            }
-            catch (Exception ex)
-            {
-                TimingLog.Error($"Failed to prune old sessions: {ex.Message}");
             }
         }
     }

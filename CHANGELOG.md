@@ -2,6 +2,16 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [2.2.3] - 2026-08-23
+
+### Architecture, Stability & Performance
+- **Registered PlayerConcludeFailedScorePatch**: Added `PlayerConcludeFailedScorePatch` to patch array for complete coverage across base `Player` and `SubmittingPlayer` gameplay paths with `TryMarkPlayerRecorded` deduplication.
+- **Thread-Safe PP Calculation**: Eliminated background worker thread state mutation in `calculateAndAssignPP`, enforcing dispatch via `Host.Scheduler`.
+- **Hot-Reload Cleanup**: Added explicit clearing of `recordedPlayerHashes` under lock prior to instance reset in `Dispose()`.
+- **Complete Settings Unbinding**: Implemented `UnbindAllSettings()` covering all 25+ settings Bindables on plugin disposal.
+- **Async Throttled Storage Pruning**: Moved `PruneOldSessions` to asynchronous startup execution with 24-hour throttling, keeping `Dispose()` lightweight and instant.
+- **Thread-Safe & Non-Blocking Storage**: Protected all file reads/writes with `lock (storageLock)` and made archive UI file operations fire-and-forget in background threads to avoid UI micro-stutters.
+
 ## [2.2.2] - 2026-08-23
 
 ### Added & Improved
