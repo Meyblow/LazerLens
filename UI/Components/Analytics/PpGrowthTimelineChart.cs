@@ -270,20 +270,21 @@ namespace LazerLens.UI.Components.Analytics
                 });
             }
 
-            var splineVertices = generateSmoothSpline(rawPoints);
+            var splineVertices = generateSmoothSpline(rawPoints, w, h, padY);
             foreach (var vertex in splineVertices)
             {
                 linePath.AddVertex(vertex);
             }
         }
 
-        private static List<Vector2> generateSmoothSpline(IReadOnlyList<Vector2> points, int segmentsPerPoint = 12)
+        private static List<Vector2> generateSmoothSpline(IReadOnlyList<Vector2> points, float w, float h, float padY, int segmentsPerPoint = 12)
         {
             var result = new List<Vector2>();
             if (points.Count == 0) return result;
             if (points.Count <= 2)
             {
-                result.AddRange(points);
+                foreach (var p in points)
+                    result.Add(new Vector2(Math.Clamp(p.X, 0, w), Math.Clamp(p.Y, padY, h - padY)));
                 return result;
             }
 
@@ -296,7 +297,15 @@ namespace LazerLens.UI.Components.Analytics
 
                 if (Vector2.DistanceSquared(p1, p2) < 0.001f)
                 {
-                    result.Add(p1);
+                    result.Add(new Vector2(Math.Clamp(p1.X, 0, w), Math.Clamp(p1.Y, padY, h - padY)));
+                    continue;
+                }
+
+                // If vertical difference is flat (plateau), keep it perfectly straight without Catmull-Rom bounce
+                if (Math.Abs(p1.Y - p2.Y) < 0.5f)
+                {
+                    result.Add(new Vector2(Math.Clamp(p1.X, 0, w), Math.Clamp(p1.Y, padY, h - padY)));
+                    result.Add(new Vector2(Math.Clamp(p2.X, 0, w), Math.Clamp(p2.Y, padY, h - padY)));
                     continue;
                 }
 
@@ -316,11 +325,11 @@ namespace LazerLens.UI.Components.Analytics
                                       (2 * p0.Y - 5 * p1.Y + 4 * p2.Y - p3.Y) * t2 +
                                       (-p0.Y + 3 * p1.Y - 3 * p2.Y + p3.Y) * t3);
 
-                    result.Add(new Vector2(x, y));
+                    result.Add(new Vector2(Math.Clamp(x, 0, w), Math.Clamp(y, padY, h - padY)));
                 }
             }
 
-            result.Add(points[^1]);
+            result.Add(new Vector2(Math.Clamp(points[^1].X, 0, w), Math.Clamp(points[^1].Y, padY, h - padY)));
             return result;
         }
 

@@ -2,6 +2,11 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [2.2.9] - 2026-08-23
+
+### Fixed
+- **PP Growth Plateau Bouncing & Spline Clamping**: Enforced horizontal straight line segments across flat session intervals (plateaus) and clamped all Catmull-Rom spline vertices to graph boundaries, preventing curves from dipping into the lower canvas void.
+
 ## [2.2.8] - 2026-08-23
 
 ### Fixed
