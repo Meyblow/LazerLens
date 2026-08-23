@@ -2,6 +2,14 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [2.2.2] - 2026-08-23
+
+### Added & Improved
+- **Scrollable Leaderboard Cards in Analytics**: Integrated independent `OsuScrollContainer`s with sticky headers into **MOST PLAYED BEATMAPS** and **TOP BEATMAP CREATORS**, allowing users to scroll through expanded leaderboards (up to 15 entries each).
+
+### Fixed
+- **Notification Emoji Rendering (??)**: Removed unsupported Unicode emoji characters from toast notifications and chart tooltips that appeared as `??` in osu!'s Torus font renderer.
+
 ## [2.2.1] - 2026-08-23
 
 ### Fixed & Polished

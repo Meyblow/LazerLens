@@ -344,7 +344,7 @@ namespace LazerLens.UI.Components.Analytics
                     string dateStr = entry.Date.ToString("dd MMM yyyy, HH:mm", CultureInfo.InvariantCulture);
                     string playCountStr = entry.PlayCount > 0 ? $" • {entry.PlayCount} plays" : "";
                     string noteStr = !string.IsNullOrWhiteSpace(entry.SessionTitle) && !entry.SessionTitle.Contains(dateStr, StringComparison.OrdinalIgnoreCase)
-                        ? $"\n🏷️ {entry.SessionTitle}"
+                        ? $"\nNote: {entry.SessionTitle}"
                         : "";
 
                     return $"{dateStr}\n+{entry.SessionPpGain:F0} PP (Total: {entry.CumulativePp:F0} PP)\n{entry.SessionAccuracy:F2}% avg{playCountStr}{noteStr}";

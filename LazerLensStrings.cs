@@ -102,11 +102,11 @@ namespace LazerLens
         public static LocalisableString SettingsMilestonesCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsMilestonesCaption)), "Milestone notifications");
         public static LocalisableString SettingsMilestonesSubtitle => OsuCcLocalisation.Get(getKey(nameof(SettingsMilestonesSubtitle)), "Congratulates on reaching round play counts or PP thresholds");
 
-        public static LocalisableString ToastSessionBestTitle => OsuCcLocalisation.Get(getKey(nameof(ToastSessionBestTitle)), "🎉 New Session Best!");
+        public static LocalisableString ToastSessionBestTitle => OsuCcLocalisation.Get(getKey(nameof(ToastSessionBestTitle)), "New Session Best!");
         public static LocalisableString ToastSessionBestBody(string title, string metric) => OsuCcLocalisation.Get(getKey(nameof(ToastSessionBestBody)), "{0}\n{1}", title, metric);
-        public static LocalisableString ToastMilestoneTitle => OsuCcLocalisation.Get(getKey(nameof(ToastMilestoneTitle)), "⭐ Milestone Reached!");
+        public static LocalisableString ToastMilestoneTitle => OsuCcLocalisation.Get(getKey(nameof(ToastMilestoneTitle)), "Milestone Reached!");
         public static LocalisableString ToastMilestoneBody(string message) => OsuCcLocalisation.Get(getKey(nameof(ToastMilestoneBody)), "{0}", message);
-        public static LocalisableString ToastGoalAchieved(string target) => OsuCcLocalisation.Get(getKey(nameof(ToastGoalAchieved)), "🎯 Session goal achieved: {0}! 🎉", target);
+        public static LocalisableString ToastGoalAchieved(string target) => OsuCcLocalisation.Get(getKey(nameof(ToastGoalAchieved)), "Session goal achieved: {0}!", target);
 
         // 5. Overlay & Toolbar
         public static LocalisableString SettingsToolbarBadgeCaption => OsuCcLocalisation.Get(getKey(nameof(SettingsToolbarBadgeCaption)), "Toolbar button badge");
@@ -241,7 +241,7 @@ namespace LazerLens
         // --- Goals & Warmup ---
         public static LocalisableString GoalHeader => OsuCcLocalisation.Get(getKey(nameof(GoalHeader)), "SESSION GOAL");
         public static LocalisableString GoalNoneActive => OsuCcLocalisation.Get(getKey(nameof(GoalNoneActive)), "No goal set \u2022 Click to set target");
-        public static LocalisableString GoalAchieved => OsuCcLocalisation.Get(getKey(nameof(GoalAchieved)), "GOAL ACHIEVED! 🎉");
+        public static LocalisableString GoalAchieved => OsuCcLocalisation.Get(getKey(nameof(GoalAchieved)), "GOAL ACHIEVED!");
         public static LocalisableString GoalAchievedNotification => OsuCcLocalisation.Get(getKey(nameof(GoalAchievedNotification)), "Session goal successfully completed!");
         public static LocalisableString GoalDialogTitle => OsuCcLocalisation.Get(getKey(nameof(GoalDialogTitle)), "Session Target Goal");
         public static LocalisableString GoalDialogDesc => OsuCcLocalisation.Get(getKey(nameof(GoalDialogDesc)), "Set a target metric for this gaming session:");

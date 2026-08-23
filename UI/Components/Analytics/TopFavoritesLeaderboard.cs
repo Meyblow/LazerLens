@@ -68,6 +68,7 @@ namespace LazerLens.UI.Components.Analytics
                 AutoSizeAxes = Axes.Y,
                 Direction = FillDirection.Vertical,
                 Spacing = new Vector2(0, 6),
+                Padding = new MarginPadding { Right = 10 },
             };
 
             for (int i = 0; i < analytics.TopBeatmaps.Count; i++)
@@ -100,6 +101,7 @@ namespace LazerLens.UI.Components.Analytics
                 AutoSizeAxes = Axes.Y,
                 Direction = FillDirection.Vertical,
                 Spacing = new Vector2(0, 6),
+                Padding = new MarginPadding { Right = 10 },
             };
 
             for (int i = 0; i < analytics.TopMappers.Count; i++)
@@ -140,18 +142,17 @@ namespace LazerLens.UI.Components.Analytics
                         RelativeSizeAxes = Axes.Both,
                         Colour = colourProvider.Background4,
                     },
-                    new FillFlowContainer
+                    new Container
                     {
                         RelativeSizeAxes = Axes.Both,
-                        Direction = FillDirection.Vertical,
                         Padding = new MarginPadding(14),
-                        Spacing = new Vector2(0, 10),
                         Children = new Drawable[]
                         {
+                            // 1. Fixed Header
                             new FillFlowContainer
                             {
                                 RelativeSizeAxes = Axes.X,
-                                AutoSizeAxes = Axes.Y,
+                                Height = 22,
                                 Direction = FillDirection.Horizontal,
                                 Spacing = new Vector2(8, 0),
                                 Children = new Drawable[]
@@ -174,7 +175,20 @@ namespace LazerLens.UI.Components.Analytics
                                     }
                                 }
                             },
-                            content
+
+                            // 2. Scrollable Content Pane
+                            new Container
+                            {
+                                Position = new Vector2(0, 28),
+                                RelativeSizeAxes = Axes.Both,
+                                Padding = new MarginPadding { Bottom = 28 },
+                                Child = new OsuScrollContainer
+                                {
+                                    RelativeSizeAxes = Axes.Both,
+                                    ScrollbarVisible = true,
+                                    Child = content
+                                }
+                            }
                         }
                     }
                 }

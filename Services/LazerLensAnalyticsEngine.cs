@@ -195,7 +195,7 @@ namespace LazerLens.Services
                     };
                 })
                 .OrderByDescending(b => b.PlayCount)
-                .Take(8)
+                .Take(15)
                 .ToList();
 
             data.TopBeatmaps = mapGroups;
@@ -213,7 +213,7 @@ namespace LazerLens.Services
                     TopPp = g.Where(p => p.PerformancePoints.HasValue).Select(p => p.PerformancePoints!.Value).DefaultIfEmpty(0).Max()
                 })
                 .OrderByDescending(m => m.PlayCount)
-                .Take(6)
+                .Take(15)
                 .ToList();
 
             data.TopMappers = mapperGroups;
