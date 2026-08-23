@@ -7,6 +7,7 @@ using System.Linq;
 using osucc.Core;
 using osucc.Data;
 using LazerLens.Models;
+using LazerLens.Utilities;
 
 namespace LazerLens.Services
 {
@@ -186,7 +187,7 @@ namespace LazerLens.Services
                     var fullPath = _storage.GetFullPath(path);
                     if (!string.IsNullOrEmpty(fullPath) && File.Exists(fullPath))
                     {
-                        Process.Start("explorer.exe", $"/select,\"{fullPath}\"");
+                        PlatformHelper.OpenAndSelectFile(fullPath);
                         return;
                     }
                 }
@@ -234,25 +235,10 @@ namespace LazerLens.Services
 
         public void OpenSessionsDirectory()
         {
-            try
+            var fullPath = _storage?.GetFullPath(sessions_directory);
+            if (!string.IsNullOrEmpty(fullPath))
             {
-                var fullPath = _storage?.GetFullPath(sessions_directory);
-                if (!string.IsNullOrEmpty(fullPath))
-                {
-                    if (!Directory.Exists(fullPath))
-                        Directory.CreateDirectory(fullPath);
-
-                    Process.Start(new ProcessStartInfo
-                    {
-                        FileName = fullPath,
-                        UseShellExecute = true,
-                        Verb = "open"
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                TimingLog.Error($"Failed to open sessions directory: {ex.Message}");
+                PlatformHelper.OpenDirectory(fullPath);
             }
         }
 
@@ -260,9 +246,21 @@ namespace LazerLens.Services
         {
             try
             {
-                var downloadsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
-                if (string.IsNullOrEmpty(downloadsPath))
-                    return null;
+                string? downloadsPath = null;
+                try
+                {
+                    downloadsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+                    if (!Directory.Exists(downloadsPath))
+                    {
+                        downloadsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                    }
+                }
+                catch { }
+
+                if (string.IsNullOrEmpty(downloadsPath) || !Directory.Exists(downloadsPath))
+                {
+                    downloadsPath = _storage?.GetFullPath("exports") ?? Path.GetTempPath();
+                }
 
                 var exportFolder = Path.Combine(downloadsPath, "osu_session_exports");
                 if (!Directory.Exists(exportFolder))

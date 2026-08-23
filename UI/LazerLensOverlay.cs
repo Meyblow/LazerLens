@@ -208,18 +208,28 @@ namespace LazerLens.UI
                 bool isArchive = e.NewValue == LazerLensSection.Archive;
                 bool isSettings = e.NewValue == LazerLensSection.Settings;
 
-                liveContent.FadeTo(isSession ? 1 : 0, 200, Easing.OutQuint);
                 liveContent.BypassAutoSizeAxes = isSession ? Axes.None : Axes.Both;
-
-                archiveContent.FadeTo(isArchive ? 1 : 0, 200, Easing.OutQuint);
                 archiveContent.BypassAutoSizeAxes = isArchive ? Axes.None : Axes.Both;
-
-                settingsContent.FadeTo(isSettings ? 1 : 0, 200, Easing.OutQuint);
                 settingsContent.BypassAutoSizeAxes = isSettings ? Axes.None : Axes.Both;
 
-                if (isArchive)
+                if (isSession)
                 {
+                    archiveContent.Hide();
+                    settingsContent.Hide();
+                    liveContent.FadeIn(180, Easing.OutQuint);
+                }
+                else if (isArchive)
+                {
+                    liveContent.Hide();
+                    settingsContent.Hide();
+                    archiveContent.FadeIn(180, Easing.OutQuint);
                     refreshArchiveList();
+                }
+                else if (isSettings)
+                {
+                    liveContent.Hide();
+                    archiveContent.Hide();
+                    settingsContent.FadeIn(180, Easing.OutQuint);
                 }
             }, true);
 
@@ -472,7 +482,7 @@ namespace LazerLens.UI
                                                             Child = new OsuScrollContainer
                                                             {
                                                                 RelativeSizeAxes = Axes.Both,
-                                                                Padding = new MarginPadding { Right = 14 },
+                                                                Padding = new MarginPadding { Right = 18 },
                                                                 ScrollbarVisible = true,
                                                                 Child = archiveCardsList = new FillFlowContainer
                                                                 {
@@ -553,7 +563,7 @@ namespace LazerLens.UI
                                     archiveDetailScroll = new OsuScrollContainer
                                     {
                                         RelativeSizeAxes = Axes.Both,
-                                        Padding = new MarginPadding { Right = 8 },
+                                        Padding = new MarginPadding { Right = 24 },
                                         ScrollbarVisible = true,
                                         Child = archiveDetailContent = new FillFlowContainer
                                         {

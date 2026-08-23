@@ -15,9 +15,9 @@ namespace LazerLens.Patches
         {
         }
 
-        public void Postfix(Player __instance, bool __result)
+        public void Postfix(Player __instance)
         {
-            if (__instance == null || !__result) return;
+            if (__instance == null) return;
 
             string typeName = __instance.GetType().Name;
             if (typeName.Contains("Replay") || typeName.Contains("Spectator"))
