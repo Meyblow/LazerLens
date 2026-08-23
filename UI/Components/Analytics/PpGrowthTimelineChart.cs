@@ -259,6 +259,8 @@ namespace LazerLens.UI.Components.Analytics
 
             linePath.Colour = colourProvider.Highlight1;
 
+            var rawPoints = new List<Vector2>();
+
             for (int i = 0; i < sorted.Count; i++)
             {
                 var entry = sorted[i];
@@ -267,13 +269,66 @@ namespace LazerLens.UI.Components.Analytics
                 float y = h - (normalized * h);
 
                 var pt = new Vector2(x, y);
-                linePath.AddVertex(pt);
+                rawPoints.Add(pt);
 
                 dataPointsContainer.Add(new TimelinePoint(entry, colourProvider.Highlight1)
                 {
                     Position = pt,
                 });
             }
+
+            var splineVertices = generateSmoothSpline(rawPoints);
+            foreach (var vertex in splineVertices)
+            {
+                linePath.AddVertex(vertex);
+            }
+        }
+
+        private static List<Vector2> generateSmoothSpline(IReadOnlyList<Vector2> points, int segmentsPerPoint = 12)
+        {
+            var result = new List<Vector2>();
+            if (points.Count == 0) return result;
+            if (points.Count <= 2)
+            {
+                result.AddRange(points);
+                return result;
+            }
+
+            for (int i = 0; i < points.Count - 1; i++)
+            {
+                var p0 = i > 0 ? points[i - 1] : points[i];
+                var p1 = points[i];
+                var p2 = points[i + 1];
+                var p3 = i + 2 < points.Count ? points[i + 2] : p2;
+
+                if (Vector2.DistanceSquared(p1, p2) < 0.001f)
+                {
+                    result.Add(p1);
+                    continue;
+                }
+
+                for (int step = 0; step < segmentsPerPoint; step++)
+                {
+                    float t = (float)step / segmentsPerPoint;
+                    float t2 = t * t;
+                    float t3 = t2 * t;
+
+                    float x = 0.5f * ((2 * p1.X) +
+                                      (-p0.X + p2.X) * t +
+                                      (2 * p0.X - 5 * p1.X + 4 * p2.X - p3.X) * t2 +
+                                      (-p0.X + 3 * p1.X - 3 * p2.X + p3.X) * t3);
+
+                    float y = 0.5f * ((2 * p1.Y) +
+                                      (-p0.Y + p2.Y) * t +
+                                      (2 * p0.Y - 5 * p1.Y + 4 * p2.Y - p3.Y) * t2 +
+                                      (-p0.Y + 3 * p1.Y - 3 * p2.Y + p3.Y) * t3);
+
+                    result.Add(new Vector2(x, y));
+                }
+            }
+
+            result.Add(points[^1]);
+            return result;
         }
 
         private sealed partial class TimelinePoint : CompositeDrawable, IHasTooltip

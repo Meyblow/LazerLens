@@ -2,6 +2,13 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [2.2.1] - 2026-08-23
+
+### Fixed & Polished
+- **Smooth Spline PP Growth Timeline Chart**: Replaced polygonal straight line segments with smooth Catmull-Rom spline interpolation, creating modern, organically curved transitions between data points without sharp corners.
+- **Analytics Tab Scrolling**: Fixed vertical mouse wheel scrolling in the Analytics tab. Corrected `TopFavoritesLeaderboard` height calculation and added bottom padding so all leaderboards and cards are fully viewable.
+- **Archive Sort Dropdown Alignment**: Aligned the `Date` sort dropdown button vertically to the exact centerline of `SAVED SESSIONS (X)` on the left.
+
 ## [2.2.0] - 2026-08-23
 
 ### Added

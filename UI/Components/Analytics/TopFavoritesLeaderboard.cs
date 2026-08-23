@@ -31,7 +31,7 @@ namespace LazerLens.UI.Components.Analytics
             this.analytics = analytics;
             this.onOpenBeatmap = onOpenBeatmap;
             RelativeSizeAxes = Axes.X;
-            AutoSizeAxes = Axes.Y;
+            Height = 350;
         }
 
         [BackgroundDependencyLoader]
@@ -39,8 +39,7 @@ namespace LazerLens.UI.Components.Analytics
         {
             InternalChild = new GridContainer
             {
-                RelativeSizeAxes = Axes.X,
-                AutoSizeAxes = Axes.Y,
+                RelativeSizeAxes = Axes.Both,
                 ColumnDimensions = new[]
                 {
                     new Dimension(GridSizeMode.Distributed),
@@ -129,8 +128,7 @@ namespace LazerLens.UI.Components.Analytics
         {
             return new Container
             {
-                RelativeSizeAxes = Axes.X,
-                AutoSizeAxes = Axes.Y,
+                RelativeSizeAxes = Axes.Both,
                 Masking = true,
                 CornerRadius = 10,
                 BorderThickness = 1,
@@ -144,8 +142,7 @@ namespace LazerLens.UI.Components.Analytics
                     },
                     new FillFlowContainer
                     {
-                        RelativeSizeAxes = Axes.X,
-                        AutoSizeAxes = Axes.Y,
+                        RelativeSizeAxes = Axes.Both,
                         Direction = FillDirection.Vertical,
                         Padding = new MarginPadding(14),
                         Spacing = new Vector2(0, 10),
