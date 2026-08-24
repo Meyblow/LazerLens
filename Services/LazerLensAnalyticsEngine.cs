@@ -40,7 +40,7 @@ namespace LazerLens.Services
             if (data.TotalPlays > 0)
             {
                 data.AverageAccuracy = allPlays.Average(p => p.Accuracy);
-                data.TotalPpGain = allPlays.Where(p => p.PerformancePoints.HasValue).Sum(p => p.PerformancePoints!.Value);
+                data.TotalPpGain = allPlays.Where(p => p.ProfilePerformancePoints.HasValue && p.ProfilePerformancePoints.Value > 0).Sum(p => p.ProfilePerformancePoints!.Value);
                 data.PeakSessionPp = summaries != null && summaries.Count > 0 ? summaries.Max(s => s.TopPP) : 0;
                 if (liveState != null && liveState.BestScore?.PerformancePoints > data.PeakSessionPp)
                     data.PeakSessionPp = liveState.BestScore.PerformancePoints.Value;
@@ -253,11 +253,12 @@ namespace LazerLens.Services
 
         /// <summary>
         /// Builds chronological cumulative PP timeline from raw plays filtered by a specific ruleset (or all).
-        /// Only includes plays with positive PP gains (> 0 PP) and recalculates cumulative PP strictly from 0 PP.
+        /// Only includes plays that resulted in an actual profile PP gain (ProfilePerformancePoints > 0)
+        /// and recalculates cumulative profile PP strictly from 0 PP.
         /// </summary>
         public static List<SessionTimelineEntry> BuildTimelineFromPlays(IEnumerable<SessionPlayRecord> plays, string? rulesetFilter = null)
         {
-            var filtered = plays.Where(p => p.PerformancePoints.HasValue && p.PerformancePoints.Value > 0.0);
+            var filtered = plays.Where(p => p.ProfilePerformancePoints.HasValue && p.ProfilePerformancePoints.Value > 0.0);
 
             if (!string.IsNullOrEmpty(rulesetFilter) && rulesetFilter != "all")
             {
@@ -272,15 +273,15 @@ namespace LazerLens.Services
             for (int i = 0; i < ordered.Count; i++)
             {
                 var p = ordered[i];
-                double pPp = p.PerformancePoints!.Value;
-                runningPp += pPp;
+                double profPp = p.ProfilePerformancePoints!.Value;
+                runningPp += profPp;
 
                 timeline.Add(new SessionTimelineEntry
                 {
                     Date = p.Timestamp.LocalDateTime,
                     CumulativePp = runningPp,
                     SessionAccuracy = p.Accuracy,
-                    SessionPpGain = pPp,
+                    SessionPpGain = profPp,
                     PlayCount = i + 1,
                     SessionTitle = $"{p.BeatmapArtist} - {p.BeatmapTitle}"
                 });

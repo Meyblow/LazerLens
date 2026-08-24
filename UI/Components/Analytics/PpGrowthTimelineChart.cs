@@ -317,7 +317,7 @@ namespace LazerLens.UI.Components.Analytics
                 return list;
 
             var modes = new HashSet<string>();
-            foreach (var p in analyticsData.AllPlays.Where(p => p.PerformancePoints.HasValue && p.PerformancePoints.Value > 0))
+            foreach (var p in analyticsData.AllPlays.Where(p => p.ProfilePerformancePoints.HasValue && p.ProfilePerformancePoints.Value > 0))
             {
                 modes.Add(LazerLensAnalyticsEngine.NormalizeRuleset(p.RulesetName));
             }
