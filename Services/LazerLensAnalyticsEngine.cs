@@ -218,70 +218,8 @@ namespace LazerLens.Services
 
             data.TopMappers = mapperGroups;
 
-            // 8. PP Growth Timeline (Per session / per play chronological progression)
-            var timelineList = new List<SessionTimelineEntry>();
-            var sessionItems = new List<(DateTime Time, double PpGain, double Accuracy, int Plays, string Title)>();
-
-            if (summaries != null && summaries.Count > 0)
-            {
-                foreach (var summary in summaries)
-                {
-                    var sState = storageService?.LoadSession(summary.Id);
-                    double ppGain = sState != null ? sState.SessionPPGain : summary.TopPP;
-                    double acc = sState != null ? sState.AverageAccuracy : summary.AverageAccuracy;
-                    int plays = sState != null ? sState.TotalPlays : summary.PlayCount;
-                    string title = summary.Note ?? summary.StartTime.LocalDateTime.ToString("dd MMM yyyy, HH:mm");
-
-                    sessionItems.Add((summary.StartTime.LocalDateTime, ppGain, acc, plays, title));
-                }
-            }
-
-            if (liveState != null && liveState.TotalPlays > 0)
-            {
-                sessionItems.Add((liveState.SessionStart.LocalDateTime, liveState.SessionPPGain, liveState.AverageAccuracy, liveState.TotalPlays, "Текущая сессия"));
-            }
-
-            sessionItems = sessionItems.OrderBy(s => s.Time).ToList();
-
-            double runningPp = 0;
-            foreach (var item in sessionItems)
-            {
-                runningPp += Math.Max(0, item.PpGain);
-                timelineList.Add(new SessionTimelineEntry
-                {
-                    Date = item.Time,
-                    CumulativePp = runningPp,
-                    SessionAccuracy = item.Accuracy,
-                    SessionPpGain = item.PpGain,
-                    PlayCount = item.Plays,
-                    SessionTitle = item.Title
-                });
-            }
-
-            // Fallback: If <= 1 session but multiple plays exist, populate from individual plays
-            if (timelineList.Count <= 1 && allPlays.Count > 1)
-            {
-                timelineList.Clear();
-                runningPp = 0;
-                var orderedPlays = allPlays.OrderBy(p => p.Timestamp).ToList();
-                for (int i = 0; i < orderedPlays.Count; i++)
-                {
-                    var p = orderedPlays[i];
-                    double pPp = p.PerformancePoints ?? 0;
-                    runningPp += pPp;
-                    timelineList.Add(new SessionTimelineEntry
-                    {
-                        Date = p.Timestamp.LocalDateTime,
-                        CumulativePp = runningPp,
-                        SessionAccuracy = p.Accuracy,
-                        SessionPpGain = pPp,
-                        PlayCount = i + 1,
-                        SessionTitle = $"{p.BeatmapArtist} - {p.BeatmapTitle}"
-                    });
-                }
-            }
-
-            data.PpTimeline = timelineList;
+            // 8. PP Growth Timeline (Per-play chronological progression of positive PP gains)
+            data.PpTimeline = BuildTimelineFromPlays(allPlays);
             data.AllPlays = allPlays;
 
             return data;
@@ -315,11 +253,11 @@ namespace LazerLens.Services
 
         /// <summary>
         /// Builds chronological cumulative PP timeline from raw plays filtered by a specific ruleset (or all).
-        /// Recalculates cumulative PP strictly from 0 PP for that specific ruleset.
+        /// Only includes plays with positive PP gains (> 0 PP) and recalculates cumulative PP strictly from 0 PP.
         /// </summary>
         public static List<SessionTimelineEntry> BuildTimelineFromPlays(IEnumerable<SessionPlayRecord> plays, string? rulesetFilter = null)
         {
-            var filtered = plays.AsEnumerable();
+            var filtered = plays.Where(p => p.PerformancePoints.HasValue && p.PerformancePoints.Value > 0.0);
 
             if (!string.IsNullOrEmpty(rulesetFilter) && rulesetFilter != "all")
             {
@@ -334,8 +272,8 @@ namespace LazerLens.Services
             for (int i = 0; i < ordered.Count; i++)
             {
                 var p = ordered[i];
-                double pPp = p.PerformancePoints ?? 0;
-                runningPp += Math.Max(0, pPp);
+                double pPp = p.PerformancePoints!.Value;
+                runningPp += pPp;
 
                 timeline.Add(new SessionTimelineEntry
                 {

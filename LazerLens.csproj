@@ -10,7 +10,7 @@
     <PackageId>lazer-lens</PackageId>
     <Title>Lazer Lens</Title>
     <Description>Tracks your play session metrics, play history, average accuracy, and session bests with an in-game overlay.</Description>
-    <Version>2.2.12</Version>
+    <Version>2.2.13</Version>
     <Priority>60</Priority>
     <IconGlyph>ChartBar</IconGlyph>
     <RepositoryUrl>https://github.com/Meyblow/LazerLens</RepositoryUrl>

@@ -317,7 +317,7 @@ namespace LazerLens.UI.Components.Analytics
                 return list;
 
             var modes = new HashSet<string>();
-            foreach (var p in analyticsData.AllPlays)
+            foreach (var p in analyticsData.AllPlays.Where(p => p.PerformancePoints.HasValue && p.PerformancePoints.Value > 0))
             {
                 modes.Add(LazerLensAnalyticsEngine.NormalizeRuleset(p.RulesetName));
             }
@@ -344,17 +344,13 @@ namespace LazerLens.UI.Components.Analytics
             }
 
             // 2. Filter raw plays and recalculate cumulative PP strictly from 0
-            if (currentRuleset == "all")
-            {
-                currentTimeline = initialTimeline;
-            }
-            else if (analyticsData?.AllPlays != null && analyticsData.AllPlays.Count > 0)
+            if (analyticsData?.AllPlays != null && analyticsData.AllPlays.Count > 0)
             {
                 currentTimeline = LazerLensAnalyticsEngine.BuildTimelineFromPlays(analyticsData.AllPlays, currentRuleset);
             }
             else
             {
-                currentTimeline = Array.Empty<SessionTimelineEntry>();
+                currentTimeline = initialTimeline ?? Array.Empty<SessionTimelineEntry>();
             }
 
             // 3. Redraw chart

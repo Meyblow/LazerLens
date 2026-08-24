@@ -2,6 +2,11 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [2.2.13] - 2026-08-24
+
+### Changed
+- **Positive PP Gains Only on Timeline**: Filtered the Cumulative PP & Accuracy Timeline in Analytics to only include scores that produced a positive PP gain (`PerformancePoints > 0`). Non-scoring retries, fails, unranked maps, and 0 PP plays are excluded from generating timeline points, preventing dense point clutter and ensuring every dot represents an actual PP gain with informative tooltip statistics.
+
 ## [2.2.12] - 2026-08-23
 
 ### Added
