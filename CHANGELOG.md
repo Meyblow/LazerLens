@@ -2,6 +2,12 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [2.2.14] - 2026-08-25
+
+### Changed
+- **Individual Play Representation on PP Timeline**: Overhauled timeline entries and point tooltips so each point represents an individual map with its exact characteristics (Artist, Title, Difficulty, Ruleset, Grade, Mods, Accuracy %, Star Rating, +PP profile delta, Total cumulative PP, raw score PP, timestamp, and score index `#N of Total`).
+- **Header Summary Precision**: Updated summary badge in the timeline header to display exact score count (`Total: +X PP • Y% avg • N scores`).
+
 ## [2.2.13] - 2026-08-24
 
 ### Changed

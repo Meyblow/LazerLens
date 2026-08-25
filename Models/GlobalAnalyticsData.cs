@@ -38,6 +38,9 @@ namespace LazerLens.Models
         public double SessionPpGain { get; set; }
         public int PlayCount { get; set; }
         public string SessionTitle { get; set; } = string.Empty;
+        public int PlayIndex { get; set; }
+        public int TotalPlaysCount { get; set; }
+        public SessionPlayRecord? PlayRecord { get; set; }
     }
 
     public class TopBeatmapStat

@@ -124,23 +124,23 @@ namespace LazerLens.UI.Components.Analytics
                                         Origin = Anchor.CentreRight,
                                         AutoSizeAxes = Axes.Both,
                                         Direction = FillDirection.Horizontal,
-                                        Spacing = new Vector2(8, 0),
+                                        Spacing = new Vector2(10, 0),
                                         Children = new Drawable[]
                                         {
+                                            summaryPillText = new OsuSpriteText
+                                            {
+                                                Anchor = Anchor.CentreLeft,
+                                                Origin = Anchor.CentreLeft,
+                                                Font = OsuFont.Torus.With(size: 11, weight: FontWeight.SemiBold),
+                                                Colour = colourProvider.Highlight1,
+                                            },
                                             rulesetButtonsFlow = new FillFlowContainer
                                             {
-                                                Anchor = Anchor.CentreRight,
-                                                Origin = Anchor.CentreRight,
+                                                Anchor = Anchor.CentreLeft,
+                                                Origin = Anchor.CentreLeft,
                                                 AutoSizeAxes = Axes.Both,
                                                 Direction = FillDirection.Horizontal,
                                                 Spacing = new Vector2(4, 0),
-                                            },
-                                            summaryPillText = new OsuSpriteText
-                                            {
-                                                Anchor = Anchor.CentreRight,
-                                                Origin = Anchor.CentreRight,
-                                                Font = OsuFont.Torus.With(size: 11, weight: FontWeight.SemiBold),
-                                                Colour = colourProvider.Highlight1,
                                             }
                                         }
                                     }
@@ -399,7 +399,9 @@ namespace LazerLens.UI.Components.Analytics
 
             double totalGain = sorted.Last().CumulativePp;
             double avgAcc = sorted.Average(s => s.SessionAccuracy);
-            summaryPillText.Text = $"Total: +{totalGain:F0} PP  •  {avgAcc:F2}% avg";
+            int count = sorted.Count;
+            string countStr = count == 1 ? "1 score" : $"{count} scores";
+            summaryPillText.Text = $"Total: +{totalGain:F0} PP  •  {avgAcc:F2}% avg  •  {countStr}";
 
             float w = chartArea.ChildSize.X;
             float h = chartArea.ChildSize.Y;
@@ -500,13 +502,23 @@ namespace LazerLens.UI.Components.Analytics
             {
                 get
                 {
+                    var p = entry.PlayRecord;
                     string dateStr = entry.Date.ToString("dd MMM yyyy, HH:mm", CultureInfo.InvariantCulture);
-                    string playCountStr = entry.PlayCount > 0 ? $" • {entry.PlayCount} plays" : "";
-                    string noteStr = !string.IsNullOrWhiteSpace(entry.SessionTitle) && !entry.SessionTitle.Contains(dateStr, StringComparison.OrdinalIgnoreCase)
-                        ? $"\nNote: {entry.SessionTitle}"
-                        : "";
 
-                    return $"{dateStr}\n+{entry.SessionPpGain:F0} PP (Total: {entry.CumulativePp:F0} PP)\n{entry.SessionAccuracy:F2}% avg{playCountStr}{noteStr}";
+                    if (p != null)
+                    {
+                        string songTitle = $"{p.BeatmapArtist} - {p.BeatmapTitle} [{p.DifficultyName}]";
+                        string rulesetStr = LazerLensAnalyticsEngine.GetRulesetDisplayLabel(LazerLensAnalyticsEngine.NormalizeRuleset(p.RulesetName));
+                        string modsStr = p.Mods != null && p.Mods.Length > 0 ? $" +{string.Join(",", p.Mods)}" : "";
+                        string starStr = p.StarRating > 0 ? $" • {p.StarRating.ToString("F2", CultureInfo.InvariantCulture)}★" : "";
+                        string rawPpStr = p.PerformancePoints.HasValue && p.PerformancePoints.Value > 0 ? $" • {p.PerformancePoints.Value:F0} raw PP" : "";
+                        string countStr = entry.TotalPlaysCount > 0 ? $" (#{entry.PlayIndex} of {entry.TotalPlaysCount})" : "";
+
+                        return $"{songTitle}\n[{rulesetStr}] Grade {p.Grade}{modsStr} • {p.Accuracy.ToString("F2", CultureInfo.InvariantCulture)}%{starStr}\n+{entry.SessionPpGain:F0} PP (Total: +{entry.CumulativePp:F0} PP){rawPpStr}\n{dateStr}{countStr}";
+                    }
+
+                    string fallbackTitle = !string.IsNullOrWhiteSpace(entry.SessionTitle) ? $"{entry.SessionTitle}\n" : "";
+                    return $"{fallbackTitle}+{entry.SessionPpGain:F0} PP (Total: +{entry.CumulativePp:F0} PP)\n{entry.SessionAccuracy.ToString("F2", CultureInfo.InvariantCulture)}% acc\n{dateStr}";
                 }
             }
 

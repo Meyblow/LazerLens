@@ -283,7 +283,10 @@ namespace LazerLens.Services
                     SessionAccuracy = p.Accuracy,
                     SessionPpGain = profPp,
                     PlayCount = i + 1,
-                    SessionTitle = $"{p.BeatmapArtist} - {p.BeatmapTitle}"
+                    PlayIndex = i + 1,
+                    TotalPlaysCount = ordered.Count,
+                    SessionTitle = $"{p.BeatmapArtist} - {p.BeatmapTitle} [{p.DifficultyName}]",
+                    PlayRecord = p
                 });
             }
 
