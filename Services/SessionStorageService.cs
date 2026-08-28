@@ -311,6 +311,63 @@ namespace LazerLens.Services
             }
         }
 
+        public string? ExportSingleSessionToCsv(Guid sessionId)
+        {
+            try
+            {
+                var session = LoadSession(sessionId);
+                if (session == null)
+                    return null;
+
+                string? downloadsPath = null;
+                try
+                {
+                    downloadsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+                    if (!Directory.Exists(downloadsPath))
+                    {
+                        downloadsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                    }
+                }
+                catch { }
+
+                if (string.IsNullOrEmpty(downloadsPath) || !Directory.Exists(downloadsPath))
+                {
+                    downloadsPath = _storage?.GetFullPath("exports") ?? Path.GetTempPath();
+                }
+
+                var exportFolder = Path.Combine(downloadsPath, "osu_session_exports");
+                if (!Directory.Exists(exportFolder))
+                    Directory.CreateDirectory(exportFolder);
+
+                var fileName = $"session_{session.SessionStart:yyyy-MM-dd_HH-mm-ss}_{session.Id}.csv";
+                var fullPath = Path.Combine(exportFolder, fileName);
+
+                using var writer = new StreamWriter(fullPath);
+                writer.WriteLine("Timestamp,Artist,Title,Difficulty,Mapper,Ruleset,Grade,Accuracy,Score,MaxCombo,Stars,RawPP,ProfilePP,Mods,Passed,UnstableRate,Status");
+
+                foreach (var p in session.Plays.OrderBy(x => x.Timestamp))
+                {
+                    string safeArtist = p.BeatmapArtist?.Replace(",", " ") ?? "";
+                    string safeTitle = p.BeatmapTitle?.Replace(",", " ") ?? "";
+                    string safeDiff = p.DifficultyName?.Replace(",", " ") ?? "";
+                    string safeMapper = p.BeatmapMapper?.Replace(",", " ") ?? "";
+                    string safeMods = p.Mods != null && p.Mods.Length > 0 ? string.Join("+", p.Mods) : "NoMod";
+                    string rawPp = p.PerformancePoints.HasValue ? p.PerformancePoints.Value.ToString("F2", CultureInfo.InvariantCulture) : "0.00";
+                    string profPp = p.ProfilePerformancePoints.HasValue ? p.ProfilePerformancePoints.Value.ToString("F2", CultureInfo.InvariantCulture) : "0.00";
+                    string ur = p.UnstableRate.HasValue ? p.UnstableRate.Value.ToString("F2", CultureInfo.InvariantCulture) : "";
+
+                    writer.WriteLine($"{p.Timestamp:yyyy-MM-dd HH:mm:ss},{safeArtist},{safeTitle},{safeDiff},{safeMapper},{p.RulesetName},{p.Grade},{p.Accuracy.ToString("F2", CultureInfo.InvariantCulture)},{p.TotalScore},{p.MaxCombo},{p.StarRating.ToString("F2", CultureInfo.InvariantCulture)},{rawPp},{profPp},{safeMods},{p.Passed},{ur},{p.Status}");
+                }
+
+                return fullPath;
+            }
+            catch (Exception ex)
+            {
+                TimingLog.Error($"Failed to export single session to CSV: {ex.Message}");
+                return null;
+            }
+        }
+
         /// <summary>
         /// Automatically migrates sessions from legacy directories into the VFS directory osu-cc/data/lazer-lens/sessions/.
         /// </summary>

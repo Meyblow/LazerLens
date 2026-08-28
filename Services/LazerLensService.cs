@@ -110,6 +110,11 @@ namespace LazerLens.Services
             return StorageService?.ExportToCsv();
         }
 
+        public string? ExportSingleSessionToCsv(Guid sessionId)
+        {
+            return StorageService?.ExportSingleSessionToCsv(sessionId);
+        }
+
         public void ResetLiveSession()
         {
             AutoSave();
@@ -353,7 +358,15 @@ namespace LazerLens.Services
 
             if (match != null)
             {
-                UpdatePlay(match.Id, p => p with { ProfilePerformancePoints = roundedDelta }, save: true);
+                double? updatedRawPp = (update.Score != null && update.Score.PP.HasValue && update.Score.PP.Value > 0)
+                    ? (double)update.Score.PP.Value
+                    : match.PerformancePoints;
+
+                UpdatePlay(match.Id, p => p with
+                {
+                    ProfilePerformancePoints = roundedDelta,
+                    PerformancePoints = updatedRawPp ?? p.PerformancePoints
+                }, save: true);
             }
         }
 

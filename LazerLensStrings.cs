@@ -224,6 +224,7 @@ namespace LazerLens
         public static LocalisableString ContextMenuUnpinSession => OsuCcLocalisation.Get(getKey(nameof(ContextMenuUnpinSession)), "Unpin session");
         public static LocalisableString ContextMenuSetNote => OsuCcLocalisation.Get(getKey(nameof(ContextMenuSetNote)), "Set session note...");
         public static LocalisableString ContextMenuEditNote => OsuCcLocalisation.Get(getKey(nameof(ContextMenuEditNote)), "Edit session note...");
+        public static LocalisableString ContextMenuExportCsv => OsuCcLocalisation.Get(getKey(nameof(ContextMenuExportCsv)), "Export session to CSV");
         public static LocalisableString ContextMenuDeleteSession => OsuCcLocalisation.Get(getKey(nameof(ContextMenuDeleteSession)), "Delete session");
 
         public static LocalisableString DialogDeleteConfirmTitle => OsuCcLocalisation.Get(getKey(nameof(DialogDeleteConfirmTitle)), "Delete Saved Session");

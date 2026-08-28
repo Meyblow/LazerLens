@@ -144,6 +144,7 @@
   "lazer-lens:ContextMenuUnpinSession": "Открепить сессию",
   "lazer-lens:ContextMenuSetNote": "Задать пометку...",
   "lazer-lens:ContextMenuEditNote": "Изменить пометку...",
+  "lazer-lens:ContextMenuExportCsv": "Экспорт сессии в CSV",
   "lazer-lens:ContextMenuDeleteSession": "Удалить сессию",
   "lazer-lens:DialogDeleteConfirmTitle": "Удаление сессии",
   "lazer-lens:DialogDeleteConfirmBody": "Вы действительно хотите безвозвратно удалить эту сохраненную сессию?",

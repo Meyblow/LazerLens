@@ -1153,6 +1153,7 @@ namespace LazerLens.UI
                     onOpenFolder: handleOpenFolder,
                     onTogglePin: handleTogglePin,
                     onSetNote: handleSetNote,
+                    onExportCsv: handleExportSingleSessionCsv,
                     onDelete: handleDeleteSession
                 );
 
@@ -1161,6 +1162,25 @@ namespace LazerLens.UI
 
             reorderArchiveCards();
             loadArchivedSessionDetail(selectedArchiveSessionId.Value);
+        }
+
+        private void handleExportSingleSessionCsv(Guid id)
+        {
+            var exportPath = service.ExportSingleSessionToCsv(id);
+            if (exportPath != null)
+            {
+                LazerLensPlugin.Instance?.Host.Notify(
+                    LazerLensStrings.ExportSuccess(exportPath),
+                    NotificationKind.Success
+                );
+            }
+            else
+            {
+                LazerLensPlugin.Instance?.Host.Notify(
+                    LazerLensStrings.ExportFailed(""),
+                    NotificationKind.Error
+                );
+            }
         }
 
         private void handleOpenFolder(Guid id)

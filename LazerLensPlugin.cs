@@ -389,7 +389,12 @@ namespace LazerLens
                     );
                 }
 
-                string ppStr = play.PerformancePoints.HasValue ? $" \u2022 {play.PerformancePoints.Value:F0}pp" : "";
+                string ppGainPart = (play.ProfilePerformancePoints.HasValue && play.ProfilePerformancePoints.Value > 0)
+                    ? $" (+{play.ProfilePerformancePoints.Value:F0} PP)"
+                    : "";
+                string ppStr = play.PerformancePoints.HasValue && play.PerformancePoints.Value > 0
+                    ? $" \u2022 {play.PerformancePoints.Value:F0}pp{ppGainPart}"
+                    : (play.ProfilePerformancePoints.HasValue && play.ProfilePerformancePoints.Value > 0 ? $" \u2022 +{play.ProfilePerformancePoints.Value:F0} PP" : "");
 
                 Host.Notify(
                     LazerLensStrings.AddedToTracker(play.BeatmapTitle, play.Accuracy.ToString("F2", CultureInfo.InvariantCulture), play.Grade, ppStr),

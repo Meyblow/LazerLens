@@ -32,6 +32,7 @@ namespace LazerLens.UI.Components
         private readonly Action<Guid>? onOpenFolder;
         private readonly Action<Guid, bool>? onTogglePin;
         private readonly Action<Guid, string?>? onSetNote;
+        private readonly Action<Guid>? onExportCsv;
         private readonly Action<Guid>? onDelete;
 
         private Box background = null!;
@@ -47,6 +48,7 @@ namespace LazerLens.UI.Components
             new OsuMenuItem(LazerLensStrings.ContextMenuOpenInFolder, MenuItemType.Standard, () => onOpenFolder?.Invoke(Summary.Id)),
             new OsuMenuItem(Summary.IsPinned ? LazerLensStrings.ContextMenuUnpinSession : LazerLensStrings.ContextMenuPinSession, MenuItemType.Standard, () => onTogglePin?.Invoke(Summary.Id, !Summary.IsPinned)),
             new OsuMenuItem(string.IsNullOrEmpty(Summary.Note) ? LazerLensStrings.ContextMenuSetNote : LazerLensStrings.ContextMenuEditNote, MenuItemType.Standard, () => onSetNote?.Invoke(Summary.Id, Summary.Note)),
+            new OsuMenuItem(LazerLensStrings.ContextMenuExportCsv, MenuItemType.Standard, () => onExportCsv?.Invoke(Summary.Id)),
             new OsuMenuItem(LazerLensStrings.ContextMenuDeleteSession, MenuItemType.Destructive, () => onDelete?.Invoke(Summary.Id)),
         };
 
@@ -57,6 +59,7 @@ namespace LazerLens.UI.Components
             Action<Guid>? onOpenFolder = null,
             Action<Guid, bool>? onTogglePin = null,
             Action<Guid, string?>? onSetNote = null,
+            Action<Guid>? onExportCsv = null,
             Action<Guid>? onDelete = null)
         {
             Summary = summary;
@@ -65,6 +68,7 @@ namespace LazerLens.UI.Components
             this.onOpenFolder = onOpenFolder;
             this.onTogglePin = onTogglePin;
             this.onSetNote = onSetNote;
+            this.onExportCsv = onExportCsv;
             this.onDelete = onDelete;
 
             RelativeSizeAxes = Axes.X;

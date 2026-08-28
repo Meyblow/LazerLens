@@ -2,6 +2,15 @@
 
 All notable changes to Lazer Lens are documented here.
 
+## [2.2.15] - 2026-08-28
+
+### Added
+- **Single Session CSV Export**: Added an "Export session to CSV" action in the context menu of archive session cards. Exports the complete play history of the selected session with detailed columns (Timestamp, Artist, Title, Difficulty, Mapper, Ruleset, Grade, Accuracy, Score, MaxCombo, Stars, RawPP, ProfilePP, Mods, Passed, UR, Status) to `~/Downloads/osu_session_exports/`.
+
+### Fixed
+- **Authoritative PP Synchronization**: Synchronized official server `ScoreInfo.PP` and profile delta from `OnUserStatisticsUpdated`, fixing discrepancies where local PP calculations differed from osu! results screen values.
+- **Enhanced Play Notification Formatting**: Notifications now display profile PP gains (`(+X PP)`) alongside the score's official PP.
+
 ## [2.2.14] - 2026-08-25
 
 ### Changed
